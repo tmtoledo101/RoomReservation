@@ -1,0 +1,36 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/config.2.0.schema.json",
+  "version": "2.0",
+  "bundles": {
+    "res-reservation-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/resReservation/ResReservationWebPart.js",
+          "manifest": "./src/webparts/resReservation/ResReservationWebPart.manifest.json"
+        }
+      ]
+    },
+    "res-display-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/resDisplay/ResDisplayWebPart.js",
+          "manifest": "./src/webparts/resDisplay/ResDisplayWebPart.manifest.json"
+        }
+      ]
+    },
+    "res-views-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/resViews/ResViewsWebPart.js",
+          "manifest": "./src/webparts/resViews/ResViewsWebPart.manifest.json"
+        }
+      ]
+    }
+  },
+  "externals": {},
+  "localizedResources": {
+    "ResReservationWebPartStrings": "lib/webparts/resReservation/loc/{locale}.js",
+    "ResDisplayWebPartStrings": "lib/webparts/resDisplay/loc/{locale}.js",
+    "ResViewsWebPartStrings": "lib/webparts/resViews/loc/{locale}.js"
+  }
+}

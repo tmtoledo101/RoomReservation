@@ -1,0 +1,13 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "res-reservation-client-side-solution",
+    "id": "831d38b2-12a3-4d25-91dd-acd5b3d8da0c",
+    "version": "1.0.0.0",
+    "includeClientSideAssets": true,
+    "isDomainIsolated": false
+  },
+  "paths": {
+    "zippedPackage": "solution/res-reservation.sppkg"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "@microsoft/generator-sharepoint": {
+    "isCreatingSolution": false,
+    "environment": "spo",
+    "version": "1.9.1",
+    "libraryName": "res-reservation",
+    "libraryId": "831d38b2-12a3-4d25-91dd-acd5b3d8da0c",
+    "packageManager": "npm",
+    "isDomainIsolated": false,
+    "componentType": "webpart"
+  }
+}
