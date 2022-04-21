@@ -15,7 +15,7 @@ import MaterialTable from "material-table";
 import VisibilityIcon from "@material-ui/icons/Visibility";
 import CloseIcon from "@material-ui/icons/Close";
 import { Formik, Field } from "formik";
-import { DateTimePicker, MuiPickersUtilsProvider } from "@material-ui/pickers";
+import { DatePicker, MuiPickersUtilsProvider } from "@material-ui/pickers";
 import DateFnsUtils from "@date-io/date-fns";
 import * as yup from "yup";
 
@@ -46,12 +46,10 @@ const CustomDateTimePicker = (props) => {
         return (
           <FormControl fullWidth>
             <MuiPickersUtilsProvider utils={DateFnsUtils}>
-              <DateTimePicker
+              <DatePicker
                 clearable
                 autoOk
-                hideTabs
-                ampm
-                format="MM/dd/yyyy HH:mm"
+                format="MM/dd/yyyy"
                 value={field.value ? field.value : null}
                 onChange={(e) => {
                   form.setFieldValue(name, e);
@@ -259,7 +257,7 @@ export default class ResViews extends React.Component<
                         title={headerObj[`${tabValue}`]}
                         columns={[
                           {
-                            title: "Date and Time of use - From",
+                            title: "Date of use - From",
                             field: "fromDate",
                             type: "date",
                             cellStyle: {
@@ -271,7 +269,7 @@ export default class ResViews extends React.Component<
                                 : null,
                           },
                           {
-                            title: "Date and Time of use - To",
+                            title: "Date of use - To",
                             field: "toDate",
                             type: "date",
                             cellStyle: {
@@ -323,7 +321,7 @@ export default class ResViews extends React.Component<
                         options={{
                           filtering: true,
                           pageSize: 5,
-                          pageSizeOptions: [5, 10, this.getData()?.length],
+                          pageSizeOptions: [5, 10, this.getData().length],
                           search: false,
                           grouping: true,
                           selection: false,
@@ -374,13 +372,22 @@ export default class ResViews extends React.Component<
     this.getUser();
   }
 
-  public ISODate = (date) => moment(date).toISOString() ;
+  public dateConverter = (date, type) =>   {
+    let result = null;
+   if(type === 1) {
+   result = `${moment(date).format("YYYY-MM-DD")}T00:00:00Z`;
+   }  else if (type === 2) {
+    result = `${moment(date).add(1, 'days').format("YYYY-MM-DD")}T00:00:00Z`;
+   } 
+  return result;
+  }
 
   public getItems = async (from, to) => {
+    // 2022-04-19T09:00:56.763
     const RequestItem: any[] = await sp.web.lists
       .getByTitle("Request")
       .items.select("*")
-      .filter(`FromDate ge datetime'${this.ISODate(from)}' and ToDate le datetime'${this.ISODate(to)}'`)
+      .filter(`FromDate ge datetime'${this.dateConverter(from, 1)}' and ToDate le datetime'${this.dateConverter(to, 2)}'`)
       .orderBy("Id", false)
       .get();
     const itemArray1 = [];

@@ -1696,15 +1696,16 @@ public participantHandler = (e) => {
   public getPrincipalUser = async () => {
     const principalData: any[] = await sp.web.lists
       .getByTitle("Employee")
-      .items.select("EmployeeName", "Department")
+      .items.select("EmployeeName", "Department/Department")
+      .expand("Department/FieldValuesAsText")
       .filter(`PrincipalUser eq 'Yes'`)
       .get();
     const princialMap = {};
     principalData.forEach((item) => {
-      if (!princialMap[item.Department]) {
-        princialMap[item.Department] = [];
+      if (!princialMap[item.Department.Department]) {
+        princialMap[item.Department.Department] = [];
       }
-      princialMap[item.Department].push(item.EmployeeName);
+      princialMap[item.Department.Department].push(item.EmployeeName);
     });
     this.princialDepartmentMap = princialMap;
   }
