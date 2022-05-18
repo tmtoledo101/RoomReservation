@@ -144,6 +144,7 @@ export default class ResViews extends React.Component<
       referenceNumberList: [],
       pastRequestList: [],
       approvalRequest: [],
+      department: "",
     };
     this.inputRef = React.createRef<HTMLInputElement>();
   }
@@ -370,6 +371,7 @@ export default class ResViews extends React.Component<
 
   public componentDidMount() {
     this.getUser();
+   
   }
 
   public dateConverter = (date, type) =>   {
@@ -382,12 +384,29 @@ export default class ResViews extends React.Component<
   return result;
   }
 
+
   public getItems = async (from, to) => {
     // 2022-04-19T09:00:56.763
+    const  { department } =  this.state;
+    const dateRange = `FromDate ge datetime'${this.dateConverter(from, 1)}'and ToDate le datetime'${this.dateConverter(to, 2)}'`;
+    let filterQuery = null;
+    if(department.length) {
+      let query = "";
+      department.forEach((item, index) => {
+        query += `Department eq '${item}'`;
+        if((department.length - 1) != index){
+          query+= ' or ';
+        }
+      });
+      filterQuery = `${dateRange} and ${query}`;
+    } else {
+      filterQuery = `${dateRange}`;
+    }
+
     const RequestItem: any[] = await sp.web.lists
       .getByTitle("Request")
       .items.select("*")
-      .filter(`FromDate ge datetime'${this.dateConverter(from, 1)}' and ToDate le datetime'${this.dateConverter(to, 2)}'`)
+      .filter(`${filterQuery}`)
       .orderBy("Id", false)
       .get();
     const itemArray1 = [];
@@ -399,7 +418,7 @@ export default class ResViews extends React.Component<
         venue: item.Venue,
         fromDate: item.FromDate,
         toDate: item.ToDate,
-        referenceNumber: item.Id,
+        referenceNumber: item.ReferenceNumber,
         purposeOfUse: item.PurposeOfUse,
         numberOfParticipants: item.NoParticipant,
         requestedBy: item.RequestedBy,
@@ -428,17 +447,37 @@ export default class ResViews extends React.Component<
   }
 
   public getUser = async () => {
-    const crsdUsers = await sp.web.siteGroups.getById(27).users();
-    const ddUsers = await sp.web.siteGroups.getById(28).users();
+    const crsdUsers = await sp.web.siteGroups.getByName("CRSD").users();
+    const ddUsers = await sp.web.siteGroups.getByName("DD").users();
     const currentUser = await sp.web.currentUser.get();
 
     const list = crsdUsers.map((item) => item.Email);
     const list2 = ddUsers.map((item) => item.Email);
     const useremail = currentUser.Email;
+
     if (list.indexOf(useremail) > -1 || list2.indexOf(useremail) > -1) {
       this.setState({
         menuTabs: ["By Reference No", "Past Request", "For Approval"],
       });
     }
+
+    const deparmentData: any[] = await sp.web.lists
+    .getByTitle("UsersPerDepartment")
+    .items.select(
+      "EmployeeName/EMail",
+      "Department/Department",
+    ).filter(`EmployeeName/EMail eq '${useremail}'`)
+    .expand(
+      "Department/FieldValuesAsText",
+      "EmployeeName/EMail",
+    )
+    .get();
+    const departList = [];
+    deparmentData.forEach((item) => {
+      departList.push(item.Department.Department);
+    });
+  this.setState({
+    department: departList,
+  });
   }
 }

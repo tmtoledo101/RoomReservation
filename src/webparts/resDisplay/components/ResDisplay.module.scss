@@ -103,6 +103,13 @@
     border-collapse: collapse;
     min-height: 100px;
   }
+  td {
+    max-width: 200px;
+    pre {
+      white-space: break-spaces;
+    }
+  }
+
   tr > td {
     text-align: center;
   }

@@ -41,6 +41,7 @@ import "@pnp/sp/items";
 import "@pnp/sp/sputilities";
 import { IEmailProperties } from "@pnp/sp/sputilities";
 import "@pnp/sp/site-groups";
+import { Web } from "@pnp/sp/webs";   
 
 const FSS = "FSS";
 const PENDING = "Pending for Approval";
@@ -314,7 +315,6 @@ const ModalPopup = ({ children, title, open, onClose, hideCloseIcon }) => {
 const newResEmail = async (to:Array<string>,cc: Array<string>, values: any, type: any,siteUrl: string, id) => {
   let toEmail = [...to];
   let ccEmail = [...cc];
-  console.log('Cc',cc );
   let emailProps: IEmailProperties = {
     From: "NTT_LagmayJ_JavierGO@bsp.gov.ph",
     To: toEmail,
@@ -410,13 +410,14 @@ export default class ResDisplay extends React.Component<
     this.inputRef = React.createRef<HTMLInputElement>();
   }
 
+  private web = Web("https://bspgovph.sharepoint.com/sites/AccessControl");   
+
   public onEditClick = () => {
     this.setState({
       isEdit: true,
     });
     this.getBuildings();
     this.getLayout();
-    this.getPrincipalUser();
     this.getPurposeofUse();
     this.getParticipants();
     this.getFacility();
@@ -643,13 +644,16 @@ public ISODate = (date) => {
     const facility = JSON.stringify(Formdata["facilityData"]);
     try {  
       const { isEdit } = this.state;
+      if(this.state.newStatus === CANCELLED || this.state.newStatus === DISAPPROVED) {
+        await this.updateRoomTimeSlot(this.state.selectedID, Formdata["venueId"], this.ISODate(Formdata["fromDate"]),this.ISODate(Formdata["toDate"]), true);
+      }
       let dataNeedsToBeUpdated = { };
       this.setState({
         isSavingFailure: false,
       });
-      const isAvailable = await this.checkRoomAvailablity(Formdata["venueId"], this.ISODate(Formdata["fromDate"]),this.ISODate(Formdata["toDate"]));
 
       if(isEdit) {
+          const isAvailable = await this.checkRoomAvailablity(Formdata["venueId"], this.ISODate(Formdata["fromDate"]),this.ISODate(Formdata["toDate"]));
           if(this.state.newStatus === APPROVED && isAvailable){
             await this.updateRoomTimeSlot(this.state.selectedID, Formdata["venueId"], this.ISODate(Formdata["fromDate"]),this.ISODate(Formdata["toDate"]));
           }
@@ -744,24 +748,27 @@ public ISODate = (date) => {
     this.inputRef.current.setFieldTouched("contactPerson", true, false);
     this.inputRef.current.setFieldValue("contactPerson", "");
 
-    const layout = this.layout[value] || [];
-    const check = layout.length ? true : false;
+    
     this.setState({
-      showCSRDField: check,
-      layoutList: [...layout],
       facilityData: [],
       selectedID: "",
+      layoutList: [],
     });
 
     const list = [...this.state.venueList];
     const selectedVenue = list.filter((item) => item.value === value);
+    const check = selectedVenue[0].group === 'CRSD' ? true : false;
+
     if (selectedVenue.length) {
+      const layout = this.layout[value] || [];
       this.setState({
         venueImage: selectedVenue[0].venueImage,
         facilitiesAvailable: JSON.parse(selectedVenue[0].facilitiesAvailable),
         capacityperLayout: selectedVenue[0].capacityperLayout,
         venueId: selectedVenue[0].venueId,
         selectedID: selectedVenue[0].itemId,
+        showCSRDField: check,
+        layoutList: [...layout],
       });
     }
    
@@ -774,6 +781,11 @@ public ISODate = (date) => {
       this.inputRef.current.setFieldValue("principal", "");
       this.inputRef.current.setFieldTouched("contactPerson", true, false);
       this.inputRef.current.setFieldValue("contactPerson", "");
+    }
+
+    if(check){
+      const department =  this.inputRef.current.values["department"];
+      this.getPrincipalUser(department);
     }
   }
 
@@ -1245,7 +1257,7 @@ public participantHandler = (e) => {
                                 </thead>
                                 <tbody>
                                   <tr>
-                                    <td>{capacityperLayout}</td>
+                                    <td><pre>{capacityperLayout}</pre></td>
                                     <td>
                                       <pre>{facilitiesAvailable}</pre>
                                     </td>
@@ -1547,7 +1559,7 @@ public participantHandler = (e) => {
       .items.getById(id)
       .get();
     this.getVenueImage(item.Venue);
-    this.inputRef.current.setFieldValue("referenceNumber", item.Id);
+    this.inputRef.current.setFieldValue("referenceNumber", item.ReferenceNumber);
     this.inputRef.current.setFieldValue(
       "requestDate",
       dateFormat(item.Created)
@@ -1693,21 +1705,25 @@ public participantHandler = (e) => {
     });
     this.layout = layoutMap;
   }
-  public getPrincipalUser = async () => {
-    const principalData: any[] = await sp.web.lists
-      .getByTitle("Employee")
-      .items.select("EmployeeName", "Department/Department")
-      .expand("Department/FieldValuesAsText")
-      .filter(`PrincipalUser eq 'Yes'`)
-      .get();
+  public getPrincipalUser = async (dept: string) => {
+    const principalData: any[] =  await this.web.lists.getByTitle("Employees")
+          .items.select("Name", "Dept")
+          .filter(`Dept eq '${dept}'`)
+          .get();
+  
     const princialMap = {};
     principalData.forEach((item) => {
-      if (!princialMap[item.Department.Department]) {
-        princialMap[item.Department.Department] = [];
+      if (!princialMap[item.Dept]) {
+        princialMap[item.Dept] = [];
       }
-      princialMap[item.Department.Department].push(item.EmployeeName);
+      princialMap[item.Dept].push(item.Name);
     });
     this.princialDepartmentMap = princialMap;
+    if (this.princialDepartmentMap[dept]) {
+      this.setState({
+        princialList: arrayToDropDownValues(this.princialDepartmentMap[dept]),
+      });
+    }
   }
   public getPurposeofUse = async () => {
     const PurposeofUseData: any[] = await sp.web.lists
@@ -1780,7 +1796,7 @@ public participantHandler = (e) => {
       approverList: [...list, ...list2],
     });
   }
-  public updateRoomTimeSlot = async (id, venueId, fromDate, toDate) => {
+  public updateRoomTimeSlot = async (id, venueId, fromDate, toDate, isRemoved = false) => {
     const venueData: any[] = await sp.web.lists.getByTitle("Venue").items.select(
       "Timeslot",
       "VenueId",
@@ -1789,13 +1805,12 @@ public participantHandler = (e) => {
     .get();
     
     const venue  = venueData[0];
-    const timeSlot = JSON.parse(venue.Timeslot) || [];
-    // date is saved in ISO format.
-    //const currentDate = moment().toISOString();
-    // time will be [{fromDate - toDate}]
-    // old date or past date need to remove.
-    
-   timeSlot.push(`${fromDate} ${toDate}`);
+    let timeSlot: string[] = JSON.parse(venue.Timeslot) || [];
+    if(isRemoved) {
+      timeSlot = timeSlot.filter(item => item !== `${fromDate} ${toDate}`);
+    } else {
+    timeSlot.push(`${fromDate} ${toDate}`);
+    }
 
     await sp.web.lists.getByTitle('Venue').items.getById(id).update({
       Timeslot: JSON.stringify(timeSlot),

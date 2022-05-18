@@ -29,4 +29,5 @@ export interface IResReservationState {
   selectedID: any;
   ddMemeberList: any;
   isddMember: boolean;
+  fssMemberList: any;
   }

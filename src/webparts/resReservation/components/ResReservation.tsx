@@ -36,6 +36,7 @@ import "@pnp/sp/items";
 import "@pnp/sp/sputilities";
 import { IEmailProperties } from "@pnp/sp/sputilities";
 import "@pnp/sp/site-groups";
+import { Web } from "@pnp/sp/webs";   
 
 const PENDING = "Pending for Approval";
 const FSS = "FSS";
@@ -288,6 +289,7 @@ const mapArrayToObject = (obj) =>
   Object.keys(obj).map((item) => {
     return { id: item, value: item };
   });
+ 
 const arrayToDropDownValues = (array) =>
   array.map((item) => ({ id: item, value: item }));
 
@@ -409,6 +411,7 @@ export default class ResReservation extends React.Component<
       files: [],
       crsdMemberList: [],
       ddMemeberList: [],
+      fssMemberList: [],
       requestorEmail: "",
       isSavingDone: false,
       isSavingFailure: false,
@@ -422,6 +425,7 @@ export default class ResReservation extends React.Component<
     this.inputRef = React.createRef<HTMLInputElement>();
   }
 
+  private web = Web("https://bspgovph.sharepoint.com/sites/AccessControl");   
   /** set field value and error message for all the fields */
   private getFieldProps = (formik: FormikProps<any>, field: string) => {
     return {
@@ -439,7 +443,9 @@ export default class ResReservation extends React.Component<
    /*if deparment sector is not fss then venue dropdown
      should have all values except exclusivetocolumn fss value.
      In case it is in fss sector then  venue dropdown
-     should have all the values. We need to clear the selected value in
+     should have all the values. 
+     
+     We need to clear the selected value in
      venue dropdown. Reset the venue image and hide the csdr field.
     */
 
@@ -447,7 +453,7 @@ export default class ResReservation extends React.Component<
     const {
       target: { value },
     } = e;
-
+     
     this.setState({
       isFssManaged: true,
     });
@@ -461,14 +467,7 @@ export default class ResReservation extends React.Component<
       });
     }
 
-    if (this.princialDepartmentMap[value]) {
-      this.setState({
-        princialList: arrayToDropDownValues(this.princialDepartmentMap[value]),
-      });
-    }
-
-   
-
+  
     this.setState({
       venueList: [...newVenue],
       venueImage: "https://wallpaperaccess.com/full/2119702.jpg",
@@ -489,6 +488,7 @@ export default class ResReservation extends React.Component<
     this.inputRef.current.setFieldTouched("contactPerson", true, false);
     this.inputRef.current.setFieldValue("contactPerson", "");
     this.inputRef.current.setFieldValue("isCSDR", false);
+  
   }
 
   public  buildingHandler = (e) => {
@@ -634,24 +634,26 @@ export default class ResReservation extends React.Component<
     this.inputRef.current.setFieldTouched("contactPerson", true, false);
     this.inputRef.current.setFieldValue("contactPerson", "");
 
-    const layout = this.layout[value] || [];
-    const check = layout.length ? true : false;
     this.setState({
-      showCSRDField: check,
-      layoutList: [...layout],
       facilityData: [],
       selectedID: "",
+      layoutList: [],
     });
 
     const list = [...this.state.venueList];
     const selectedVenue = list.filter((item) => item.value === value);
+    const check = selectedVenue[0].group === 'CRSD' ? true : false;
+    
     if (selectedVenue.length) {
+      const layout = this.layout[value] || [];
       this.setState({
         venueImage: selectedVenue[0].venueImage,
         facilitiesAvailable: JSON.parse(selectedVenue[0].facilitiesAvailable),
         capacityperLayout: selectedVenue[0].capacityperLayout,
         venueId: selectedVenue[0].venueId,
         selectedID: selectedVenue[0].itemId,
+        showCSRDField: check,
+        layoutList: [...layout],
       });
     }
    
@@ -664,24 +666,43 @@ export default class ResReservation extends React.Component<
       this.inputRef.current.setFieldValue("principal", "");
       this.inputRef.current.setFieldTouched("contactPerson", true, false);
       this.inputRef.current.setFieldValue("contactPerson", "");
+    } 
+    
+    if(check){
+      const department =  this.inputRef.current.values["department"];
+      this.getPrincipalUser(department);
     }
   }
 
  public ISODate = (date) => {
    return moment(date).toISOString();
  }
+
+ public getCount = (count) => {
+  const newCount = count + 1;
+  return newCount < 10 ? `0${newCount}`: newCount;
+}
+
   public CreateRequest = async (Formdata) => {
     const participant = JSON.stringify(Formdata["participant"]);
     const facility = JSON.stringify(Formdata["facilityData"]);
+    const itemLength: any = await sp.web.lists.getByTitle('Request').items
+        .select("referCount")
+        .top(1)
+        .orderBy("Id", false)
+        .get();
+    const count  = itemLength.length ? Number(itemLength[0].referCount) : 0;
+    const ReferenceNumber =  `RR-${moment().year()}${this.getCount(moment().month())}-${this.getCount(count)}`;
+
     this.setState({
       failureMessage: "",
       isSavingFailure: false,
     });
     const isAvailable = await this.checkRoomAvailablity(Formdata["venueId"], this.ISODate(Formdata["fromDate"]),this.ISODate(Formdata["toDate"]));
     if(isAvailable) {
-      if(this.state.isFssManaged) {
+      // if(this.state.isFssManaged) {
            await this.updateRoomTimeSlot(this.state.selectedID, Formdata["venueId"], this.ISODate(Formdata["fromDate"]),this.ISODate(Formdata["toDate"]));
-       }
+       //}
       try {  
         const iar =  await sp.web.lists.getByTitle('Request').items.add({  
         Title: Formdata["requestedBy"],
@@ -704,6 +725,8 @@ export default class ResReservation extends React.Component<
         FacilityData : facility,
         Status: this.state.isFssManaged ?  APPROVED :  PENDING,
         RequestorEmail: this.state.requestorEmail,
+        referCount: `${count + 1}`,
+        ReferenceNumber: ReferenceNumber,
       });
       const  _itemId = iar.data.ID;
       const f = "/sites/ResourceReservation" + "/ReservationDocs/" + iar.data.GUID;
@@ -765,7 +788,10 @@ export default class ResReservation extends React.Component<
 
     if(this.state.isFssManaged) {
       await newResEmail([this.state.requestorEmail], [],
-        Formdata, 3, this.state.facilitiesAvailable, this.props.siteUrl, _itemId);
+        Formdata, 3, null, this.props.siteUrl, _itemId);
+
+      await newResEmail(this.state.fssMemberList, [this.state.requestorEmail],
+          Formdata, 3, null, this.props.siteUrl, _itemId);
      
     this.setState({
       isSavingDone: true,
@@ -867,6 +893,8 @@ export default class ResReservation extends React.Component<
         }}
       >
         {(formik) => {
+          // formik object - refreence save this.inputRef.current 
+          // setFieldValue
           this.inputRef.current = formik;
           return (
             <form onSubmit={formik.handleSubmit}>
@@ -1277,7 +1305,6 @@ export default class ResReservation extends React.Component<
     this.getDepartments();
     this.getBuildings();
     this.getLayout();
-    this.getPrincipalUser();
     this.getPurposeofUse();
     this.getParticipants();
     this.getFacility();
@@ -1402,21 +1429,25 @@ export default class ResReservation extends React.Component<
     });
     this.layout = layoutMap;
   }
-  public getPrincipalUser = async () => {
-    const principalData: any[] = await sp.web.lists
-      .getByTitle("Employee")
-      .items.select("EmployeeName", "Department/Department")
-      .expand("Department/FieldValuesAsText")
-      .filter(`PrincipalUser eq 'Yes'`)
-      .get();
+  public getPrincipalUser = async (dept: string) => {
+    const principalData: any[] =  await this.web.lists.getByTitle("Employees")
+          .items.select("Name", "Dept")
+          .filter(`Dept eq '${dept}'`)
+          .get();
+  
     const princialMap = {};
     principalData.forEach((item) => {
-      if (!princialMap[item.Department.Department]) {
-        princialMap[item.Department.Department] = [];
+      if (!princialMap[item.Dept]) {
+        princialMap[item.Dept] = [];
       }
-      princialMap[item.Department.Department].push(item.EmployeeName);
+      princialMap[item.Dept].push(item.Name);
     });
     this.princialDepartmentMap = princialMap;
+    if (this.princialDepartmentMap[dept]) {
+      this.setState({
+        princialList: arrayToDropDownValues(this.princialDepartmentMap[dept]),
+      });
+    }
   }
   public getPurposeofUse = async () => {
     const PurposeofUseData: any[] = await sp.web.lists
@@ -1457,14 +1488,16 @@ export default class ResReservation extends React.Component<
     this.facilityMap = facility;
   }
   public getCRSD = async () => {
- 
-    const crsdUsers = await sp.web.siteGroups.getById(27).users();
-    const ddUsers = await sp.web.siteGroups.getById(28).users();
+    const crsdUsers = await sp.web.siteGroups.getByName("CRSD").users();
+    const ddUsers = await sp.web.siteGroups.getByName("DD").users();
+    const fssUsers = await sp.web.siteGroups.getByName("FSS").users();
     const list = crsdUsers.map(item => item.Email);
     const list2 = ddUsers.map(item => item.Email);
+    const list3 = fssUsers.map(item => item.Email);
     this.setState({
       crsdMemberList: [...list],
-      ddMemeberList: [...list2]
+      ddMemeberList: [...list2],
+      fssMemberList: [...list3]
     });
   }
   public updateRoomTimeSlot = async (id, venueId, fromDate, toDate) => {
@@ -1497,8 +1530,12 @@ export default class ResReservation extends React.Component<
     const venue  = venueData[0];
     const TimeSlot = JSON.parse(venue.Timeslot) || [];
     let isAvailable = true;
-    // if room is not available for any date then
-    // immediately break the loop and exit with room status unavailable.
+    /* 
+     if room is not available for any date then
+     immediately break the loop and exit with room status unavailable.
+     start  - end   ==> already booked dates
+     fromdate - todate ==> requested dates
+   */
     for(let i = 0 ;i < TimeSlot.length; i++){
       const data = TimeSlot[i].split(" ");
       const [start , end] = data;
@@ -1513,5 +1550,4 @@ export default class ResReservation extends React.Component<
     }
    return isAvailable;
   }
-
 }

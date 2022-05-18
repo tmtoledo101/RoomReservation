@@ -5,4 +5,5 @@ export interface IResViewState {
     referenceNumberList: any;
     pastRequestList: any;
     approvalRequest: any;
+    department: any;
 }
