@@ -1720,8 +1720,9 @@ public participantHandler = (e) => {
     });
     this.princialDepartmentMap = princialMap;
     if (this.princialDepartmentMap[dept]) {
+      const sortedData = [].sort.call(this, this.princialDepartmentMap[dept]);
       this.setState({
-        princialList: arrayToDropDownValues(this.princialDepartmentMap[dept]),
+        princialList: arrayToDropDownValues(sortedData),
       });
     }
   }

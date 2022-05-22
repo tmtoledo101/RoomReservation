@@ -368,6 +368,12 @@ const newResEmail = async (to:Array<string>,cc: Array<string>, values: any, type
     Link: <a href="${siteUrl}/SitePages/DisplayReservation_appge.aspx?pid=${id}">Request url</a>
     `;
   }
+  if (type === 4) {
+    emailProps.Subject = `Approved Request for Reservation.:  ${id}. Date of Use: ${dateFormat(values["fromDate"])} to ${dateFormat(values["toDate"])}`;
+    emailProps.Body = `We are pleased to inform you that your venue reservation request is approved. <br/>
+    Link: <a href="${siteUrl}/SitePages/DisplayReservation_appge.aspx?pid=${id}">Request url</a>
+    `;
+  }
 
    await sp.utility.sendEmail(emailProps); 
 };
@@ -678,9 +684,9 @@ export default class ResReservation extends React.Component<
    return moment(date).toISOString();
  }
 
- public getCount = (count) => {
-  const newCount = count + 1;
-  return newCount < 10 ? `0${newCount}`: newCount;
+ public getCount = (count, padlen = 2) => {
+  const newCount = `${count + 1}`;
+  return newCount.padStart(padlen,'0');
 }
 
   public CreateRequest = async (Formdata) => {
@@ -692,7 +698,7 @@ export default class ResReservation extends React.Component<
         .orderBy("Id", false)
         .get();
     const count  = itemLength.length ? Number(itemLength[0].referCount) : 0;
-    const ReferenceNumber =  `RR-${moment().year()}${this.getCount(moment().month())}-${this.getCount(count)}`;
+    const ReferenceNumber =  `RR-${moment().year()}${this.getCount(moment().month())}-${this.getCount(count, 4)}`;
 
     this.setState({
       failureMessage: "",
@@ -790,8 +796,8 @@ export default class ResReservation extends React.Component<
       await newResEmail([this.state.requestorEmail], [],
         Formdata, 3, null, this.props.siteUrl, _itemId);
 
-      await newResEmail(this.state.fssMemberList, [this.state.requestorEmail],
-          Formdata, 3, null, this.props.siteUrl, _itemId);
+      await newResEmail([this.state.requestorEmail],this.state.fssMemberList,
+          Formdata, 4, null, this.props.siteUrl, _itemId);
      
     this.setState({
       isSavingDone: true,
@@ -1443,9 +1449,12 @@ export default class ResReservation extends React.Component<
       princialMap[item.Dept].push(item.Name);
     });
     this.princialDepartmentMap = princialMap;
+
     if (this.princialDepartmentMap[dept]) {
+      const sortedData = [].sort.call(this.princialDepartmentMap[dept]);
+      console.log('sorted', sortedData);
       this.setState({
-        princialList: arrayToDropDownValues(this.princialDepartmentMap[dept]),
+        princialList: arrayToDropDownValues(sortedData),
       });
     }
   }
