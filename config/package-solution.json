@@ -1,0 +1,40 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "res-reservation-refactored-client-side-solution",
+    "id": "9b5c040b-bb71-44b0-b796-e40a673b682a",
+    "version": "1.0.0.0",
+    "includeClientSideAssets": true,
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "developer": {
+      "name": "",
+      "websiteUrl": "",
+      "privacyUrl": "",
+      "termsOfUseUrl": "",
+      "mpnId": "Undefined-1.20.0"
+    },
+    "metadata": {
+      "shortDescription": {
+        "default": "ResReservation_Refactored description"
+      },
+      "longDescription": {
+        "default": "ResReservation_Refactored description"
+      },
+      "screenshotPaths": [],
+      "videoUrl": "",
+      "categories": []
+    },
+    "features": [
+      {
+        "title": "res-reservation-refactored Feature",
+        "description": "The feature that activates elements of the res-reservation-refactored solution.",
+        "id": "aa5ecdd9-fe41-4e50-9fe7-5c9309d421c9",
+        "version": "1.0.0.0"
+      }
+    ]
+  },
+  "paths": {
+    "zippedPackage": "solution/res-reservation-refactored.sppkg"
+  }
+}

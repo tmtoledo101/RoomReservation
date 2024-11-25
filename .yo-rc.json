@@ -1,0 +1,21 @@
+{
+  "@microsoft/generator-sharepoint": {
+    "plusBeta": false,
+    "isCreatingSolution": true,
+    "nodeVersion": "22.11.0",
+    "sdksVersions": {
+      "@microsoft/microsoft-graph-client": "3.0.2",
+      "@microsoft/teams-js": "2.24.0"
+    },
+    "version": "1.20.0",
+    "libraryName": "res-reservation-refactored",
+    "libraryId": "9b5c040b-bb71-44b0-b796-e40a673b682a",
+    "environment": "spo",
+    "packageManager": "npm",
+    "solutionName": "ResReservation_Refactored",
+    "solutionShortDescription": "ResReservation_Refactored description",
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "componentType": "webpart"
+  }
+}

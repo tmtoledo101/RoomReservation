@@ -1,0 +1,56 @@
+{
+  "name": "res-reservation-refactored",
+  "version": "0.0.1",
+  "private": true,
+  "engines": {
+    "node": ">=18.17.1 <19.0.0"
+  },
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "gulp bundle",
+    "clean": "gulp clean",
+    "test": "gulp test"
+  },
+  "dependencies": {
+    "@date-io/date-fns": "^3.0.0",
+    "@emotion/react": "^11.13.5",
+    "@emotion/styled": "^11.13.5",
+    "@fluentui/react": "^8.106.4",
+    "@microsoft/sp-component-base": "1.20.0",
+    "@microsoft/sp-core-library": "1.20.0",
+    "@microsoft/sp-lodash-subset": "1.20.0",
+    "@microsoft/sp-office-ui-fabric-core": "1.20.0",
+    "@microsoft/sp-property-pane": "1.20.0",
+    "@microsoft/sp-webpart-base": "1.20.0",
+    "@mui/icons-material": "^6.1.8",
+    "@mui/lab": "^6.0.0-beta.16",
+    "@mui/material": "^6.1.8",
+    "@mui/x-date-pickers": "^7.22.3",
+    "@pnp/sp": "^4.7.0",
+    "date-fns": "^3.2.0",
+    "formik": "^2.4.6",
+    "moment": "^2.30.1",
+    "react": "17.0.1",
+    "react-dom": "17.0.1",
+    "react-dropzone": "^14.3.5",
+    "tslib": "2.3.1",
+    "yup": "^1.4.0"
+  },
+  "devDependencies": {
+    "@microsoft/eslint-config-spfx": "1.20.2",
+    "@microsoft/eslint-plugin-spfx": "1.20.2",
+    "@microsoft/rush-stack-compiler-4.7": "0.1.0",
+    "@microsoft/sp-build-web": "1.20.2",
+    "@microsoft/sp-module-interfaces": "1.20.2",
+    "@rushstack/eslint-config": "4.0.1",
+    "@types/react": "^17.0.83",
+    "@types/react-dom": "^17.0.25",
+    "@types/webpack-env": "~1.15.2",
+    "@types/yup": "^0.29.14",
+    "ajv": "^6.12.5",
+    "eslint": "8.57.0",
+    "eslint-plugin-react-hooks": "4.3.0",
+    "gulp": "4.0.2",
+    "typescript": "4.7.4"
+  }
+}
