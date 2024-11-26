@@ -1327,13 +1327,13 @@ export default class ResReservation extends React.Component<
   public getDepartments = async () => {
     const currentUserData =  await sp.web.currentUser.get();
     // get department as per current user only.
-    const email =  currentUserData.Email;
+    const email =  currentUserData.Title;
     const deparmentData: any[] = await sp.web.lists
       .getByTitle("UsersPerDepartment")
       .items.select(
         "EmployeeName/EMail",
         "Department/Department",
-      ).filter(`EmployeeName/EMail eq '${email}'`)
+      ).filter(`Title eq '${email}'`)
       .expand(
         "Department/FieldValuesAsText",
         "EmployeeName/EMail",

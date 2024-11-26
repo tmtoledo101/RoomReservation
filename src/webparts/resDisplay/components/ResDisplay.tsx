@@ -340,6 +340,13 @@ const newResEmail = async (to:Array<string>,cc: Array<string>, values: any, type
      Events and Visitor Services Pool (EVSP) at local telephone numbers 2559 or 2462.<br/><br/>
     Link: <a href="${siteUrl}/SitePages/DisplayReservation_appge.aspx?pid=${id}">Request url</a>`;
   }
+  if(type === CANCELLED) {
+    emailProps.Subject = `Cancelled Request for Reservation.:  ${id}. Date of Use: ${dateFormat(values["fromDate"])} to ${dateFormat(values["toDate"])}`;
+    emailProps.Body = `This venue reservation request is cancelled. 
+    For further clarifications, you may e-mail us at coraoreservations@bsp.gov.ph or call our
+     Events and Visitor Services Pool (EVSP) at local telephone numbers 2559 or 2462.<br/><br/>
+    Link: <a href="${siteUrl}/SitePages/DisplayReservation_appge.aspx?pid=${id}">Request url</a>`;
+  }
 
    await sp.utility.sendEmail(emailProps); 
 };
@@ -683,35 +690,35 @@ public ISODate = (date) => {
         Status: this.state.newStatus
       });
       const  _itemId = this.state.guid;
-
-      
-      const f = "/sites/ResourceReservation" + "/ReservationDocs/" + _itemId;
-      await sp.web.lists.getByTitle("ReservationDocs").rootFolder.folders.getByName(_itemId).delete();
-      await sp.web.lists.getByTitle("ReservationDocs").rootFolder.folders
-      .add(_itemId)
-      .then(r => {
-         Promise.all(Formdata.files.map( (file) => {
-         if (file.size <= 10485760) {
-             sp.web.getFolderByServerRelativeUrl(f).files.add(file.name, file, true)
-             .then(result => {  
-              result.file.getItem()
-              .then(item => {  
-                  item.update({  
-                    RequestId : _itemId  
-                  });
-              });  
-          });
-          } else {
-             sp.web.getFolderByServerRelativeUrl(f).files.addChunked(file.name, file, d1 => {
-            }, true).then(({ file:fileData }) => fileData.getItem()).then((item:any) => {  
-                return item.update({  
-                  RequestId : _itemId
-                });
+      console.log(_itemId);
+      if(_itemId) {
+        const f = "/sites/ResourceReservation" + "/ReservationDocs/" + _itemId;
+        await sp.web.lists.getByTitle("ReservationDocs").rootFolder.folders.getByName(_itemId).delete();
+        await sp.web.lists.getByTitle("ReservationDocs").rootFolder.folders
+        .add(_itemId)
+        .then(r => {
+          Promise.all(Formdata.files.map( (file) => {
+          if (file.size <= 10485760) {
+              sp.web.getFolderByServerRelativeUrl(f).files.add(file.name, file, true)
+              .then(result => {  
+                result.file.getItem()
+                .then(item => {  
+                    item.update({  
+                      RequestId : _itemId  
+                    });
+                });  
             });
-          }
-        }));
-      });
-    
+            } else {
+              sp.web.getFolderByServerRelativeUrl(f).files.addChunked(file.name, file, d1 => {
+              }, true).then(({ file:fileData }) => fileData.getItem()).then((item:any) => {  
+                  return item.update({  
+                    RequestId : _itemId
+                  });
+              });
+            }
+          }));
+        });
+      }
       let toUser = this.state.crsdMemberList; 
       if(this.state.isDDMember) {
         toUser = this.state.ddMemeberList;
