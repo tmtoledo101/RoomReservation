@@ -70,22 +70,15 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
   }
 
   private async initializeForm() {
-    console.log("RRF1")
+  
     const currentUser = await this.spService.getCurrentUser();
     const { departments, departmentSectorMap } = await this.spService.getDepartments(currentUser.Title);
-    console.log("RRF_getDepartments");
     const { buildings, venues } = await this.spService.getBuildings();
-    console.log("RRF_getBuilding");
     const layouts = await this.spService.getLayouts();
-    console.log("RRF_getLayouts");
     const purposeOfUse = await this.spService.getPurposeOfUse();
-    console.log("RRF_getPurposeOfUse");
     const participants = await this.spService.getParticipants();
-    console.log("RRF_getParticipants");
     const facilityMap = await this.spService.getFacilities();
-    console.log("RRF_getFacilities");
-    const { crsdMembers, ddMembers, fssMembers } = await this.spService.getGroupMembers();
-    console.log("RRF_getGroupMembers");
+    //const { crsdMembers, ddMembers, fssMembers } = await this.spService.getGroupMembers();
     this.venue = venues;
     this.layout = layouts;
     this.facilityMap = facilityMap;
@@ -94,8 +87,8 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
       id: index.toString(),
       value: item.value
     }));
-    console.log("buildingList")
-    console.log(buildingList)
+    console.log("buildingList");
+    console.log(buildingList);
     this.setState({
       departmentList: departments,
       departmentSectorMap,
@@ -103,12 +96,12 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
       venueList: venues,
       purposeOfUseList: purposeOfUse,
       participantList: participants,
-      crsdMemberList: crsdMembers,
-      ddMemeberList: ddMembers,
-      fssMemberList: fssMembers,
+      //crsdMemberList: crsdMembers,
+      //ddMemeberList: ddMembers,
+      //fssMemberList: fssMembers,
       requestorEmail: currentUser.Email,
     });
-    console.log("Set currentUser : " + currentUser.Title)
+    console.log("Set currentUser : " + currentUser.Title);
     this.formikRef.current.setFieldValue("requestedBy", currentUser.Title);
   }
 
@@ -220,6 +213,15 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
     }));
   }
 
+  private participantHandler = (e) => {
+    const { target : { value }}  = e;
+     this.setState({
+       isddMember:  !(value.indexOf('BSP-QC Personnel') > -1 && value.length === 1),
+     });
+ 
+}
+
+
   public render(): React.ReactElement {
     return (
       <Formik
@@ -259,8 +261,10 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
 
                   {/* Basic Information */}
                   <Grid item xs={6}>
+                  <div className={styles.width}>
                     <div className={styles.label}>Requested By</div>
                     <CustomInput name="requestedBy" disabled />
+                  </div>
                   </Grid>
                   <Grid item xs={6}>
                     <div className={styles.label}>Department</div>
@@ -273,64 +277,120 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
 
                   {/* Venue Selection */}
                   <Grid item xs={6}>
+                  <div className={styles.width}>
                     <div className={styles.label}>Building</div>
                     <Dropdown
                       items={this.state.buildingList}
                       name="building"
                     />
+                    </div>
                   </Grid>
+
                   <Grid item xs={6}>
+                  <div className={styles.width}>
                     <div className={styles.label}>Venue</div>
                     <Dropdown
                       items={this.state.venueList}
                       name="venue"
                       handleChange={this.handleVenueChange}
                     />
+                  </div>
                   </Grid>
 
-                  {/* Venue Details */}
-                  <VenueDetails
-                    venueImage={this.state.venueImage}
-                    capacityperLayout={this.state.capacityperLayout}
-                    facilitiesAvailable={this.state.facilitiesAvailable}
-                  />
+                 
 
                   {/* CSRD Fields */}
                   {this.state.showCSRDField && (
                     <>
                       <Grid item xs={6}>
+                      <div className={styles.width}>
                         <div className={styles.label}>Layout Tables/Chairs*</div>
                         <Dropdown items={this.state.layoutList} name="layout" />
+                      </div>
                       </Grid>
-                      <Grid item xs={6}>
-                        <div className={styles.label}>Principal User*</div>
-                        <Dropdown items={this.state.princialList} name="principal" />
-                      </Grid>
+                      
                       <Grid item xs={6}>
                         <div className={styles.label}>Contact Person*</div>
                         <CustomInput name="contactPerson" />
                       </Grid>
+                
+                      <Grid item xs={6}>
+                    <div className={styles.width}>
+                      <div className={styles.label}>Principal User*</div>
+                      <Dropdown items={this.state.princialList} name="principal" />
+                    </div>
+                  </Grid>
                     </>
                   )}
 
-                  {/* Other Fields */}
+                   {/* Venue Details */}
+                   <VenueDetails
+                    venueImage={this.state.venueImage}
+                    capacityperLayout={this.state.capacityperLayout}
+                    facilitiesAvailable={this.state.facilitiesAvailable}
+                  />
+
+                  
+
+                  {/* Contact No.*/}
                   <Grid item xs={6}>
+                  <div className={styles.width}>
                     <div className={styles.label}>Contact No.</div>
                     <CustomInput name="contactNumber" />
+                    </div>
                   </Grid>
+                  
+                  {/*Purpose of Use*/}
                   <Grid item xs={6}>
-                    <div className={styles.label}>Purpose Of Use</div>
-                    <Dropdown items={this.state.purposeOfUseList} name="purposeOfUse" />
+                    <div className={styles.width}>
+                      <div className={styles.label}>Purpose Of Use</div>
+                      <Dropdown items={this.state.purposeOfUseList} name="purposeOfUse" />
+                    </div>
+                  </Grid>
+
+                   {/*Participants*/}
+                  <Grid item xs={6}>
+                  <div className={styles.width}>
+                    <div className={styles.label}>Participants</div>
+                      <Dropdown
+                        items= {this.state.participantList}
+                        name="participant"
+                        multiple
+                        handleChange={(e) => this.participantHandler(e)}
+                      />
+                     { formik.values.participant.length > 0 &&  this.state.showCSRDField  && (
+                        <span>Selected type of participants are subject for approval by { this.state.isddMember ?  'DD' : 'CRSD' } staff level</span>)
+                     }
+                   </div>
+                  </Grid>
+                  {/*Number of Participants*/}
+                  <Grid item xs={6}>
+                    <div className={styles.width}>
+                      <div className={styles.label}>Number of Participants</div>
+                      <CustomInput name="numberOfParticipant" />
+                    </div>
+                  </Grid>
+                    {/*Title Description*/}
+                  <Grid item xs={6}>
+                  <div className={styles.width}>
+                    <div className={styles.label}>Title Description</div>
+                      <CustomInput name="titleDesc" />
+                  </div>
                   </Grid>
 
                   {/* Date and Time */}
                   <Grid item xs={6}>
+                  <div className={styles.width}>
                     <div className={styles.label}>Date and Time of use - From</div>
                     <CustomDateTimePicker name="fromDate" />
+                  </div>
                   </Grid>
+
                   <Grid item xs={6}>
-                    <div className={styles.label}>Date and Time of use - To</div>
-                    <CustomDateTimePicker name="toDate" />
+                    <div className={styles.width}>
+                      <div className={styles.label}>Date and Time of use - To</div>
+                      <CustomDateTimePicker name="toDate" />
+                    </div>
                   </Grid>
 
                   {/* Facilities */}
@@ -351,9 +411,16 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
                     </Grid>
                   )}
 
+                  <Grid item xs={6}>
+                    <div className={styles.width}>
+                      <div className={styles.label}>Other Requirements</div>
+                      <CustomInput name="otherRequirment" />
+                    </div>
+                  </Grid>
+
                   {/* File Upload */}
                   <Grid item xs={12}>
-                    <div className={styles.label}>Attachments</div>
+                    <div className={styles.label}>Attachments Here</div>
                     <DropzoneArea
                       showPreviews={true}
                       showPreviewsInDropzone={false}
