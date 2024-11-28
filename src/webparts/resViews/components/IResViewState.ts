@@ -1,9 +1,11 @@
+import { IRequestItem } from "./services/SharePointService";
+
 export interface IResViewState {
-    items: any;
-    menuTabs: any;
-    tabValue: Number;
-    referenceNumberList: any;
-    pastRequestList: any;
-    approvalRequest: any;
-    department: any;
+  items: any[];
+  menuTabs: string[];
+  tabValue: number;
+  referenceNumberList: IRequestItem[];
+  pastRequestList: IRequestItem[];
+  approvalRequest: IRequestItem[];
+  department: string[];
 }
