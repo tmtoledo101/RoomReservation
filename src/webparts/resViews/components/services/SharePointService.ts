@@ -2,102 +2,34 @@ import { sp } from "@pnp/sp";
 import "@pnp/sp/webs";
 import "@pnp/sp/lists";
 import "@pnp/sp/items";
-import { STATUS } from "../constants";
-import { createDateRangeFilter } from "../utils/dateUtils";
-
-export interface IRequestItem {
-  building: string;
-  venue: string;
-  fromDate: Date;
-  toDate: Date;
-  referenceNumber: string;
-  purposeOfUse: string;
-  numberOfParticipants: number;
-  requestedBy: string;
-  department: string;
-  contactNumber: string;
-  status: string;
-  ID: number;
-}
+import "@pnp/sp/site-groups/web";
+import { ITableItem, STATUS } from "../interfaces/IResViews";
+import { dateConverter } from "../utils/helpers";
 
 export class SharePointService {
-  public async getCurrentUser() {
-    try {
-      return await sp.web.currentUser.get();
-    } catch (error) {
-      console.error('Error getting current user:', error);
-      throw error;
-    }
-  }
+  public static async getRequestItems(from: string, to: string, department: string[]): Promise<{
+    referenceNumberList: ITableItem[];
+    pastRequestList: ITableItem[];
+    approvalRequest: ITableItem[];
+  }> {
+    const dateRange = `FromDate ge datetime'${dateConverter(from, 1)}' and ToDate le datetime'${dateConverter(to, 2)}'`;
+    let filterQuery = department.length 
+      ? `${dateRange} and ${department.map(item => `Department eq '${item}'`).join(' or ')}`
+      : dateRange;
 
-  public async getUserGroups() {
-    try {
-      const [crsdUsers, ddUsers] = await Promise.all([
-        sp.web.siteGroups.getByName("CRSD").users(),
-        sp.web.siteGroups.getByName("DD").users()
-      ]);
+    const RequestItem: any[] = await sp.web.lists
+      .getByTitle("Request")
+      .items.select("*")
+      .filter(filterQuery)
+      .orderBy("Id", false)
+      .get();
 
-      return {
-        crsdUsers: crsdUsers.map(item => item.Email),
-        ddUsers: ddUsers.map(item => item.Email)
-      };
-    } catch (error) {
-      console.error('Error getting user groups:', error);
-      throw error;
-    }
-  }
+    const itemArray1: ITableItem[] = [];
+    const itemArray2: ITableItem[] = [];
+    const itemArray3: ITableItem[] = [];
 
-  public async getUserDepartments(userEmail: string) {
-    try {
-      const deparmentData = await sp.web.lists
-        .getByTitle("UsersPerDepartment")
-        .items.select(
-          "EmployeeName/EMail",
-          "Department/Department"
-        )
-        .filter(`EmployeeName/EMail eq '${userEmail}'`)
-        .expand(
-          "Department/FieldValuesAsText",
-          "EmployeeName/EMail"
-        )
-        .get();
-
-      return deparmentData.map(item => item.Department.Department);
-    } catch (error) {
-      console.error('Error getting user departments:', error);
-      throw error;
-    }
-  }
-
-  public async getRequestItems(fromDate: Date, toDate: Date, departments: string[]) {
-    try {
-      const filterQuery = createDateRangeFilter(fromDate, toDate, departments);
-      
-      const requestItems: any[] = await sp.web.lists
-        .getByTitle("Request")
-        .items.select("*")
-        .filter(filterQuery)
-        .orderBy("Id", false)
-        .get();
-
-      return this.processRequestItems(requestItems);
-    } catch (error) {
-      console.error('Error getting request items:', error);
-      throw error;
-    }
-  }
-
-  private processRequestItems(items: any[]): {
-    allRequests: IRequestItem[];
-    pastRequests: IRequestItem[];
-    pendingRequests: IRequestItem[];
-  } {
-    const allRequests: IRequestItem[] = [];
-    const pastRequests: IRequestItem[] = [];
-    const pendingRequests: IRequestItem[] = [];
-
-    items.forEach(item => {
-      const requestItem: IRequestItem = {
+    RequestItem.forEach((item) => {
+      const tempObj: ITableItem = {
         building: item.Building,
         venue: item.Venue,
         fromDate: item.FromDate,
@@ -109,26 +41,63 @@ export class SharePointService {
         department: item.Department,
         contactNumber: item.ContactNumber,
         status: item.Status,
-        ID: item.Id
+        ID: item.Id,
       };
 
-      allRequests.push(requestItem);
-
-      if (item.Status === STATUS.APPROVED || 
-          item.Status === STATUS.DISAPPROVED || 
-          item.Status === STATUS.CANCELLED) {
-        pastRequests.push(requestItem);
+      itemArray1.push(tempObj);
+      
+      if (
+        item.Status === STATUS.APPROVED ||
+        item.Status === STATUS.DISAPPROVED ||
+        item.Status === STATUS.CANCELLED
+      ) {
+        itemArray2.push(tempObj);
       }
-
+      
       if (item.Status === STATUS.PENDING) {
-        pendingRequests.push(requestItem);
+        itemArray3.push(tempObj);
       }
     });
 
     return {
-      allRequests,
-      pastRequests,
-      pendingRequests
+      referenceNumberList: itemArray1,
+      pastRequestList: itemArray2,
+      approvalRequest: itemArray3,
+    };
+  }
+
+  public static async getCurrentUserGroups(): Promise<{
+    isApprover: boolean;
+    departments: string[];
+  }> {
+    const crsdUsers = await sp.web.siteGroups.getByName("CRSD").users();
+    const ddUsers = await sp.web.siteGroups.getByName("DD").users();
+    const currentUser = await sp.web.currentUser.get();
+
+    const crsdEmails = crsdUsers.map((item) => item.Email);
+    const ddEmails = ddUsers.map((item) => item.Email);
+    const userEmail = currentUser.Email;
+
+    const isApprover = crsdEmails.includes(userEmail) || ddEmails.includes(userEmail);
+
+    const departmentData: any[] = await sp.web.lists
+      .getByTitle("UsersPerDepartment")
+      .items.select(
+        "EmployeeName/EMail",
+        "Department/Department",
+      )
+      .filter(`EmployeeName/EMail eq '${userEmail}'`)
+      .expand(
+        "Department/FieldValuesAsText",
+        "EmployeeName/EMail",
+      )
+      .get();
+
+    const departments = departmentData.map(item => item.Department.Department);
+
+    return {
+      isApprover,
+      departments
     };
   }
 }
