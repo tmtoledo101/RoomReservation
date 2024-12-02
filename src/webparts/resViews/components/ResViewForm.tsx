@@ -1,12 +1,11 @@
 import * as React from "react";
 import { Formik } from "formik";
-import { Grid, Button, Paper, AppBar, Tabs, Tab } from "@material-ui/core";
-import MaterialTable from "material-table";
-import VisibilityIcon from "@material-ui/icons/Visibility";
+import { Grid, Button, Paper } from "@material-ui/core";
 import CloseIcon from "@material-ui/icons/Close";
 import { CustomDateTimePicker } from "./common/CustomDateTimePicker";
+import { CustomTabs } from "./common/CustomTabs";
+import { CustomTable } from "./common/CustomTable";
 import { resViewValidationSchema } from "./utils/validation";
-import { formatDate } from "./utils/helpers";
 import { IFormValues, ITableItem, HEADER_OBJ } from "./interfaces/IResViews";
 import styles from "./ResViews.module.scss";
 
@@ -15,7 +14,7 @@ interface IResViewFormProps {
   menuTabs: string[];
   data: ITableItem[];
   onTabChange: (event: React.ChangeEvent<{}>, value: number) => void;
-  onSearch: (fromDate: string | Date, toDate: string | Date) => void;
+  onSearch: (fromDate: Date | null, toDate: Date | null) => void;
   onView: (event: any, data: ITableItem | ITableItem[]) => void;
   onClose: () => void;
 }
@@ -30,8 +29,8 @@ export const ResViewForm: React.FC<IResViewFormProps> = ({
   onClose,
 }) => {
   const initialValues: IFormValues = {
-    fromDate: "",
-    toDate: "",
+    fromDate: null,
+    toDate: null,
   };
 
   return (
@@ -47,23 +46,11 @@ export const ResViewForm: React.FC<IResViewFormProps> = ({
               View Reservation Request
             </Grid>
             <Grid item xs={12}>
-              <Paper square className={styles.paper}>
-                <AppBar position="static" color="default">
-                  <Tabs
-                    value={tabValue}
-                    indicatorColor="primary"
-                    textColor="primary"
-                    onChange={onTabChange}
-                    aria-label="tabs example"
-                    variant="scrollable"
-                    scrollButtons="auto"
-                  >
-                    {menuTabs.map((item: string, index: number) => (
-                      <Tab key={index} label={item} className={styles.tabbar} />
-                    ))}
-                  </Tabs>
-                </AppBar>
-              </Paper>
+              <CustomTabs
+                value={tabValue}
+                menuTabs={menuTabs}
+                onChange={onTabChange}
+              />
             </Grid>
 
             <Grid item xs={4}>
@@ -95,85 +82,11 @@ export const ResViewForm: React.FC<IResViewFormProps> = ({
             </Grid>
             <Grid item xs={12}>
               <Paper variant="outlined" className={styles.paper}>
-                <div>
-                  <MaterialTable
-                    title={HEADER_OBJ[`${tabValue}`]}
-                    columns={[
-                      {
-                        title: "Date of use - From",
-                        field: "fromDate",
-                        type: "date",
-                        cellStyle: {
-                          minWidth: 150,
-                        },
-                        render: (rowData) => formatDate(rowData.fromDate),
-                      },
-                      {
-                        title: "Date of use - To",
-                        field: "toDate",
-                        type: "date",
-                        cellStyle: {
-                          minWidth: 150,
-                        },
-                        render: (rowData) => formatDate(rowData.toDate),
-                      },
-                      {
-                        title: "Building",
-                        field: "building",
-                      },
-                      {
-                        title: "Venue",
-                        field: "venue",
-                      },
-                      {
-                        title: "Reference No.",
-                        field: "referenceNumber",
-                      },
-                      {
-                        title: "Purpose of Use",
-                        field: "purposeOfUse",
-                      },
-                      {
-                        title: "Number of Participants",
-                        field: "numberOfParticipants",
-                      },
-                      {
-                        title: "Requested By",
-                        field: "requestedBy",
-                      },
-                      {
-                        title: "Department",
-                        field: "department",
-                      },
-                      {
-                        title: "Contact No.",
-                        field: "contactNumber",
-                      },
-                      {
-                        title: "Status",
-                        field: "status",
-                      },
-                    ]}
-                    data={data}
-                    options={{
-                      filtering: true,
-                      pageSize: 5,
-                      pageSizeOptions: [5, 10, data.length],
-                      search: false,
-                      grouping: true,
-                      selection: false,
-                      columnsButton: false,
-                      exportButton: true,
-                    }}
-                    actions={[
-                      {
-                        icon: () => <VisibilityIcon />,
-                        tooltip: "View Record",
-                        onClick: onView,
-                      },
-                    ]}
-                  />
-                </div>
+                <CustomTable
+                  title={HEADER_OBJ[`${tabValue}`]}
+                  data={data}
+                  onView={onView}
+                />
               </Paper>
             </Grid>
             <Grid item xs={12}>

@@ -14,8 +14,8 @@ export interface ITableItem {
 }
 
 export interface IFormValues {
-  fromDate: string;
-  toDate: string;
+  fromDate: Date | null;
+  toDate: Date | null;
 }
 
 export const STATUS = {

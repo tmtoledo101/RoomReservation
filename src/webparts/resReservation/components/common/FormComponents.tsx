@@ -121,9 +121,9 @@ export const CustomDateTimePicker = (props) => {
                 clearable
                 autoOk
                 hideTabs
-                ampm={false}
+                ampm={true}
                 disablePast
-                format="MM/dd/yyyy HH:mm"
+                format="MM/dd/yyyy hh:mm a"
                 value={field.value ? field.value : null}
                 minDate={new Date()}
                 onChange={(e) => {
