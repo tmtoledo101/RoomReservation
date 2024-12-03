@@ -27,7 +27,7 @@ export const newResEmail = async (to: Array<string>, cc: Array<string>, values: 
   const toEmail = [...to];
   const ccEmail = [...cc];
   const emailProps: IEmailProperties = {
-    From: "NTT_LagmayJ_JavierGO@bsp.gov.ph",
+    From: "TDO365ASMEDEV1_SYS@bsp.gov.ph",
     To: toEmail,
     CC: ccEmail,
     Subject: '',

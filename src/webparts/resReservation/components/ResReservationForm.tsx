@@ -3,16 +3,19 @@ import { Formik } from "formik";
 import { Grid, Button, Checkbox } from "@material-ui/core";
 import SaveIcon from "@material-ui/icons/Save";
 import CloseIcon from "@material-ui/icons/Close";
-import { DropzoneArea } from "material-ui-dropzone";
 
-import { CustomInput, Dropdown, CustomDateTimePicker } from "./common/FormComponents";
+import { BasicInformation } from "./common/BasicInformation";
+import { VenueSelection } from "./common/VenueSelection";
+import { CSRDFields } from "./common/CSRDFields";
+import { ParticipantInformation } from "./common/ParticipantInformation";
+import { DateTimeSelection } from "./common/DateTimeSelection";
+import { FacilitySection } from "./common/FacilitySection";
 import { FacilityDialog } from "./common/FacilityDialog";
 import { ConfirmationDialog } from "./common/ConfirmationDialog";
-import { VenueDetails } from "./common/VenueDetails";
-import { FacilityList } from "./common/FacilityList";
 import { Notification } from "./common/Notification";
 import { SharePointService } from "./services/SharePointService";
 import { validationSchema } from "./utils/validation";
+import { newResEmail } from "./utils/helpers";
 import { IResReservationState, IResReservationFormValues, IDropdownItem } from "./interfaces/IResReservation";
 import { IResReservationFormProps } from "./IResReservationProps";
 import styles from "./ResReservation.module.scss";
@@ -23,13 +26,11 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
   private venue: any;
   private layout: any;
   private facilityMap: any;
-  private venueState: any;
 
   constructor(props: IResReservationFormProps) {
     super(props);
     this.spService = new SharePointService();
     this.formikRef = React.createRef();
-
     this.state = {
       departmentList: [],
       buildingList: [],
@@ -65,13 +66,14 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
     };
   }
 
-  public async componentDidMount() {
+  public async componentDidMount(): Promise<void> {
     await this.initializeForm();
   }
 
-  private async initializeForm() {
-  
+  private async initializeForm(): Promise<void> {
     const currentUser = await this.spService.getCurrentUser();
+    console.log("Terence, this the current user:");
+    console.log(currentUser);
     const { departments, departmentSectorMap } = await this.spService.getDepartments(currentUser.Title);
     const { buildings, venues } = await this.spService.getBuildings();
     const layouts = await this.spService.getLayouts();
@@ -79,16 +81,16 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
     const participants = await this.spService.getParticipants();
     const facilityMap = await this.spService.getFacilities();
     //const { crsdMembers, ddMembers, fssMembers } = await this.spService.getGroupMembers();
+    
     this.venue = venues;
     this.layout = layouts;
     this.facilityMap = facilityMap;
 
-    const buildingList: IDropdownItem[] = buildings.map((item, index) => ({
+    const buildingList = buildings.map((item, index) => ({
       id: index.toString(),
       value: item.value
     }));
-    console.log("buildingList");
-    console.log(buildingList);
+
     this.setState({
       departmentList: departments,
       departmentSectorMap,
@@ -101,11 +103,28 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
       //fssMemberList: fssMembers,
       requestorEmail: currentUser.Email,
     });
-    console.log("Set currentUser : " + currentUser.Title);
+
     this.formikRef.current.setFieldValue("requestedBy", currentUser.Title);
   }
 
-  private handleDepartmentChange = (e) => {
+  private resetFormFields(): void {
+    const formik = this.formikRef.current;
+    formik.setFieldValue("venue", "");
+    formik.setFieldValue("building", "");
+    formik.setFieldValue("layout", "");
+    formik.setFieldValue("principal", "");
+    formik.setFieldValue("contactPerson", "");
+    formik.setFieldValue("isCSDR", false);
+  }
+
+  private createQuantityList(quantity: number): IDropdownItem[] {
+    return Array.from({ length: quantity }, (_, i) => ({
+      id: (i + 1).toString(),
+      value: (i + 1).toString()
+    }));
+  }
+
+  private handleDepartmentChange = (e: any): void => {
     const { value } = e.target;
     let newVenue = this.venue;
     const { venueList: data } = this.state;
@@ -128,11 +147,10 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
       selectedID: 0,
     });
 
-    this.venueState = newVenue;
     this.resetFormFields();
   }
 
-  private handleVenueChange = async (e) => {
+  private handleVenueChange = async (e: any): Promise<void> => {
     const { value } = e.target;
     const selectedVenue = this.state.venueList.find(v => v.value === value);
     
@@ -162,11 +180,57 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
     }
 
     this.formikRef.current.setFieldValue("venue", value);
-    //this.formikRef.current.setFieldValue("isCSDR", selectedVenue?.group === 'CRSD');
     this.formikRef.current.setFieldValue("isCSDR", selectedVenue && selectedVenue.group === 'CRSD');
   }
 
-  private handleSave = async (formik) => {
+  private participantHandler = (e: any): void => {
+    const { value } = e.target;
+    this.setState({
+      isddMember: !(value.indexOf('BSP-QC Personnel') > -1 && value.length === 1),
+    });
+  }
+
+  private handleFacilitySave = (form: any): void => {
+    const newFacilityData = [...this.state.facilityData];
+    const facilityItem = {
+      facility: form.values.facility,
+      quantity: form.values.quantity,
+      assetNumber: form.values.assetNumber,
+    };
+    
+    if (form.values.currentRecord >= 0) {
+      newFacilityData[form.values.currentRecord] = facilityItem;
+    } else {
+      newFacilityData.push(facilityItem);
+    }
+
+    this.setState({
+      facilityData: newFacilityData,
+      showFacilityDialog: false,
+    });
+    form.setFieldValue("currentRecord", -1);
+  }
+
+  private handleFacilityDelete = (form: any): void => {
+    const newFacilityData = [...this.state.facilityData];
+    newFacilityData.splice(form.values.currentRecord, 1);
+    this.setState({
+      facilityData: newFacilityData,
+      showFacilityDialog: false,
+    });
+    form.setFieldValue("currentRecord", -1);
+  }
+
+  private handleFacilityChange = (e: any): void => {
+    const facility = e.target.value as string;
+    const quantity = this.facilityMap[facility].Quantity;
+    this.setState({
+      quantityList: this.createQuantityList(quantity)
+    });
+    this.formikRef.current.setFieldValue("assetNumber", this.facilityMap[facility].AssetNumber);
+  }
+
+  private handleSave = async (formik): Promise<void> => {
     try {
       this.setState({ saveStart: true });
       
@@ -178,6 +242,32 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
         this.state.isFssManaged
       );
 
+      try {
+        //const toEmails = [this.state.requestorEmail];
+        const toEmails = ['tmtoledo@kpmg.com'];
+        const ccEmails = [
+          ...(formik.values.isCSDR ? this.state.crsdMemberList : []),
+          ...(this.state.isFssManaged ? this.state.fssMemberList : []),
+          ...(this.state.isddMember ? this.state.ddMemeberList : []),
+          ...(this.state.facilityData.length > 0 
+            ? this.state.facilityData.map(facility => this.facilityMap[facility.facility].FacilityOwner)
+            : []
+          ),
+        ];
+
+        await newResEmail(
+          toEmails,
+          [...new Set(ccEmails)],
+          formik.values,
+          this.state.isFssManaged ? 4 : 1,
+          this.state.facilitiesAvailable,
+          this.props.siteUrl,
+          result.ReferenceNumber
+        );
+      } catch (emailError) {
+        console.error('Failed to send email notification:', emailError);
+      }
+
       this.setState({
         isSavingDone: true,
         saveDialog: false,
@@ -188,6 +278,7 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
       }, 1500);
 
     } catch (error) {
+      console.error('Error in handleSave:', error);
       this.setState({
         isSavingFailure: true,
         saveStart: false,
@@ -196,33 +287,7 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
     }
   }
 
-  private resetFormFields() {
-    const formik = this.formikRef.current;
-    formik.setFieldValue("venue", "");
-    formik.setFieldValue("building", "");
-    formik.setFieldValue("layout", "");
-    formik.setFieldValue("principal", "");
-    formik.setFieldValue("contactPerson", "");
-    formik.setFieldValue("isCSDR", false);
-  }
-
-  private createQuantityList(quantity: number): IDropdownItem[] {
-    return Array.from({ length: quantity }, (_, i) => ({
-      id: (i + 1).toString(),
-      value: (i + 1).toString()
-    }));
-  }
-
-  private participantHandler = (e) => {
-    const { target : { value }}  = e;
-     this.setState({
-       isddMember:  !(value.indexOf('BSP-QC Personnel') > -1 && value.length === 1),
-     });
- 
-}
-
-
-  public render(): React.ReactElement {
+  public render(): React.ReactElement<IResReservationFormProps> {
     return (
       <Formik
         initialValues={{
@@ -259,185 +324,52 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
                     <h2>New Room Reservation Request</h2>
                   </Grid>
 
-                  {/* Basic Information */}
-                  <Grid item xs={6}>
-                  <div className={styles.width}>
-                    <div className={styles.label}>Requested By</div>
-                    <CustomInput name="requestedBy" disabled />
-                  </div>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <div className={styles.label}>Department</div>
-                    <Dropdown
-                      items={this.state.departmentList}
-                      name="department"
-                      handleChange={this.handleDepartmentChange}
-                    />
-                  </Grid>
+                  <BasicInformation
+                    departmentList={this.state.departmentList}
+                    onDepartmentChange={this.handleDepartmentChange}
+                  />
 
-                  {/* Venue Selection */}
-                  <Grid item xs={6}>
-                  <div className={styles.width}>
-                    <div className={styles.label}>Building</div>
-                    <Dropdown
-                      items={this.state.buildingList}
-                      name="building"
-                    />
-                    </div>
-                  </Grid>
-
-                  <Grid item xs={6}>
-                  <div className={styles.width}>
-                    <div className={styles.label}>Venue</div>
-                    <Dropdown
-                      items={this.state.venueList}
-                      name="venue"
-                      handleChange={this.handleVenueChange}
-                    />
-                  </div>
-                  </Grid>
-
-                 
-
-                  {/* CSRD Fields */}
-                  {this.state.showCSRDField && (
-                    <>
-                      <Grid item xs={6}>
-                      <div className={styles.width}>
-                        <div className={styles.label}>Layout Tables/Chairs*</div>
-                        <Dropdown items={this.state.layoutList} name="layout" />
-                      </div>
-                      </Grid>
-                      
-                      <Grid item xs={6}>
-                        <div className={styles.label}>Contact Person*</div>
-                        <CustomInput name="contactPerson" />
-                      </Grid>
-                
-                      <Grid item xs={6}>
-                    <div className={styles.width}>
-                      <div className={styles.label}>Principal User*</div>
-                      <Dropdown items={this.state.princialList} name="principal" />
-                    </div>
-                  </Grid>
-                    </>
-                  )}
-
-                   {/* Venue Details */}
-                   <VenueDetails
+                  <VenueSelection
+                    buildingList={this.state.buildingList}
+                    venueList={this.state.venueList}
+                    onVenueChange={this.handleVenueChange}
                     venueImage={this.state.venueImage}
                     capacityperLayout={this.state.capacityperLayout}
                     facilitiesAvailable={this.state.facilitiesAvailable}
                   />
 
-                  
+                  <CSRDFields
+                    showCSRDField={this.state.showCSRDField}
+                    layoutList={this.state.layoutList}
+                    principalList={this.state.princialList}
+                  />
 
-                  {/* Contact No.*/}
-                  <Grid item xs={6}>
-                  <div className={styles.width}>
-                    <div className={styles.label}>Contact No.</div>
-                    <CustomInput name="contactNumber" />
-                    </div>
-                  </Grid>
-                  
-                  {/*Purpose of Use*/}
-                  <Grid item xs={6}>
-                    <div className={styles.width}>
-                      <div className={styles.label}>Purpose Of Use</div>
-                      <Dropdown items={this.state.purposeOfUseList} name="purposeOfUse" />
-                    </div>
-                  </Grid>
+                  <ParticipantInformation
+                    participantList={this.state.participantList}
+                    purposeOfUseList={this.state.purposeOfUseList}
+                    onParticipantChange={this.participantHandler}
+                    showCSRDField={this.state.showCSRDField}
+                    isddMember={this.state.isddMember}
+                    participantLength={formik.values.participant.length}
+                  />
 
-                   {/*Participants*/}
-                  <Grid item xs={6}>
-                  <div className={styles.width}>
-                    <div className={styles.label}>Participants</div>
-                      <Dropdown
-                        items= {this.state.participantList}
-                        name="participant"
-                        multiple
-                        handleChange={(e) => this.participantHandler(e)}
-                      />
-                     { formik.values.participant.length > 0 &&  this.state.showCSRDField  && (
-                        <span>Selected type of participants are subject for approval by { this.state.isddMember ?  'DD' : 'CRSD' } staff level</span>)
-                     }
-                   </div>
-                  </Grid>
-                  {/*Number of Participants*/}
-                  <Grid item xs={6}>
-                    <div className={styles.width}>
-                      <div className={styles.label}>Number of Participants</div>
-                      <CustomInput name="numberOfParticipant" />
-                    </div>
-                  </Grid>
-                    {/*Title Description*/}
-                  <Grid item xs={6}>
-                  <div className={styles.width}>
-                    <div className={styles.label}>Title Description</div>
-                      <CustomInput name="titleDesc" />
-                  </div>
-                  </Grid>
+                  <DateTimeSelection />
 
-                  {/* Date and Time */}
-                  <Grid item xs={6}>
-                  <div className={styles.width}>
-                    <div className={styles.label}>Date and Time of use - From</div>
-                    <CustomDateTimePicker name="fromDate" />
-                  </div>
-                  </Grid>
+                  <FacilitySection
+                    showCSRDField={this.state.showCSRDField}
+                    facilityData={this.state.facilityData}
+                    onAddClick={() => this.setState({ showFacilityDialog: true })}
+                    onEditClick={(index) => {
+                      const data = this.state.facilityData[index];
+                      formik.setFieldValue("facility", data.facility);
+                      formik.setFieldValue("quantity", data.quantity);
+                      formik.setFieldValue("assetNumber", data.assetNumber);
+                      formik.setFieldValue("currentRecord", index);
+                      this.setState({ showFacilityDialog: true });
+                    }}
+                    onFilesChange={(files) => this.setState({ files })}
+                  />
 
-                  <Grid item xs={6}>
-                    <div className={styles.width}>
-                      <div className={styles.label}>Date and Time of use - To</div>
-                      <CustomDateTimePicker name="toDate" />
-                    </div>
-                  </Grid>
-
-                  {/* Facilities */}
-                  {this.state.showCSRDField && (
-                    <Grid item xs={12}>
-                      <FacilityList
-                        facilityData={this.state.facilityData}
-                        onAddClick={() => this.setState({ showFacilityDialog: true })}
-                        onEditClick={(index) => {
-                          const data = this.state.facilityData[index];
-                          formik.setFieldValue("facility", data.facility);
-                          formik.setFieldValue("quantity", data.quantity);
-                          formik.setFieldValue("assetNumber", data.assetNumber);
-                          formik.setFieldValue("currentRecord", index);
-                          this.setState({ showFacilityDialog: true });
-                        }}
-                      />
-                    </Grid>
-                  )}
-
-                  <Grid item xs={6}>
-                    <div className={styles.width}>
-                      <div className={styles.label}>Other Requirements</div>
-                      <CustomInput name="otherRequirment" />
-                    </div>
-                  </Grid>
-
-                  {/* File Upload */}
-                  <Grid item xs={12}>
-                    <div className={styles.label}>Attachments Here</div>
-                    <DropzoneArea
-                      showPreviews={true}
-                      showPreviewsInDropzone={false}
-                      useChipsForPreview
-                      dropzoneClass={styles.dropZone}
-                      previewGridProps={{
-                        container: { spacing: 1, direction: "row" },
-                      }}
-                      previewChipProps={{
-                        classes: { root: styles.previewChip },
-                      }}
-                      previewText="Selected files"
-                      onChange={(files) => this.setState({ files })}
-                    />
-                  </Grid>
-
-                  {/* Action Buttons */}
                   <Grid item xs={12}>
                     <div className={styles.formHandle}>
                       <Button
@@ -445,10 +377,7 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
                         variant="contained"
                         startIcon={<CloseIcon />}
                         onClick={() => window.location.href = this.props.siteUrl + "/SitePages/Home.aspx"}
-                        style={{
-                          color: "lightgrey",
-                          background: "grey",
-                        }}
+                        style={{ color: "lightgrey", background: "grey" }}
                       >
                         Close
                       </Button>
@@ -467,50 +396,15 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
               </div>
             </div>
 
-            {/* Dialogs */}
             <FacilityDialog
               open={this.state.showFacilityDialog}
               onClose={() => this.setState({ showFacilityDialog: false })}
               facilityList={this.state.facilityList}
               quantityList={this.state.quantityList}
               formik={formik}
-              onSave={(form) => {
-                const newFacilityData = [...this.state.facilityData];
-                const facilityItem = {
-                  facility: form.values.facility,
-                  quantity: form.values.quantity,
-                  assetNumber: form.values.assetNumber,
-                };
-                
-                if (form.values.currentRecord >= 0) {
-                  newFacilityData[form.values.currentRecord] = facilityItem;
-                } else {
-                  newFacilityData.push(facilityItem);
-                }
-
-                this.setState({
-                  facilityData: newFacilityData,
-                  showFacilityDialog: false,
-                });
-                form.setFieldValue("currentRecord", -1);
-              }}
-              onDelete={(form) => {
-                const newFacilityData = [...this.state.facilityData];
-                newFacilityData.splice(form.values.currentRecord, 1);
-                this.setState({
-                  facilityData: newFacilityData,
-                  showFacilityDialog: false,
-                });
-                form.setFieldValue("currentRecord", -1);
-              }}
-              onFacilityChange={(e) => {
-                const facility = e.target.value as string;
-                const quantity = this.facilityMap[facility].Quantity;
-                this.setState({
-                  quantityList: this.createQuantityList(quantity)
-                });
-                formik.setFieldValue("assetNumber", this.facilityMap[facility].AssetNumber);
-              }}
+              onSave={this.handleFacilitySave}
+              onDelete={this.handleFacilityDelete}
+              onFacilityChange={this.handleFacilityChange}
             />
 
             <ConfirmationDialog
@@ -521,7 +415,6 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
               message="Do you want to create this request?"
             />
 
-            {/* Notifications */}
             <Notification
               open={this.state.isSavingDone}
               message="Entry has been created successfully"
