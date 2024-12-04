@@ -4,6 +4,12 @@ import { IResViewState } from "./IResViewState";
 import { SharePointService } from "./services/SharePointService";
 import { ResViewForm } from "./ResViewForm";
 import { ITableItem } from "./interfaces/IResViews";
+import { 
+  getDataByTabValue, 
+  getMenuTabs, 
+  isValidDateRange,
+  getHomePageUrl
+} from "./utils/businessLogic";
 
 export default class ResViews extends React.Component<IResViewsProps, IResViewState> {
   constructor(props: IResViewsProps) {
@@ -11,12 +17,14 @@ export default class ResViews extends React.Component<IResViewsProps, IResViewSt
 
     this.state = {
       items: [],
-      menuTabs: ["By Reference No", "Past Request"],
+      menuTabs: getMenuTabs(false), // Initialize with non-approver tabs
       tabValue: 0,
       referenceNumberList: [],
       pastRequestList: [],
       approvalRequest: [],
       department: [],
+      isPanelOpen: false,
+      selectedItem: null,
     };
   }
 
@@ -26,68 +34,72 @@ export default class ResViews extends React.Component<IResViewsProps, IResViewSt
 
   protected getData = (): ITableItem[] => {
     const { referenceNumberList, pastRequestList, approvalRequest, tabValue } = this.state;
-    
-    switch(tabValue) {
-      case 1:
-        return pastRequestList;
-      case 2:
-        return approvalRequest;
-      default:
-        return referenceNumberList;
-    }
+    return getDataByTabValue(tabValue, referenceNumberList, pastRequestList, approvalRequest);
   }
 
   protected handleView = (event: any, rowData: ITableItem | ITableItem[]): void => {
     if (!Array.isArray(rowData)) {
-      window.open(
-        this.props.siteUrl +
-          "/SitePages/DisplayReservation_appge.aspx?pid=" +
-          rowData.ID,
-        "_self"
-      );
+      this.setState({
+        selectedItem: rowData,
+        isPanelOpen: true
+      });
     }
   }
 
+  protected handlePanelDismiss = (): void => {
+    this.setState({
+      isPanelOpen: false,
+      selectedItem: null
+    });
+  }
+
   protected handleSearch = async (fromDate: Date | null, toDate: Date | null): Promise<void> => {
-    if (fromDate && toDate) {
+    if (fromDate && toDate && isValidDateRange(fromDate, toDate)) {
       await this.getItems(fromDate.toISOString(), toDate.toISOString());
     }
   }
 
   protected handleClose = (): void => {
-    window.open(this.props.siteUrl + "/SitePages/Home.aspx", "_self");
+    window.open(getHomePageUrl(this.props.siteUrl), "_self");
   }
 
   public async componentDidMount(): Promise<void> {
-    const { isApprover, departments } = await SharePointService.getCurrentUserGroups();
-    
-    if (isApprover) {
+    try {
+      const { isApprover, departments } = await SharePointService.getCurrentUserGroups();
+      
       this.setState({
-        menuTabs: ["By Reference No", "Past Request", "For Approval"],
+        menuTabs: getMenuTabs(isApprover),
+        department: departments
       });
+    } catch (error) {
+      console.error('Error in componentDidMount:', error);
+      // Here you could set an error state if needed
     }
-
-    this.setState({ department: departments });
   }
 
   private async getItems(from: string, to: string): Promise<void> {
-    const { department } = this.state;
-    
-    const {
-      referenceNumberList,
-      pastRequestList,
-      approvalRequest,
-    } = await SharePointService.getRequestItems(from, to, department);
+    try {
+      const { department } = this.state;
+      
+      const {
+        referenceNumberList,
+        pastRequestList,
+        approvalRequest,
+      } = await SharePointService.getRequestItems(from, to, department);
 
-    this.setState({
-      referenceNumberList,
-      pastRequestList,
-      approvalRequest,
-    });
+      this.setState({
+        referenceNumberList,
+        pastRequestList,
+        approvalRequest,
+      });
+    } catch (error) {
+      console.error('Error fetching items:', error);
+      // Here you could set an error state if needed
+    }
   }
 
   public render(): React.ReactElement<IResViewsProps> {
-    const { menuTabs, tabValue } = this.state;
+    const { menuTabs, tabValue, isPanelOpen, selectedItem } = this.state;
 
     return (
       <ResViewForm
@@ -98,6 +110,9 @@ export default class ResViews extends React.Component<IResViewsProps, IResViewSt
         onSearch={this.handleSearch}
         onView={this.handleView}
         onClose={this.handleClose}
+        isPanelOpen={isPanelOpen}
+        selectedItem={selectedItem}
+        onPanelDismiss={this.handlePanelDismiss}
       />
     );
   }
