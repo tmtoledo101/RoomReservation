@@ -332,6 +332,8 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
                   <VenueSelection
                     buildingList={this.state.buildingList}
                     venueList={this.state.venueList}
+                    departmentList={this.state.departmentList}
+                    departmentSectorMap={this.state.departmentSectorMap}
                     onVenueChange={this.handleVenueChange}
                     venueImage={this.state.venueImage}
                     capacityperLayout={this.state.capacityperLayout}

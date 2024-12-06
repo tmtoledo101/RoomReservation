@@ -3,7 +3,7 @@ import { Field } from "formik";
 import { DatePicker, MuiPickersUtilsProvider } from "@material-ui/pickers";
 import DateFnsUtils from "@date-io/date-fns";
 import { FormControl } from "@material-ui/core";
-import styles from "../styles/ResViews.module.scss";
+import styles from "../ResViews.module.scss";
 
 interface ICustomDateTimePickerProps {
   name: string;

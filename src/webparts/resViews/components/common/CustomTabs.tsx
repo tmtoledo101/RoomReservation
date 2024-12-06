@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Paper, AppBar, Tabs, Tab } from "@material-ui/core";
-import styles from "../styles/ResViews.module.scss";
+import styles from "../ResViews.module.scss";
 
 interface ICustomTabsProps {
   value: number;

@@ -8,6 +8,4 @@ export interface IResViewState {
   pastRequestList: ITableItem[];
   approvalRequest: ITableItem[];
   department: string[];
-  isPanelOpen: boolean;
-  selectedItem: ITableItem | null;
 }

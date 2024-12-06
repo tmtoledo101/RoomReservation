@@ -14,6 +14,8 @@ interface IModalPopupProps {
   open: boolean;
   onClose: () => void;
   hideCloseIcon?: boolean;
+  maxWidth?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | false;
+  fullWidth?: boolean;
 }
 
 export const ModalPopup: React.FC<IModalPopupProps> = ({ 
@@ -21,12 +23,16 @@ export const ModalPopup: React.FC<IModalPopupProps> = ({
   title, 
   open, 
   onClose, 
-  hideCloseIcon 
+  hideCloseIcon,
+  maxWidth = 'lg',
+  fullWidth = true
 }) => {
   return (
     <Dialog
       open={open}
       keepMounted
+      maxWidth={maxWidth}
+      fullWidth={fullWidth}
       aria-labelledby="faciliites-dialog-title"
       aria-describedby="faciliites-dialog-description"
     >

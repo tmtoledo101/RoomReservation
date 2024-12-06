@@ -5,10 +5,9 @@ import CloseIcon from "@material-ui/icons/Close";
 import { CustomDateTimePicker } from "./common/CustomDateTimePicker";
 import { CustomTabs } from "./common/CustomTabs";
 import { CustomTable } from "./common/CustomTable";
-import { DetailPanel } from "./common/DetailPanel";
 import { resViewValidationSchema } from "./utils/validation";
 import { IFormValues, ITableItem, HEADER_OBJ } from "./interfaces/IResViews";
-import styles from "./styles/ResViews.module.scss";
+import styles from "./ResViews.module.scss";
 
 interface IResViewFormProps {
   tabValue: number;
@@ -18,9 +17,6 @@ interface IResViewFormProps {
   onSearch: (fromDate: Date | null, toDate: Date | null) => void;
   onView: (event: any, data: ITableItem | ITableItem[]) => void;
   onClose: () => void;
-  isPanelOpen: boolean;
-  selectedItem: ITableItem | null;
-  onPanelDismiss: () => void;
 }
 
 export const ResViewForm: React.FC<IResViewFormProps> = ({
@@ -31,9 +27,6 @@ export const ResViewForm: React.FC<IResViewFormProps> = ({
   onSearch,
   onView,
   onClose,
-  isPanelOpen,
-  selectedItem,
-  onPanelDismiss,
 }) => {
   const initialValues: IFormValues = {
     fromDate: null,
@@ -112,12 +105,6 @@ export const ResViewForm: React.FC<IResViewFormProps> = ({
               </Button>
             </Grid>
           </Grid>
-
-          <DetailPanel
-            isOpen={isPanelOpen}
-            item={selectedItem}
-            onDismiss={onPanelDismiss}
-          />
         </form>
       )}
     </Formik>
