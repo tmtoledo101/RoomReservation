@@ -12,6 +12,7 @@ import { Formik } from "formik";
 import { ModalPopup } from "./ModalPopup";
 import { CustomDateTimePicker, Dropdown } from "./FormComponents";
 import { validationSchema } from "../utils/validation";
+import { SharePointService } from "../services/SharePointService";
 import styles from "../ResReservation.module.scss";
 
 interface IVenueSearchDialogProps {
@@ -35,6 +36,8 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
 }) => {
   const [selectedBuilding, setSelectedBuilding] = React.useState("");
   const [filteredVenueList, setFilteredVenueList] = React.useState(venueList);
+  const [unavailableVenues, setUnavailableVenues] = React.useState<string[]>([]);
+  const spService = new SharePointService();
 
   const handleDepartmentChange = (e: any, formik: any) => {
     const { value } = e.target;
@@ -49,22 +52,37 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
     setSelectedBuilding("");
   };
 
+  const handleDateChange = async (formik: any) => {
+    const { fromDate, toDate } = formik.values;
+    if (fromDate && toDate && !formik.errors.fromDate && !formik.errors.toDate) {
+      try {
+        const unavailableVenueList = await spService.checkVenueAvailability(fromDate, toDate);
+        setUnavailableVenues(unavailableVenueList);
+      } catch (error) {
+        console.error('Error checking venue availability:', error);
+      }
+    }
+  };
+
   const filteredVenues = React.useMemo(() => {
     return filteredVenueList.filter((venue) => {
       const matchesBuilding = !selectedBuilding || venue.building === selectedBuilding;
-      return matchesBuilding;
+      const isAvailable = !unavailableVenues.includes(venue.value);
+      return matchesBuilding && isAvailable;
     });
-  }, [filteredVenueList, selectedBuilding]);
+  }, [filteredVenueList, selectedBuilding, unavailableVenues]);
 
   const handleVenueSelect = (venue: any, formikValues: any) => {
     onVenueSelect(venue, formikValues.fromDate, formikValues.toDate);
     onClose();
     // Reset state
     setSelectedBuilding("");
+    setUnavailableVenues([]);
   };
 
   const handleClose = () => {
     setSelectedBuilding("");
+    setUnavailableVenues([]);
     onClose();
   };
 
@@ -140,14 +158,20 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
                   <Grid item xs={6}>
                     <div className={styles.width}>
                       <div className={styles.label}>Date and Time of use - From</div>
-                      <CustomDateTimePicker name="fromDate" />
+                      <CustomDateTimePicker 
+                        name="fromDate"
+                        handleChange={() => handleDateChange(formik)}
+                      />
                     </div>
                   </Grid>
 
                   <Grid item xs={6}>
                     <div className={styles.width}>
                       <div className={styles.label}>Date and Time of use - To</div>
-                      <CustomDateTimePicker name="toDate" />
+                      <CustomDateTimePicker 
+                        name="toDate"
+                        handleChange={() => handleDateChange(formik)}
+                      />
                     </div>
                   </Grid>
                 </Grid>
@@ -156,7 +180,7 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
               {/* Venues List Section */}
               <Grid item xs={12}>
                 <Typography variant="subtitle1" style={{ marginBottom: "15px", fontWeight: 500 }}>
-                  {filteredVenues.length} venues found
+                  {filteredVenues.length} venues available
                 </Typography>
                 <Paper style={{ maxHeight: "400px", overflow: "auto" }}>
                   <List>

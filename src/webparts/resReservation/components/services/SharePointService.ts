@@ -103,6 +103,26 @@ export class SharePointService {
     };
   }
 
+  public async checkVenueAvailability(fromDate: Date, toDate: Date): Promise<string[]> {
+    // Get all reservations that overlap with the requested time period
+    const reservations = await sp.web.lists
+      .getByTitle("Request")
+      .items.select(
+        "Venue",
+        "FromDate",
+        "ToDate",
+        "Status"
+      )
+      .filter(`
+        Status ne 'Cancelled' and Status ne 'Rejected' and
+        ((FromDate le '${moment(toDate).toISOString()}' and ToDate ge '${moment(fromDate).toISOString()}'))
+      `)
+      .get();
+
+    // Return list of venue names that are already booked
+    return reservations.map(res => res.Venue);
+  }
+
   public async getLayouts() {
     const layoutData = await sp.web.lists
       .getByTitle("LayoutTablesChairs")
