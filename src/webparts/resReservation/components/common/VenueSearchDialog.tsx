@@ -85,7 +85,7 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
         selectedVenue, 
         selectedFormikValues.fromDate, 
         selectedFormikValues.toDate,
-        selectedFormikValues.department
+        selectedFormikValues.department // Pass the department value
       );
       handleCloseDialog();
     }
@@ -102,7 +102,7 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
   };
 
   const canSearch = (formik: any): boolean => {
-    return formik.values.department &&
+    return formik.values.department && // Require department selection
            formik.values.fromDate && 
            formik.values.toDate && 
            !formik.errors.fromDate && 

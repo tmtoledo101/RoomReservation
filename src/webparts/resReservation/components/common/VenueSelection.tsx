@@ -35,7 +35,8 @@ export const VenueSelection: React.FC<IVenueSelectionProps> = ({
   const formik = useFormikContext<any>();
 
   const handleVenueSelect = (venue: any, fromDate: Date | null, toDate: Date | null, department: string) => {
-    // Update department
+    // Set department value
+    formik.setFieldValue("department", department);
     onDepartmentChange({
       target: {
         value: department,
@@ -53,9 +54,6 @@ export const VenueSelection: React.FC<IVenueSelectionProps> = ({
 
     // Set building value
     formik.setFieldValue("building", venue.building || "");
-
-    // Set department value
-    formik.setFieldValue("department", venue.department || "");
 
     // Set date values in the required format
     if (fromDate) {
