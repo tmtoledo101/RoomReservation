@@ -1,22 +1,22 @@
-import * as React from 'react';
+import * as React from "react";
 import {
   TextField,
   List,
   ListItem,
   ListItemText,
   Grid,
+  Button,
   Typography,
   Paper,
-  Button,
-} from '@material-ui/core';
-import SearchIcon from '@material-ui/icons/Search';
-import { Formik } from 'formik';
-import { ModalPopup } from './ModalPopup';
-import { CustomDateTimePicker, Dropdown } from './FormComponents';
-import { validationSchema } from '../utils/validation';
-import { SharePointService } from '../services/SharePointService';
-import { ConfirmationDialog } from './ConfirmationDialog';
-import styles from '../ResReservation.module.scss';
+} from "@material-ui/core";
+import SearchIcon from "@material-ui/icons/Search";
+import { Formik } from "formik";
+import { ModalPopup } from "./ModalPopup";
+import { CustomDateTimePicker, Dropdown } from "./FormComponents";
+import { validationSchema } from "../utils/validation";
+import { SharePointService } from "../services/SharePointService";
+import { ConfirmationDialog } from "./ConfirmationDialog";
+import styles from "../ResReservation.module.scss";
 
 interface IVenueSearchDialogProps {
   open: boolean;
@@ -25,7 +25,7 @@ interface IVenueSearchDialogProps {
   venueList: any[];
   departmentList: any[];
   departmentSectorMap: { [key: string]: string };
-  onVenueSelect: (venue: any, fromDate: Date | null, toDate: Date | null) => void;
+  onVenueSelect: (venue: any, fromDate: Date | null, toDate: Date | null, department: string) => void;
 }
 
 export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
@@ -37,26 +37,26 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
   departmentSectorMap,
   onVenueSelect,
 }) => {
-  const spService = new SharePointService();
-  const [selectedBuilding, setSelectedBuilding] = React.useState('');
+  const [selectedBuilding, setSelectedBuilding] = React.useState("");
   const [filteredVenueList, setFilteredVenueList] = React.useState(venueList);
   const [unavailableVenues, setUnavailableVenues] = React.useState<string[]>([]);
   const [showResults, setShowResults] = React.useState(false);
   const [confirmationOpen, setConfirmationOpen] = React.useState(false);
   const [selectedVenue, setSelectedVenue] = React.useState<any>(null);
   const [selectedFormikValues, setSelectedFormikValues] = React.useState<any>(null);
+  const spService = new SharePointService();
 
   const handleDepartmentChange = (e: any, formik: any): void => {
     const { value } = e.target;
     let newVenue = venueList;
     
-    if (value && departmentSectorMap[value] !== 'FSS') {
-      newVenue = venueList.filter((item) => item.exclusiveTo !== 'FSS');
+    if (value && departmentSectorMap[value] !== "FSS") {
+      newVenue = venueList.filter((item) => item.exclusiveTo !== "FSS");
     }
 
     setFilteredVenueList(newVenue);
-    formik.setFieldValue('department', value);
-    setSelectedBuilding('');
+    formik.setFieldValue("department", value);
+    setSelectedBuilding("");
     setShowResults(false);
   };
 
@@ -73,16 +73,6 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
     }
   };
 
-  const handleCloseDialog = (): void => {
-    setSelectedBuilding('');
-    setUnavailableVenues([]);
-    setShowResults(false);
-    setConfirmationOpen(false);
-    setSelectedVenue(null);
-    setSelectedFormikValues(null);
-    onClose();
-  };
-
   const handleVenueClick = (venue: any, values: any): void => {
     setSelectedVenue(venue);
     setSelectedFormikValues(values);
@@ -94,14 +84,26 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
       onVenueSelect(
         selectedVenue, 
         selectedFormikValues.fromDate, 
-        selectedFormikValues.toDate
+        selectedFormikValues.toDate,
+        selectedFormikValues.department
       );
       handleCloseDialog();
     }
   };
 
+  const handleCloseDialog = (): void => {
+    setSelectedBuilding("");
+    setUnavailableVenues([]);
+    setShowResults(false);
+    setConfirmationOpen(false);
+    setSelectedVenue(null);
+    setSelectedFormikValues(null);
+    onClose();
+  };
+
   const canSearch = (formik: any): boolean => {
-    return formik.values.fromDate && 
+    return formik.values.department &&
+           formik.values.fromDate && 
            formik.values.toDate && 
            !formik.errors.fromDate && 
            !formik.errors.toDate;
@@ -126,19 +128,19 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
       >
         <Formik
           initialValues={{
-            requestedBy: '',
-            department: '',
-            building: '',
-            venue: '',
-            participant: '',
-            purposeOfUse: '',
-            contactNumber: '',
-            numberOfParticipant: '',
-            titleDesc: '',
+            requestedBy: "",
+            department: "",
+            building: "",
+            venue: "",
+            participant: "",
+            purposeOfUse: "",
+            contactNumber: "",
+            numberOfParticipant: "",
+            titleDesc: "",
             isCSDR: false,
-            layout: '',
-            principal: '',
-            contactPerson: '',
+            layout: "",
+            principal: "",
+            contactPerson: "",
             fromDate: null,
             toDate: null
           }}
@@ -146,7 +148,7 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
           onSubmit={() => {}}
         >
           {(formik) => (
-            <div style={{ padding: '30px' }}>
+            <div style={{ padding: "30px" }}>
               <Grid container spacing={4}>
                 {/* Department Selection */}
                 <Grid item xs={12}>
@@ -220,17 +222,17 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
                     onClick={() => handleSearch(formik)}
                     disabled={!canSearch(formik)}
                   >
-                    Search Venue
+                    Search Available Venues
                   </Button>
                 </Grid>
 
                 {/* Venues List Section */}
                 {showResults && (
                   <Grid item xs={12}>
-                    <Typography variant="subtitle1" style={{ marginBottom: '15px', fontWeight: 500 }}>
+                    <Typography variant="subtitle1" style={{ marginBottom: "15px", fontWeight: 500 }}>
                       {filteredVenues.length} venues available
                     </Typography>
-                    <Paper style={{ maxHeight: '400px', overflow: 'auto' }}>
+                    <Paper style={{ maxHeight: "400px", overflow: "auto" }}>
                       <List>
                         {filteredVenues.map((venue) => (
                           <ListItem
@@ -238,12 +240,12 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
                             key={venue.id || venue.value}
                             onClick={() => handleVenueClick(venue, formik.values)}
                             divider
-                            style={{ padding: '16px' }}
+                            style={{ padding: "16px" }}
                           >
                             <ListItemText
                               primary={<Typography variant="h6">{venue.value}</Typography>}
                               secondary={
-                                <Typography variant="body2" style={{ marginTop: '8px' }}>
+                                <Typography variant="body2" style={{ marginTop: "8px" }}>
                                   Building: {venue.building || 'N/A'}
                                 </Typography>
                               }

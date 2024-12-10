@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Grid } from "@material-ui/core";
-import { CustomDateTimePicker } from "./FormComponents";
+import { CustomInput } from "./FormComponents";
 import styles from "../ResReservation.module.scss";
 
 export const DateTimeSelection: React.FC = () => {
@@ -9,14 +9,20 @@ export const DateTimeSelection: React.FC = () => {
       <Grid item xs={6}>
         <div className={styles.width}>
           <div className={styles.label}>Date and Time of use - From</div>
-          <CustomDateTimePicker name="fromDate" />
+          <CustomInput 
+            name="fromDate" 
+            disabled
+          />
         </div>
       </Grid>
 
       <Grid item xs={6}>
         <div className={styles.width}>
           <div className={styles.label}>Date and Time of use - To</div>
-          <CustomDateTimePicker name="toDate" />
+          <CustomInput 
+            name="toDate" 
+            disabled
+          />
         </div>
       </Grid>
     </>

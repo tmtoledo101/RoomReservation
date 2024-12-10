@@ -335,10 +335,13 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
                     departmentList={this.state.departmentList}
                     departmentSectorMap={this.state.departmentSectorMap}
                     onVenueChange={this.handleVenueChange}
+                    onDepartmentChange={this.handleDepartmentChange}
                     venueImage={this.state.venueImage}
                     capacityperLayout={this.state.capacityperLayout}
                     facilitiesAvailable={this.state.facilitiesAvailable}
                   />
+
+                  <DateTimeSelection />
 
                   <CSRDFields
                     showCSRDField={this.state.showCSRDField}
@@ -354,8 +357,6 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
                     isddMember={this.state.isddMember}
                     participantLength={formik.values.participant.length}
                   />
-
-                  <DateTimeSelection />
 
                   <FacilitySection
                     showCSRDField={this.state.showCSRDField}

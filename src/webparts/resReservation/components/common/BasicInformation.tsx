@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Grid } from "@material-ui/core";
-import { CustomInput, Dropdown } from "./FormComponents";
+import { CustomInput } from "./FormComponents";
 import styles from "../ResReservation.module.scss";
 
 interface IBasicInformationProps {
@@ -22,10 +22,9 @@ export const BasicInformation: React.FC<IBasicInformationProps> = ({
       </Grid>
       <Grid item xs={6}>
         <div className={styles.label}>Department</div>
-        <Dropdown
-          items={departmentList}
+        <CustomInput 
           name="department"
-          handleChange={onDepartmentChange}
+          disabled
         />
       </Grid>
     </>
