@@ -72,15 +72,12 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
 
   private async initializeForm(): Promise<void> {
     const currentUser = await this.spService.getCurrentUser();
-    console.log("Terence, this the current user:");
-    console.log(currentUser);
     const { departments, departmentSectorMap } = await this.spService.getDepartments(currentUser.Title);
     const { buildings, venues } = await this.spService.getBuildings();
     const layouts = await this.spService.getLayouts();
     const purposeOfUse = await this.spService.getPurposeOfUse();
     const participants = await this.spService.getParticipants();
     const facilityMap = await this.spService.getFacilities();
-    //const { crsdMembers, ddMembers, fssMembers } = await this.spService.getGroupMembers();
     
     this.venue = venues;
     this.layout = layouts;
@@ -98,9 +95,6 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
       venueList: venues,
       purposeOfUseList: purposeOfUse,
       participantList: participants,
-      //crsdMemberList: crsdMembers,
-      //ddMemeberList: ddMembers,
-      //fssMemberList: fssMembers,
       requestorEmail: currentUser.Email,
     });
 
@@ -115,6 +109,9 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
     formik.setFieldValue("principal", "");
     formik.setFieldValue("contactPerson", "");
     formik.setFieldValue("isCSDR", false);
+    formik.setFieldValue("facility", "");
+    formik.setFieldValue("quantity", "");
+    formik.setFieldValue("assetNumber", "");
   }
 
   private createQuantityList(quantity: number): IDropdownItem[] {
@@ -144,6 +141,8 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
       facilitiesAvailable: "",
       capacityperLayout: "",
       facilityData: [],
+      facilityList: [],
+      quantityList: [],
       selectedID: 0,
     });
 
@@ -151,43 +150,113 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
   }
 
   private handleVenueChange = async (e: any): Promise<void> => {
-    const { value } = e.target;
-    const selectedVenue = this.state.venueList.find(v => v.value === value);
-    
-    if (selectedVenue) {
+    try {
+      const { value } = e.target;
+      const selectedVenue = e.target.venue || this.state.venueList.find(v => v.value === value);
+      
+      if (!selectedVenue) {
+        this.resetStateAndForm();
+        return;
+      }
+
       const isCRSD = selectedVenue.group === 'CRSD';
       const layouts = this.layout[value] || [];
 
-      this.setState({
-        venueImage: selectedVenue.venueImage,
-        facilitiesAvailable: JSON.parse(selectedVenue.facilitiesAvailable),
-        capacityperLayout: selectedVenue.capacityperLayout,
-        venueId: selectedVenue.venueId,
-        selectedID: selectedVenue.itemId,
-        showCSRDField: isCRSD,
-        layoutList: layouts,
-      });
+      // Initialize empty lists
+      let facilityList: Array<{ id: string; value: string }> = [];
+      let facilitiesAvailable = "";
 
-      if (isCRSD) {
-        const department = this.formikRef.current.values.department;
-        const principalMap = await this.spService.getPrincipalUsers(department);
-        if (principalMap[department]) {
-          this.setState({
-            princialList: principalMap[department].sort().map(name => ({ id: name, value: name })),
-          });
+      // Process facilities if they exist
+      if (selectedVenue.facilitiesAvailable) {
+        try {
+          const parsedFacilities = JSON.parse(selectedVenue.facilitiesAvailable);
+          facilitiesAvailable = selectedVenue.facilitiesAvailable;
+
+          if (this.facilityMap && Array.isArray(parsedFacilities)) {
+            facilityList = Object.entries(this.facilityMap)
+              .filter(([_, facility]: [string, any]) => {
+                return facility && 
+                       typeof facility === 'object' && 
+                       facility.Title && 
+                       Array.isArray(parsedFacilities) && 
+                       parsedFacilities.includes(facility.Title);
+              })
+              .map(([key]) => ({
+                id: key,
+                value: key
+              }));
+          }
+        } catch (parseError) {
+          console.error('Error parsing facilitiesAvailable:', parseError);
         }
       }
-    }
 
-    this.formikRef.current.setFieldValue("venue", value);
-    this.formikRef.current.setFieldValue("isCSDR", selectedVenue && selectedVenue.group === 'CRSD');
+      // Update state with safe values
+      this.setState({
+        venueImage: selectedVenue.venueImage || "https://wallpaperaccess.com/full/2119702.jpg",
+        facilitiesAvailable,
+        capacityperLayout: selectedVenue.capacityperLayout || "",
+        venueId: selectedVenue.venueId || "",
+        selectedID: selectedVenue.itemId || 0,
+        showCSRDField: isCRSD,
+        layoutList: layouts,
+        facilityList,
+        facilityData: [],
+        quantityList: [],
+      });
+
+      // Update form values
+      const formik = this.formikRef.current;
+      if (formik) {
+        formik.setFieldValue("venue", value);
+        formik.setFieldValue("isCSDR", isCRSD);
+        formik.setFieldValue("building", selectedVenue.building || "");
+        formik.setFieldValue("facility", "");
+        formik.setFieldValue("quantity", "");
+        formik.setFieldValue("assetNumber", "");
+      }
+
+      // Handle CRSD specific logic
+      if (isCRSD) {
+        try {
+          const department = this.formikRef.current?.values?.department;
+          if (department) {
+            const principalMap = await this.spService.getPrincipalUsers(department);
+            if (principalMap && principalMap[department]) {
+              this.setState({
+                princialList: principalMap[department].sort().map(name => ({
+                  id: name,
+                  value: name
+                })),
+              });
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching principal users:', error);
+          this.setState({ princialList: [] });
+        }
+      }
+    } catch (error) {
+      console.error('Error in handleVenueChange:', error);
+      this.resetStateAndForm();
+    }
   }
 
-  private participantHandler = (e: any): void => {
-    const { value } = e.target;
+  private resetStateAndForm = (): void => {
     this.setState({
-      isddMember: !(value.indexOf('BSP-QC Personnel') > -1 && value.length === 1),
+      venueImage: "https://wallpaperaccess.com/full/2119702.jpg",
+      facilitiesAvailable: "",
+      capacityperLayout: "",
+      venueId: "",
+      selectedID: 0,
+      showCSRDField: false,
+      layoutList: [],
+      facilityList: [],
+      facilityData: [],
+      quantityList: [],
+      princialList: [],
     });
+    this.resetFormFields();
   }
 
   private handleFacilitySave = (form: any): void => {
@@ -223,11 +292,13 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
 
   private handleFacilityChange = (e: any): void => {
     const facility = e.target.value as string;
-    const quantity = this.facilityMap[facility].Quantity;
-    this.setState({
-      quantityList: this.createQuantityList(quantity)
-    });
-    this.formikRef.current.setFieldValue("assetNumber", this.facilityMap[facility].AssetNumber);
+    if (facility && this.facilityMap && this.facilityMap[facility]) {
+      const quantity = this.facilityMap[facility].Quantity;
+      this.setState({
+        quantityList: this.createQuantityList(quantity)
+      });
+      this.formikRef.current.setFieldValue("assetNumber", this.facilityMap[facility].AssetNumber);
+    }
   }
 
   private handleSave = async (formik): Promise<void> => {
@@ -243,14 +314,15 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
       );
 
       try {
-        //const toEmails = [this.state.requestorEmail];
         const toEmails = ['tmtoledo@kpmg.com'];
         const ccEmails = [
           ...(formik.values.isCSDR ? this.state.crsdMemberList : []),
           ...(this.state.isFssManaged ? this.state.fssMemberList : []),
           ...(this.state.isddMember ? this.state.ddMemeberList : []),
           ...(this.state.facilityData.length > 0 
-            ? this.state.facilityData.map(facility => this.facilityMap[facility.facility].FacilityOwner)
+            ? this.state.facilityData.map(facility => 
+                this.facilityMap[facility.facility]?.FacilityOwner
+              ).filter(Boolean)
             : []
           ),
         ];
