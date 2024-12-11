@@ -8,6 +8,14 @@ export const validateDateTime = (startDateTime, endDateTime) =>
   moment(endDateTime).isValid() &&
   moment(endDateTime).isAfter(startDateTime);
 
+export const validateDateRange = (startDate, endDate) => {
+  if (!startDate || !endDate) return true;
+  const start = moment(startDate);
+  const end = moment(endDate);
+  const monthsDiff = end.diff(start, 'months', true);
+  return monthsDiff <= 3;
+};
+
 export const validationSchema = yup.object().shape({
   requestedBy: yup.string().required(),
   department: yup.string().required("Department is required"),
@@ -58,12 +66,23 @@ export const validationSchema = yup.object().shape({
           "Enter valid date",
           (val) => val && moment(val).isValid()
         )
-        .when("fromDate", (fromDate, schema) => {
-          return schema.test({
-            test: (toDate) => validateDateTime(fromDate, toDate),
-            message: "Invalid date range, fromDate < toDate",
-          });
-        })
+        .test(
+          "date-range-validation",
+          function(toDate) {
+            const { fromDate } = this.parent;
+            if (!validateDateTime(fromDate, toDate)) {
+              return this.createError({
+                message: "Invalid date range, fromDate < toDate"
+              });
+            }
+            if (!validateDateRange(fromDate, toDate)) {
+              return this.createError({
+                message: "Reservation exceeds 3 months limit"
+              });
+            }
+            return true;
+          }
+        )
         .required("toDate is required");
     }
     return yup.mixed().when("fromDate", (fromDate, schema) => {

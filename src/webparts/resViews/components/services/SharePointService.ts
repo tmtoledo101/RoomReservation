@@ -70,23 +70,25 @@ export class SharePointService {
     isApprover: boolean;
     departments: string[];
   }> {
-    const crsdUsers = await sp.web.siteGroups.getByName("CRSD").users();
-    const ddUsers = await sp.web.siteGroups.getByName("DD").users();
+    //const crsdUsers = await sp.web.siteGroups.getByName("CRSD").users();
+    //const ddUsers = await sp.web.siteGroups.getByName("DD").users();
     const currentUser = await sp.web.currentUser.get();
 
-    const crsdEmails = crsdUsers.map((item) => item.Email);
-    const ddEmails = ddUsers.map((item) => item.Email);
-    const userEmail = currentUser.Email;
+    //const crsdEmails = crsdUsers.map((item) => item.Email);
+    //const ddEmails = ddUsers.map((item) => item.Email);
+    const userEmail = currentUser.Title;
 
-    const isApprover = crsdEmails.includes(userEmail) || ddEmails.includes(userEmail);
-
+    //const isApprover = crsdEmails.includes(userEmail) || ddEmails.includes(userEmail);
+    const isApprover = true;
     const departmentData: any[] = await sp.web.lists
       .getByTitle("UsersPerDepartment")
       .items.select(
         "EmployeeName/EMail",
         "Department/Department",
       )
-      .filter(`EmployeeName/EMail eq '${userEmail}'`)
+      //Terence Commented this out
+      //.filter(`EmployeeName/EMail eq '${userEmail}'`)
+      .filter(`Title eq '${userEmail}'`)
       .expand(
         "Department/FieldValuesAsText",
         "EmployeeName/EMail",

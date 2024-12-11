@@ -35,9 +35,9 @@ export const CustomInput = (props) => {
               disabled={disabled}
               className={styles.width}
             />
-            {error && touched ? (
-              <span className={styles.error}>{error}</span>
-            ) : null}
+            {error && touched && (
+              <div className={styles.error}>{error}</div>
+            )}
           </FormControl>
         );
       }}
@@ -98,9 +98,9 @@ export const Dropdown = (props) => {
                 </MenuItem>
               ))}
             </Select>
-            {error && touched ? (
-              <span className={styles.error}>{error}</span>
-            ) : null}
+            {error && touched && (
+              <div className={styles.error}>{error}</div>
+            )}
           </FormControl>
         );
       }}
@@ -139,9 +139,9 @@ export const CustomDateTimePicker = (props) => {
                 className={styles.width}
               />
             </MuiPickersUtilsProvider>
-            {error && touched ? (
-              <span className={styles.error}>{error}</span>
-            ) : null}
+            {error && touched && (
+              <div className={styles.error}>{error}</div>
+            )}
           </FormControl>
         );
       }}

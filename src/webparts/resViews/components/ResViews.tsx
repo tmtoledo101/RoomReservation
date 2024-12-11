@@ -60,13 +60,14 @@ export default class ResViews extends React.Component<IResViewsProps, IResViewSt
 
   public async componentDidMount(): Promise<void> {
     const { isApprover, departments } = await SharePointService.getCurrentUserGroups();
-    
-    if (isApprover) {
+    //Terence commented out this
+    //if (isApprover) {
+    if (1) {
+      console.log("Complete MenuTabs");
       this.setState({
         menuTabs: ["By Reference No", "Past Request", "For Approval"],
       });
     }
-
     this.setState({ department: departments });
   }
 

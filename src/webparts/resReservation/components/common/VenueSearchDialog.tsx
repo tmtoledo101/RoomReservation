@@ -26,6 +26,10 @@ interface IVenueSearchDialogProps {
   departmentList: any[];
   departmentSectorMap: { [key: string]: string };
   onVenueSelect: (venue: any, fromDate: Date | null, toDate: Date | null, department: string) => void;
+  initialDepartment?: string;
+  initialBuilding?: string;
+  initialFromDate?: Date | null;
+  initialToDate?: Date | null;
 }
 
 export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
@@ -36,8 +40,12 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
   departmentList,
   departmentSectorMap,
   onVenueSelect,
+  initialDepartment = "",
+  initialBuilding = "",
+  initialFromDate = null,
+  initialToDate = null,
 }) => {
-  const [selectedBuilding, setSelectedBuilding] = React.useState("");
+  const [selectedBuilding, setSelectedBuilding] = React.useState(initialBuilding);
   const [filteredVenueList, setFilteredVenueList] = React.useState(venueList);
   const [unavailableVenues, setUnavailableVenues] = React.useState<string[]>([]);
   const [showResults, setShowResults] = React.useState(false);
@@ -45,6 +53,11 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
   const [selectedVenue, setSelectedVenue] = React.useState<any>(null);
   const [selectedFormikValues, setSelectedFormikValues] = React.useState<any>(null);
   const spService = new SharePointService();
+
+  // Update selected building when initialBuilding changes
+  React.useEffect(() => {
+    setSelectedBuilding(initialBuilding);
+  }, [initialBuilding]);
 
   const handleDepartmentChange = (e: any, formik: any): void => {
     const { value } = e.target;
@@ -85,14 +98,13 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
         selectedVenue, 
         selectedFormikValues.fromDate, 
         selectedFormikValues.toDate,
-        selectedFormikValues.department // Pass the department value
+        selectedFormikValues.department
       );
       handleCloseDialog();
     }
   };
 
   const handleCloseDialog = (): void => {
-    setSelectedBuilding("");
     setUnavailableVenues([]);
     setShowResults(false);
     setConfirmationOpen(false);
@@ -102,7 +114,7 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
   };
 
   const canSearch = (formik: any): boolean => {
-    return formik.values.department && // Require department selection
+    return formik.values.department && 
            formik.values.fromDate && 
            formik.values.toDate && 
            !formik.errors.fromDate && 
@@ -129,8 +141,8 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
         <Formik
           initialValues={{
             requestedBy: "",
-            department: "",
-            building: "",
+            department: initialDepartment,
+            building: initialBuilding,
             venue: "",
             participant: "",
             purposeOfUse: "",
@@ -141,11 +153,12 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
             layout: "",
             principal: "",
             contactPerson: "",
-            fromDate: null,
-            toDate: null
+            fromDate: initialFromDate,
+            toDate: initialToDate
           }}
           validationSchema={validationSchema}
           onSubmit={() => {}}
+          enableReinitialize={true}
         >
           {(formik) => (
             <div style={{ padding: "30px" }}>
@@ -164,27 +177,29 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
 
                 {/* Building Filter Section */}
                 <Grid item xs={12}>
-                  <TextField
-                    select
-                    fullWidth
-                    label="Filter by Building"
-                    variant="outlined"
-                    value={selectedBuilding}
-                    onChange={(e) => {
-                      setSelectedBuilding(e.target.value);
-                      setShowResults(false);
-                    }}
-                    SelectProps={{
-                      native: true
-                    }}
-                  >
-                    <option value="">All Buildings</option>
-                    {buildingList.map((building) => (
-                      <option key={building.id} value={building.value}>
-                        {building.value}
-                      </option>
-                    ))}
-                  </TextField>
+                  <div className={styles.width}>
+                    <div className={styles.label}>Building</div>
+                    <TextField
+                      select
+                      fullWidth
+                      variant="outlined"
+                      value={selectedBuilding}
+                      onChange={(e) => {
+                        setSelectedBuilding(e.target.value);
+                        setShowResults(false);
+                      }}
+                      SelectProps={{
+                        native: true
+                      }}
+                    >
+                      <option value="">All Buildings</option>
+                      {buildingList.map((building) => (
+                        <option key={building.id} value={building.value}>
+                          {building.value}
+                        </option>
+                      ))}
+                    </TextField>
+                  </div>
                 </Grid>
 
                 {/* Date Selection Section */}
@@ -273,4 +288,4 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
       />
     </>
   );
-};
+}
