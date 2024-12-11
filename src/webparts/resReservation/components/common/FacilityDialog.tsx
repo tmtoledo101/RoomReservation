@@ -41,7 +41,8 @@ export const FacilityDialog: React.FC<IFacilityDialogProps> = ({
             <Dropdown
               items={facilityList}
               name="facility"
-              onChange={onFacilityChange}
+              handleChange={onFacilityChange}
+              value={formik.values.facility}
             />
           </div>
         </Grid>
@@ -51,6 +52,7 @@ export const FacilityDialog: React.FC<IFacilityDialogProps> = ({
             <Dropdown
               items={quantityList}
               name="quantity"
+              value={formik.values.quantity}
             />
           </div>
         </Grid>
