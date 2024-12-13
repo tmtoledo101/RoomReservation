@@ -8,4 +8,8 @@ export interface IResViewState {
   pastRequestList: ITableItem[];
   approvalRequest: ITableItem[];
   department: string[];
+  isModalOpen: boolean;
+  selectedReservation: ITableItem | null;
+  fromDate: string | null;
+  toDate: string | null;
 }

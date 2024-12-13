@@ -4,6 +4,7 @@ import "@pnp/sp/lists";
 import "@pnp/sp/items";
 import "@pnp/sp/site-groups/web";
 import { ITableItem, STATUS } from "../interfaces/IResViews";
+import { IFacilityMapItem, IDropdownItem } from "../interfaces/IFacility";
 import { dateConverter } from "../utils/helpers";
 
 export class SharePointService {
@@ -70,24 +71,16 @@ export class SharePointService {
     isApprover: boolean;
     departments: string[];
   }> {
-    //const crsdUsers = await sp.web.siteGroups.getByName("CRSD").users();
-    //const ddUsers = await sp.web.siteGroups.getByName("DD").users();
     const currentUser = await sp.web.currentUser.get();
-
-    //const crsdEmails = crsdUsers.map((item) => item.Email);
-    //const ddEmails = ddUsers.map((item) => item.Email);
     const userEmail = currentUser.Title;
-
-    //const isApprover = crsdEmails.includes(userEmail) || ddEmails.includes(userEmail);
     const isApprover = true;
+    
     const departmentData: any[] = await sp.web.lists
       .getByTitle("UsersPerDepartment")
       .items.select(
         "EmployeeName/EMail",
         "Department/Department",
       )
-      //Terence Commented this out
-      //.filter(`EmployeeName/EMail eq '${userEmail}'`)
       .filter(`Title eq '${userEmail}'`)
       .expand(
         "Department/FieldValuesAsText",
@@ -101,5 +94,78 @@ export class SharePointService {
       isApprover,
       departments
     };
+  }
+
+  public static async getFacilities(): Promise<{
+    facilityList: IDropdownItem[];
+    facilityMap: { [key: string]: IFacilityMapItem };
+  }> {
+    const facilities: any[] = await sp.web.lists
+      .getByTitle("Facility")
+      .items.select("*")
+      .get();
+
+    const facilityMap: { [key: string]: IFacilityMapItem } = {};
+    const facilityList: IDropdownItem[] = [];
+
+    facilities.forEach(facility => {
+      facilityMap[facility.Title] = {
+        Title: facility.Title,
+        AssetNumber: facility.AssetNumber,
+        Facility: facility.Facility,
+        Quantity: facility.Quantity,
+        FacilityOwner: facility.FacilityOwner
+      };
+
+      facilityList.push({
+        id: facility.Title,
+        value: facility.Title
+      });
+    });
+
+    return {
+      facilityList,
+      facilityMap
+    };
+  }
+
+  public static async isVenueCRSD(venue: string): Promise<boolean> {
+    try {
+      const venueItem = await sp.web.lists
+        .getByTitle("Venue")
+        .items.select("Group")
+        .filter(`Venue eq '${venue}'`)
+        .get();
+      console.log('venueItem');
+      console.log(venueItem.length ); 
+      console.log(venueItem[0].Group);
+      return venueItem.length > 0 && venueItem[0].Group === 'CRSD';
+    } catch (error) {
+      console.error('Error checking venue group:', error);
+      return false;
+    }
+  }
+
+  public static async updateReservation(id: number, data: any): Promise<void> {
+    try {
+      const updateData = {
+        Building: data.building,
+        Venue: data.venue,
+        FromDate: data.fromDate,
+        ToDate: data.toDate,
+        PurposeOfUse: data.purposeOfUse,
+        NoParticipant: data.numberOfParticipants,
+        RequestedBy: data.requestedBy,
+        Department: data.department,
+        ContactNumber: data.contactNumber,
+        Status: data.status,
+        FacilityData: JSON.stringify(data.facilityData || [])
+      };
+
+      await sp.web.lists.getByTitle("Request").items.getById(id).update(updateData);
+    } catch (error) {
+      console.error('Error updating reservation:', error);
+      throw new Error('Failed to update reservation');
+    }
   }
 }

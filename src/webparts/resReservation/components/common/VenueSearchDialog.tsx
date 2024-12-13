@@ -44,6 +44,7 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
   initialBuilding = "",
   initialFromDate = null,
   initialToDate = null,
+  
 }) => {
   const [selectedBuilding, setSelectedBuilding] = React.useState(initialBuilding);
   const [filteredVenueList, setFilteredVenueList] = React.useState(venueList);
@@ -91,6 +92,14 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
     setSelectedFormikValues(values);
     setConfirmationOpen(true);
   };
+  const handleCloseDialog = (): void => {
+    setUnavailableVenues([]);
+    setShowResults(false);
+    setConfirmationOpen(false);
+    setSelectedVenue(null);
+    setSelectedFormikValues(null);
+    onClose();
+  };
 
   const handleConfirmVenue = (): void => {
     if (selectedVenue && selectedFormikValues) {
@@ -104,15 +113,7 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
     }
   };
 
-  const handleCloseDialog = (): void => {
-    setUnavailableVenues([]);
-    setShowResults(false);
-    setConfirmationOpen(false);
-    setSelectedVenue(null);
-    setSelectedFormikValues(null);
-    onClose();
-  };
-
+  
   const canSearch = (formik: any): boolean => {
     return formik.values.department && 
            formik.values.fromDate && 
@@ -288,4 +289,4 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
       />
     </>
   );
-}
+};

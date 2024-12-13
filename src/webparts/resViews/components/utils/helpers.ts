@@ -1,23 +1,23 @@
 import * as moment from "moment";
 
-export const dateConverter = (date: string | Date, type: number): string => {
-  let result = null;
+export const formatDateForInput = (dateString: string): string => {
+  return moment(dateString).format("YYYY-MM-DDTHH:mm");
+};
+
+export const formatDate = (dateString: string): string => {
+  return moment(dateString).format("MM/DD/YYYY hh:mm A");
+};
+
+export const validateDateTime = (fromDate: Date, toDate: Date): boolean => {
+  return moment(toDate).isAfter(moment(fromDate));
+};
+
+export const dateConverter = (date: string, type: number): string => {
+  const dateObj = new Date(date);
   if (type === 1) {
-    result = `${moment(date).format("YYYY-MM-DD")}T00:00:00Z`;
-  } else if (type === 2) {
-    result = `${moment(date).add(1, 'days').format("YYYY-MM-DD")}T00:00:00Z`;
+    dateObj.setHours(0, 0, 0);
+  } else {
+    dateObj.setHours(23, 59, 59);
   }
-  return result;
-};
-
-export const formatDate = (date: string | Date): string => {
-  return date ? moment(date).format("MM/DD/yyyy") : null;
-};
-
-export const validateDateTime = (startDateTime: string | Date, endDateTime: string | Date): boolean => {
-  return startDateTime &&
-    moment(startDateTime).isValid() &&
-    endDateTime &&
-    moment(endDateTime).isValid() &&
-    moment(endDateTime).isSameOrAfter(startDateTime);
+  return dateObj.toISOString();
 };

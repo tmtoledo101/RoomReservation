@@ -3,6 +3,7 @@ import { IResViewsProps } from "./IResViewsProps";
 import { IResViewState } from "./IResViewState";
 import { SharePointService } from "./services/SharePointService";
 import { ResViewForm } from "./ResViewForm";
+import { ApproverReservationForm } from "./ApproverReservationForm";
 import { ITableItem } from "./interfaces/IResViews";
 
 export default class ResViews extends React.Component<IResViewsProps, IResViewState> {
@@ -17,6 +18,10 @@ export default class ResViews extends React.Component<IResViewsProps, IResViewSt
       pastRequestList: [],
       approvalRequest: [],
       department: [],
+      isModalOpen: false,
+      selectedReservation: null,
+      fromDate: null,
+      toDate: null
     };
   }
 
@@ -39,17 +44,43 @@ export default class ResViews extends React.Component<IResViewsProps, IResViewSt
 
   protected handleView = (event: any, rowData: ITableItem | ITableItem[]): void => {
     if (!Array.isArray(rowData)) {
-      window.open(
-        this.props.siteUrl +
-          "/SitePages/DisplayReservation_appge.aspx?pid=" +
-          rowData.ID,
-        "_self"
-      );
+      if (this.state.tabValue === 2) {
+        // For approval tab, show modal
+        this.setState({
+          isModalOpen: true,
+          selectedReservation: rowData
+        });
+      } else {
+        // Other tabs, redirect to display page
+        window.open(
+          this.props.siteUrl +
+            "/SitePages/DisplayReservation_appge.aspx?pid=" +
+            rowData.ID,
+          "_self"
+        );
+      }
+    }
+  }
+
+  protected handleModalClose = (): void => {
+    this.setState({
+      isModalOpen: false,
+      selectedReservation: null
+    });
+  }
+
+  protected handleUpdateSuccess = async (): Promise<void> => {
+    // Refresh data after successful update
+    const { fromDate, toDate } = this.state;
+    if (fromDate && toDate) {
+      await this.getItems(fromDate, toDate);
     }
   }
 
   protected handleSearch = async (fromDate: Date | null, toDate: Date | null): Promise<void> => {
     if (fromDate && toDate) {
+      // Store dates in state for refresh after update
+      this.setState({ fromDate: fromDate.toISOString(), toDate: toDate.toISOString() });
       await this.getItems(fromDate.toISOString(), toDate.toISOString());
     }
   }
@@ -88,18 +119,26 @@ export default class ResViews extends React.Component<IResViewsProps, IResViewSt
   }
 
   public render(): React.ReactElement<IResViewsProps> {
-    const { menuTabs, tabValue } = this.state;
+    const { menuTabs, tabValue, isModalOpen, selectedReservation } = this.state;
 
     return (
-      <ResViewForm
-        tabValue={tabValue}
-        menuTabs={menuTabs}
-        data={this.getData()}
-        onTabChange={this.handleTabChange}
-        onSearch={this.handleSearch}
-        onView={this.handleView}
-        onClose={this.handleClose}
-      />
+      <>
+        <ResViewForm
+          tabValue={tabValue}
+          menuTabs={menuTabs}
+          data={this.getData()}
+          onTabChange={this.handleTabChange}
+          onSearch={this.handleSearch}
+          onView={this.handleView}
+          onClose={this.handleClose}
+        />
+        <ApproverReservationForm
+          isOpen={isModalOpen}
+          selectedReservation={selectedReservation}
+          onClose={this.handleModalClose}
+          onUpdateSuccess={this.handleUpdateSuccess}
+        />
+      </>
     );
   }
 }
