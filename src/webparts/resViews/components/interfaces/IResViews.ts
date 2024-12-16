@@ -11,6 +11,11 @@ export interface ITableItem {
   contactNumber: string;
   status: string;
   ID: number;
+  layout?: string;
+  contactPerson?: string;
+  principal?: string;
+  titleDesc?: string;
+  participant?: string[];
 }
 
 export interface IFormValues {

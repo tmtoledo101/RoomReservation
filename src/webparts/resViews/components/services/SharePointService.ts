@@ -3,11 +3,14 @@ import "@pnp/sp/webs";
 import "@pnp/sp/lists";
 import "@pnp/sp/items";
 import "@pnp/sp/site-groups/web";
+import { Web } from "@pnp/sp/webs";
 import { ITableItem, STATUS } from "../interfaces/IResViews";
-import { IFacilityMapItem, IDropdownItem } from "../interfaces/IFacility";
+import { IFacilityMapItem, IDropdownItem, IFacilityData } from "../interfaces/IFacility";
 import { dateConverter } from "../utils/helpers";
 
 export class SharePointService {
+  private static web = Web("https://bspgovph.sharepoint.com/sites/AccessControl");
+
   public static async getRequestItems(from: string, to: string, department: string[]): Promise<{
     referenceNumberList: ITableItem[];
     pastRequestList: ITableItem[];
@@ -43,6 +46,11 @@ export class SharePointService {
         contactNumber: item.ContactNumber,
         status: item.Status,
         ID: item.Id,
+        layout: item.Layout || "",
+        contactPerson: item.ContactPerson || "",
+        principal: item.PrincipalUser || "",
+        titleDesc: item.TitleDesc || "",
+        participant: item.Participant ? JSON.parse(item.Participant) : []
       };
 
       itemArray1.push(tempObj);
@@ -159,13 +167,99 @@ export class SharePointService {
         Department: data.department,
         ContactNumber: data.contactNumber,
         Status: data.status,
-        FacilityData: JSON.stringify(data.facilityData || [])
+        FacilityData: JSON.stringify(data.facilityData || []),
+        Layout: data.layout,
+        ContactPerson: data.contactPerson,
+        PrincipalUser: data.principal,
+        TitleDesc: data.titleDesc,
+        Participant: JSON.stringify(data.participant || [])
       };
 
       await sp.web.lists.getByTitle("Request").items.getById(id).update(updateData);
     } catch (error) {
       console.error('Error updating reservation:', error);
       throw new Error('Failed to update reservation');
+    }
+  }
+
+  public static async getFacilityData(reservationId: number): Promise<IFacilityData[]> {
+    try {
+      const item = await sp.web.lists
+        .getByTitle("Request")
+        .items.getById(reservationId)
+        .select("FacilityData")
+        .get();
+
+      if (item.FacilityData) {
+        try {
+          return JSON.parse(item.FacilityData);
+        } catch (error) {
+          console.error('Error parsing facility data:', error);
+          return [];
+        }
+      }
+      return [];
+    } catch (error) {
+      console.error('Error getting facility data:', error);
+      return [];
+    }
+  }
+
+  public static async getLayouts(venue: string): Promise<IDropdownItem[]> {
+    try {
+      const layoutData = await sp.web.lists
+        .getByTitle("LayoutTablesChairs")
+        .items.select("Venue/Venue", "Layout")
+        .filter(`Venue/Venue eq '${venue}'`)
+        .expand("Venue/FieldValuesAsText")
+        .get();
+
+      return layoutData.map(item => ({
+        id: item.Layout,
+        value: item.Layout
+      }));
+    } catch (error) {
+      console.error('Error getting layouts:', error);
+      return [];
+    }
+  }
+
+  public static async getPrincipalUsers(dept: string): Promise<{ [key: string]: string[] }> {
+    try {
+      const principalData = await this.web.lists.getByTitle("Employees")
+        .items.select("Name", "Dept")
+        .filter(`Dept eq '${dept}'`)
+        .get();
+
+      const principalMap = {};
+      principalData.forEach((item) => {
+        if (!principalMap[item.Dept]) {
+          principalMap[item.Dept] = [];
+        }
+        principalMap[item.Dept].push(item.Name);
+      });
+
+      return principalMap;
+    } catch (error) {
+      console.error('Error getting principal users:', error);
+      return {};
+    }
+  }
+
+  public static async getPurposeOfUse(): Promise<IDropdownItem[]> {
+    try {
+      const purposeData = await sp.web.lists
+        .getByTitle("PurposeOfUse")
+        .items.select("Title")
+        .get();
+
+      return purposeData.map(item => ({
+        id: item.Title,
+        value: item.Title
+      }));
+    } catch (error) {
+      console.error('Error getting purpose of use:', error);
+      return [];
     }
   }
 }
