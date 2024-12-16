@@ -3,6 +3,7 @@ import "@pnp/sp/webs";
 import "@pnp/sp/lists";
 import "@pnp/sp/items";
 import "@pnp/sp/site-groups/web";
+import "@pnp/sp/attachments";
 import { Web } from "@pnp/sp/webs";
 import { ITableItem, STATUS } from "../interfaces/IResViews";
 import { IFacilityMapItem, IDropdownItem, IFacilityData } from "../interfaces/IFacility";
@@ -23,7 +24,26 @@ export class SharePointService {
 
     const RequestItem: any[] = await sp.web.lists
       .getByTitle("Request")
-      .items.select("*")
+      .items.select(
+        "Id",
+        "Building",
+        "Venue",
+        "FromDate",
+        "ToDate",
+        "ReferenceNumber",
+        "PurposeOfUse",
+        "NoParticipant",
+        "RequestedBy",
+        "Department",
+        "ContactNumber",
+        "Status",
+        "Layout",
+        "ContactPerson",
+        "PrincipalUser",
+        "TitleDescription",
+        "Participant",
+        "OtherRequirement"
+      )
       .filter(filterQuery)
       .orderBy("Id", false)
       .get();
@@ -49,8 +69,9 @@ export class SharePointService {
         layout: item.Layout || "",
         contactPerson: item.ContactPerson || "",
         principal: item.PrincipalUser || "",
-        titleDesc: item.TitleDesc || "",
-        participant: item.Participant ? JSON.parse(item.Participant) : []
+        titleDesc: item.TitleDescription || "",
+        participant: item.Participant ? JSON.parse(item.Participant) : [],
+        otherRequirment: item.OtherRequirement || ""
       };
 
       itemArray1.push(tempObj);
@@ -144,9 +165,6 @@ export class SharePointService {
         .items.select("Group")
         .filter(`Venue eq '${venue}'`)
         .get();
-      console.log('venueItem');
-      console.log(venueItem.length ); 
-      console.log(venueItem[0].Group);
       return venueItem.length > 0 && venueItem[0].Group === 'CRSD';
     } catch (error) {
       console.error('Error checking venue group:', error);
@@ -171,8 +189,9 @@ export class SharePointService {
         Layout: data.layout,
         ContactPerson: data.contactPerson,
         PrincipalUser: data.principal,
-        TitleDesc: data.titleDesc,
-        Participant: JSON.stringify(data.participant || [])
+        TitleDescription: data.titleDesc,
+        Participant: JSON.stringify(data.participant || []),
+        OtherRequirement: data.otherRequirment || ""
       };
 
       await sp.web.lists.getByTitle("Request").items.getById(id).update(updateData);

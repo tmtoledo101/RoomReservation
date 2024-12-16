@@ -1,50 +1,42 @@
-@import '~office-ui-fabric-react/dist/sass/References.scss';
-
-
+@import "~office-ui-fabric-react/dist/sass/References.scss";
 
 .resViews {
   .container {
     display: flex;
     flex-wrap: wrap;
     box-sizing: border-box;
-    padding: 5px;
-    width: 100vw;
+    padding: 20px;
   }
 
   .width {
     max-width: 300px;
-    max-height: 300px;
   }
 
   .error {
     color: red;
   }
 
- 
   .paper {
-    padding: "16px";
+    padding: "5px";
     border-color: "transparent";
+    font-family: "Roboto";
   }
-  
+
   .tabbar {
-    text-transform: "none";
-    text-align: 'left';
+    margin-bottom: 20px;
   }
+
   .button {
-    // Our button
     text-decoration: none;
     height: 32px;
-
-    // Primary Button
     min-width: 80px;
     background-color: $ms-color-themePrimary;
     border-color: $ms-color-themePrimary;
     color: $ms-color-white;
-
-    // Basic Button
     outline: transparent;
     position: relative;
-    font-family: "Segoe UI WestEuropean","Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,"Helvetica Neue",sans-serif;
+    font-family: "Segoe UI WestEuropean", "Segoe UI", -apple-system,
+      BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif;
     -webkit-font-smoothing: antialiased;
     font-size: $ms-font-size-m;
     font-weight: $ms-font-weight-regular;
@@ -53,15 +45,54 @@
     cursor: pointer;
     display: inline-block;
     padding: 0 16px;
+  }
 
-    .label {
-      font-weight: $ms-font-weight-semibold;
-      font-size: $ms-font-size-m;
-      height: 32px;
-      line-height: 32px;
-      margin: 0 4px;
-      vertical-align: top;
-      display: inline-block;
+  .label {
+    font-weight: $ms-font-weight-semibold;
+    font-size: $ms-font-size-m;
+    height: 32px;
+    line-height: 32px;
+    margin: 0 4px;
+    vertical-align: top;
+    display: inline-block;
+  }
+
+  // Add dropzone styles
+  .dropZone {
+    min-height: 140px !important;
+  }
+
+  .previewChip {
+    min-width: 160px;
+    max-width: 210px;
+  }
+
+  // Additional styles for facility section
+  .facilityDetails {
+    padding: 0 20px;
+    margin-top: 20px;
+  }
+
+  table,
+  th,
+  td {
+    border: 1px solid black;
+    border-collapse: collapse;
+    min-height: 100px;
+  }
+ 
+  tr > td {
+    text-align: center;
+  }
+
+  td {
+    max-width: 200px;
+    pre {
+      white-space: break-spaces;
     }
+  }
+
+  table {
+    width: 75%;
   }
 }

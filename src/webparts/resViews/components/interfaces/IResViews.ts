@@ -14,8 +14,9 @@ export interface ITableItem {
   layout?: string;
   contactPerson?: string;
   principal?: string;
-  titleDesc?: string;
+  titleDesc?: string;  // Maps to TitleDescription in SharePoint
   participant?: string[];
+  otherRequirment?: string;  // Maps to OtherRequirement in SharePoint
 }
 
 export interface IFormValues {
