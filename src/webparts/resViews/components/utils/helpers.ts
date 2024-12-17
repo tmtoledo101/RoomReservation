@@ -21,3 +21,19 @@ export const dateConverter = (date: string, type: number): string => {
   }
   return dateObj.toISOString();
 };
+
+
+export const validateDateTime_ = (startDateTime: Date | null, endDateTime: Date | null): boolean =>
+  startDateTime &&
+  moment(startDateTime).isValid() &&
+  endDateTime &&
+  moment(endDateTime).isValid() &&
+  moment(endDateTime).isAfter(startDateTime);
+
+export const validateDateRange = (startDate: Date | null, endDate: Date | null): boolean => {
+  if (!startDate || !endDate) return true;
+  const start = moment(startDate);
+  const end = moment(endDate);
+  const monthsDiff = end.diff(start, 'months', true);
+  return monthsDiff <= 3;
+};

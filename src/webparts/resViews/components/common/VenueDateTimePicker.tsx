@@ -22,6 +22,7 @@ export const VenueDateTimePicker: React.FC<IVenueDateTimePickerProps> = ({ name,
                 clearable
                 autoOk
                 ampm
+                disablePast
                 format="MM/dd/yyyy hh:mm a"
                 value={field.value ? field.value : null}
                 onChange={(e: Date | null) => {
