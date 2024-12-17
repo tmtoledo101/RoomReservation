@@ -12,6 +12,95 @@ import { dateConverter } from "../utils/helpers";
 export class SharePointService {
   private static web = Web("https://bspgovph.sharepoint.com/sites/AccessControl");
 
+  public static async checkVenueAvailability(fromDate: Date, toDate: Date): Promise<string[]> {
+    try {
+      const reservations = await sp.web.lists
+        .getByTitle("Request")
+        .items.select("Venue")
+        .filter(`
+          Status eq '${STATUS.APPROVED}' and 
+          ((FromDate le datetime'${toDate.toISOString()}' and ToDate ge datetime'${fromDate.toISOString()}') or
+          (FromDate ge datetime'${fromDate.toISOString()}' and FromDate le datetime'${toDate.toISOString()}'))
+        `)
+        .get();
+
+      return reservations.map(item => item.Venue);
+    } catch (error) {
+      console.error('Error checking venue availability:', error);
+      return [];
+    }
+  }
+
+  public static async getBuildings(): Promise<IDropdownItem[]> {
+    try {
+      const buildings = await sp.web.lists
+        .getByTitle("Building")
+        .items.select("Title")
+        .get();
+
+      return buildings.map(building => ({
+        id: building.Title,
+        value: building.Title
+      }));
+    } catch (error) {
+      console.error('Error getting buildings:', error);
+      return [];
+    }
+  }
+
+  public static async getVenues(): Promise<any[]> {
+    try {
+      const venues = await sp.web.lists
+        .getByTitle("Venue")
+        .items.select("Title", "Building", "ExclusiveTo")
+        .get();
+
+      return venues.map(venue => ({
+        id: venue.Title,
+        value: venue.Title,
+        building: venue.Building,
+        exclusiveTo: venue.ExclusiveTo
+      }));
+    } catch (error) {
+      console.error('Error getting venues:', error);
+      return [];
+    }
+  }
+
+  public static async getDepartments(): Promise<{
+    departmentList: IDropdownItem[];
+    departmentSectorMap: { [key: string]: string };
+  }> {
+    try {
+      const departments = await sp.web.lists
+        .getByTitle("Department")
+        .items.select("Title", "Sector")
+        .get();
+
+      const departmentList: IDropdownItem[] = [];
+      const departmentSectorMap: { [key: string]: string } = {};
+
+      departments.forEach(dept => {
+        departmentList.push({
+          id: dept.Title,
+          value: dept.Title
+        });
+        departmentSectorMap[dept.Title] = dept.Sector;
+      });
+
+      return {
+        departmentList,
+        departmentSectorMap
+      };
+    } catch (error) {
+      console.error('Error getting departments:', error);
+      return {
+        departmentList: [],
+        departmentSectorMap: {}
+      };
+    }
+  }
+
   public static async getRequestItems(from: string, to: string, department: string[]): Promise<{
     referenceNumberList: ITableItem[];
     pastRequestList: ITableItem[];
