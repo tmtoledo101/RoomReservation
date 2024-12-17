@@ -14,7 +14,7 @@ import {
 } from "@material-ui/core";
 import SearchIcon from "@material-ui/icons/Search";
 import { Formik } from "formik";
-import { CustomDateTimePicker } from "./CustomDateTimePicker";
+import { VenueDateTimePicker } from "./VenueDateTimePicker";
 import { SharePointService } from "../services/SharePointService";
 import styles from "../ResViews.module.scss";
 
@@ -191,7 +191,7 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
                     <Grid item xs={6}>
                       <div className={styles.width}>
                         <div className={styles.label}>Date and Time of use - From</div>
-                        <CustomDateTimePicker 
+                        <VenueDateTimePicker 
                           name="fromDate"
                           handleChange={(date, name) => handleDateChange(date, name, formik)}
                         />
@@ -201,7 +201,7 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
                     <Grid item xs={6}>
                       <div className={styles.width}>
                         <div className={styles.label}>Date and Time of use - To</div>
-                        <CustomDateTimePicker 
+                        <VenueDateTimePicker 
                           name="toDate"
                           handleChange={(date, name) => handleDateChange(date, name, formik)}
                         />

@@ -22,17 +22,14 @@ export const VenueDetailsSection: React.FC<IVenueDetailsSectionProps> = ({ formi
       try {
         setIsLoading(true);
         
-        // Load buildings
-        const buildings = await SharePointService.getBuildings();
+        // Load buildings and venues using the updated SharePointService
+        const { buildings, venues } = await SharePointService.getBuildings();
         setBuildingList(buildings);
-
-        // Load venues
-        const venues = await SharePointService.getVenues();
         setVenueList(venues);
 
-        // Load departments and sector map
+        // Load departments and sector map with requestedBy value
         const { departmentList: departments, departmentSectorMap: sectorMap } = 
-          await SharePointService.getDepartments();
+          await SharePointService.getDepartments(formik.values.requestedBy);
         setDepartmentList(departments);
         setDepartmentSectorMap(sectorMap);
 
@@ -44,7 +41,7 @@ export const VenueDetailsSection: React.FC<IVenueDetailsSectionProps> = ({ formi
     };
 
     loadData();
-  }, []);
+  }, [formik.values.requestedBy]); // Add dependency on requestedBy
 
   const handleVenueSelect = (venue: any, fromDate: Date | null, toDate: Date | null, department: string) => {
     formik.setFieldValue('building', venue.building);

@@ -31,50 +31,92 @@ export class SharePointService {
     }
   }
 
-  public static async getBuildings(): Promise<IDropdownItem[]> {
+  public static async getBuildings(): Promise<{
+    buildings: IDropdownItem[];
+    venues: any[];
+  }> {
     try {
-      const buildings = await sp.web.lists
-        .getByTitle("Building")
-        .items.select("Title")
+      const buildingData = await sp.web.lists
+        .getByTitle("Venue")
+        .items.select(
+          "Id",
+          "Building",
+          "Venue",
+          "Group",
+          "CapacityperLayout",
+          "FacilitiesAvailable",
+          "ExclusiveTo",
+          "Image",
+          "VenueId"
+        )
         .get();
 
-      return buildings.map(building => ({
-        id: building.Title,
-        value: building.Title
-      }));
+      const buildObj = {};
+      const venues: any[] = [];
+
+      buildingData.forEach((item) => {
+        const ImageObj = JSON.parse(item.Image) || { serverRelativeUrl: '' };
+        if (item.Building) {
+          buildObj[item.Building] = item.Building;
+        }
+        if (item.Venue) {
+          venues.push({
+            id: item.Venue,
+            value: item.Venue,
+            venueImage: ImageObj.serverRelativeUrl,
+            facilitiesAvailable: JSON.stringify(item.FacilitiesAvailable),
+            exclusiveTo: item.ExclusiveTo,
+            group: item.Group,
+            capacityperLayout: item.CapacityperLayout,
+            venueId: item.VenueId,
+            building: item.Building,
+            itemId: item.Id,
+          });
+        }
+      });
+
+      return {
+        buildings: Object.keys(buildObj).map((item, index) => ({
+          id: index.toString(),
+          value: item,
+        })),
+        venues
+      };
     } catch (error) {
       console.error('Error getting buildings:', error);
-      return [];
+      return {
+        buildings: [],
+        venues: []
+      };
     }
   }
 
-  public static async getVenues(): Promise<any[]> {
-    try {
-      const venues = await sp.web.lists
-        .getByTitle("Venue")
-        .items.select("Title", "Building", "ExclusiveTo")
-        .get();
-
-      return venues.map(venue => ({
-        id: venue.Title,
-        value: venue.Title,
-        building: venue.Building,
-        exclusiveTo: venue.ExclusiveTo
-      }));
-    } catch (error) {
-      console.error('Error getting venues:', error);
-      return [];
-    }
-  }
-
-  public static async getDepartments(): Promise<{
+  public static async getDepartments(currentUserTitle: string): Promise<{
     departmentList: IDropdownItem[];
     departmentSectorMap: { [key: string]: string };
   }> {
     try {
+      // First get the user's department
+      const userDepartment = await sp.web.lists
+        .getByTitle("UsersPerDepartment")
+        .items.select("Department/Department")
+        .filter(`Title eq '${currentUserTitle}'`)
+        .expand("Department/FieldValuesAsText")
+        .get();
+
+      if (userDepartment.length === 0) {
+        console.error('User department not found');
+        return {
+          departmentList: [],
+          departmentSectorMap: {}
+        };
+      }
+
+      // Then get the department details
       const departments = await sp.web.lists
         .getByTitle("Department")
         .items.select("Title", "Sector")
+        .filter(`Title eq '${userDepartment[0].Department.Department}'`)
         .get();
 
       const departmentList: IDropdownItem[] = [];

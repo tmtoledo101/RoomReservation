@@ -1,16 +1,16 @@
 import * as React from "react";
 import { Field } from "formik";
-import { DatePicker, MuiPickersUtilsProvider } from "@material-ui/pickers";
+import { DateTimePicker, MuiPickersUtilsProvider } from "@material-ui/pickers";
 import DateFnsUtils from "@date-io/date-fns";
 import { FormControl } from "@material-ui/core";
 import styles from "../ResViews.module.scss";
 
-interface ICustomDateTimePickerProps {
+interface IVenueDateTimePickerProps {
   name: string;
   handleChange?: (date: Date | null, name: string) => void;
 }
 
-export const CustomDateTimePicker: React.FC<ICustomDateTimePickerProps> = ({ name, handleChange }) => {
+export const VenueDateTimePicker: React.FC<IVenueDateTimePickerProps> = ({ name, handleChange }) => {
   return (
     <Field name={name}>
       {({ field, meta, form }) => {
@@ -18,9 +18,10 @@ export const CustomDateTimePicker: React.FC<ICustomDateTimePickerProps> = ({ nam
         return (
           <FormControl fullWidth>
             <MuiPickersUtilsProvider utils={DateFnsUtils}>
-              <DatePicker
+              <DateTimePicker
                 clearable
                 autoOk
+                ampm
                 format="MM/dd/yyyy hh:mm a"
                 value={field.value ? field.value : null}
                 onChange={(e: Date | null) => {
@@ -34,6 +35,8 @@ export const CustomDateTimePicker: React.FC<ICustomDateTimePickerProps> = ({ nam
                   field.onBlur(e);
                 }}
                 className={styles.width}
+                minutesStep={5}
+                views={["date", "hours", "minutes"]}
               />
             </MuiPickersUtilsProvider>
             {error && touched ? (
