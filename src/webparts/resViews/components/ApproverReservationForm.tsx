@@ -9,6 +9,10 @@ import {
   Button,
   CircularProgress,
   Snackbar,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
 } from "@material-ui/core";
 import { Alert } from "@material-ui/lab";
 import { ITableItem, STATUS } from "./interfaces/IResViews";
@@ -32,6 +36,20 @@ interface IApproverReservationFormProps {
   onClose: () => void;
   onUpdateSuccess: () => void;
 }
+
+const formatDateTime12Hour = (dateString: string | undefined) => {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return "";
+
+  let hours = date.getHours();
+  const minutes = date.getMinutes();
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  hours = hours ? hours : 12; // the hour '0' should be '12'
+  const formattedMinutes = minutes < 10 ? '0' + minutes : minutes;
+  return `${date.toLocaleDateString()} ${hours}:${formattedMinutes} ${ampm}`;
+};
 
 export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = ({
   isOpen,
@@ -59,6 +77,8 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
     message: "",
     severity: "success"
   });
+
+  const [status, setStatus] = React.useState<string>(selectedReservation? selectedReservation.status : STATUS.PENDING);
 
   React.useEffect(() => {
     const init = async () => {
@@ -113,14 +133,17 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
     };
 
     init();
+    if(selectedReservation) {
+      setStatus(selectedReservation.status);
+    }
   }, [isOpen, selectedReservation]);
 
   if (!selectedReservation) return null;
 
   const initialValues = {
     ...selectedReservation,
-    fromDate: formatDateForInput(selectedReservation.fromDate),
-    toDate: formatDateForInput(selectedReservation.toDate),
+    fromDate: formatDateTime12Hour(selectedReservation.fromDate),
+    toDate: formatDateTime12Hour(selectedReservation.toDate),
     facility: "",
     quantity: "",
     assetNumber: "",
@@ -134,7 +157,7 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
     otherRequirment: selectedReservation.otherRequirment || ""
   };
 
-  const handleSubmit = async (values: any, status: string) => {
+  const handleSubmit = async (values: any) => {
     try {
       setIsSubmitting(true);
       await SharePointService.updateReservation(
@@ -215,6 +238,10 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
     setFiles(newFiles);
   };
 
+  const handleStatusChange = (event: React.ChangeEvent<{ value: any }>) => {
+    setStatus(event.target.value as string);
+  };
+
   return (
     <>
       <Dialog 
@@ -267,7 +294,21 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
                       formik={formik}
                     />
                   </Grid>
-
+                  <FormControl fullWidth style={{ marginTop: 16 }}>
+                    <InputLabel id="status-select-label">Status</InputLabel>
+                    <Select
+                      labelId="status-select-label"
+                      id="status-select"
+                      value={status}
+                      onChange={handleStatusChange}
+                    >
+                      {Object.values(STATUS).map((statusOption) => (
+                        <MenuItem key={statusOption} value={statusOption}>
+                          {statusOption}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
                   <DialogActions>
                     <Button 
                       onClick={onClose} 
@@ -279,18 +320,10 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
                     <Button 
                       color="primary" 
                       variant="contained"
-                      onClick={() => handleSubmit(formik.values, STATUS.APPROVED)}
+                      onClick={() => handleSubmit(formik.values)}
                       disabled={isSubmitting}
                     >
-                      {isSubmitting ? <CircularProgress size={24} /> : 'Approve'}
-                    </Button>
-                    <Button 
-                      color="secondary" 
-                      variant="contained"
-                      onClick={() => handleSubmit(formik.values, STATUS.DISAPPROVED)}
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? <CircularProgress size={24} /> : 'Reject'}
+                      {isSubmitting ? <CircularProgress size={24} /> : 'Update'}
                     </Button>
                   </DialogActions>
                 </form>

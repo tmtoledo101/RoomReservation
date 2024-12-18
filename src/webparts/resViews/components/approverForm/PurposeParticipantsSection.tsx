@@ -27,6 +27,7 @@ export const PurposeParticipantsSection: React.FC<{
               {...formik.getFieldProps('purposeOfUse')}
               error={formik.touched.purposeOfUse && Boolean(formik.errors.purposeOfUse)}
               helperText={formik.touched.purposeOfUse && formik.errors.purposeOfUse}
+              InputLabelProps={{ shrink: true }}
               SelectProps={{
                 native: true
               }}

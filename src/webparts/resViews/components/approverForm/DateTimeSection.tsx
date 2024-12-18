@@ -14,22 +14,24 @@ export const DateTimeSection: React.FC<{
           <TextField
             fullWidth
             label="From Date"
-            type="datetime-local"
+            type="text"
             InputLabelProps={{ shrink: true }}
             {...formik.getFieldProps('fromDate')}
             error={formik.touched.fromDate && Boolean(formik.errors.fromDate)}
             helperText={formik.touched.fromDate && formik.errors.fromDate}
+            disabled
           />
         </Grid>
         <Grid item xs={6}>
           <TextField
             fullWidth
             label="To Date"
-            type="datetime-local"
+            type="text"
             InputLabelProps={{ shrink: true }}
             {...formik.getFieldProps('toDate')}
             error={formik.touched.toDate && Boolean(formik.errors.toDate)}
             helperText={formik.touched.toDate && formik.errors.toDate}
+            disabled
           />
         </Grid>
       </Grid>

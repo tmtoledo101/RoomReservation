@@ -17,6 +17,7 @@ export const BasicInformationSection: React.FC<{
             {...formik.getFieldProps('requestedBy')}
             error={formik.touched.requestedBy && Boolean(formik.errors.requestedBy)}
             helperText={formik.touched.requestedBy && formik.errors.requestedBy}
+            disabled
           />
         </Grid>
         <Grid item xs={6}>
@@ -26,6 +27,7 @@ export const BasicInformationSection: React.FC<{
             {...formik.getFieldProps('department')}
             error={formik.touched.department && Boolean(formik.errors.department)}
             helperText={formik.touched.department && formik.errors.department}
+            disabled
           />
         </Grid>
         <Grid item xs={6}>

@@ -25,6 +25,7 @@ export const CRSDFieldsSection: React.FC<{
               {...formik.getFieldProps('layout')}
               error={formik.touched.layout && Boolean(formik.errors.layout)}
               helperText={formik.touched.layout && formik.errors.layout}
+              InputLabelProps={{ shrink: true }}
               SelectProps={{
                 native: true,
               }}
@@ -54,6 +55,7 @@ export const CRSDFieldsSection: React.FC<{
               {...formik.getFieldProps('principal')}
               error={formik.touched.principal && Boolean(formik.errors.principal)}
               helperText={formik.touched.principal && formik.errors.principal}
+              InputLabelProps={{ shrink: true }}
               SelectProps={{
                 native: true,
               }}

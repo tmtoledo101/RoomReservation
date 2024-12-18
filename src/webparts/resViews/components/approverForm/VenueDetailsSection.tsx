@@ -80,6 +80,7 @@ export const VenueDetailsSection: React.FC<IVenueDetailsSectionProps> = ({ formi
                 InputProps={{
                   readOnly: true,
                 }}
+                disabled
               />
             </Grid>
             <Grid item xs={6}>
@@ -92,6 +93,7 @@ export const VenueDetailsSection: React.FC<IVenueDetailsSectionProps> = ({ formi
                 InputProps={{
                   readOnly: true,
                 }}
+                disabled
               />
             </Grid>
           </Grid>
