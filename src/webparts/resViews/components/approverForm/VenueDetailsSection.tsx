@@ -4,7 +4,6 @@ import SearchIcon from "@material-ui/icons/Search";
 import { VenueSearchDialog } from "../common/VenueSearchDialog";
 import { SharePointService } from "../services/SharePointService";
 import { IDropdownItem } from "../interfaces/IFacility";
-import { ConfirmationDialog } from "../common/ConfirmationDialog";
 
 interface IVenueDetailsSectionProps {
   formik: any;
@@ -17,8 +16,6 @@ export const VenueDetailsSection: React.FC<IVenueDetailsSectionProps> = ({ formi
   const [departmentList, setDepartmentList] = React.useState<IDropdownItem[]>([]);
   const [departmentSectorMap, setDepartmentSectorMap] = React.useState<{ [key: string]: string }>({});
   const [isLoading, setIsLoading] = React.useState(false);
-  const [confirmationOpen, setConfirmationOpen] = React.useState(false);
-  const [selectedVenue, setSelectedVenue] = React.useState<any>(null);
 
   React.useEffect(() => {
     const loadData = async () => {
@@ -46,36 +43,25 @@ export const VenueDetailsSection: React.FC<IVenueDetailsSectionProps> = ({ formi
     loadData();
   }, [formik.values.requestedBy]); // Add dependency on requestedBy
 
+  const formatDateTime12Hour = (date: Date | null): string => {
+    if (!date) return "";
+    let hours = date.getHours();
+    const minutes = date.getMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    const formattedMinutes = minutes < 10 ? '0' + minutes : minutes;
+    return `${date.toLocaleDateString()} ${hours}:${formattedMinutes} ${ampm}`;
+  };
+
   const handleVenueSelect = (venue: any, fromDate: Date | null, toDate: Date | null, department: string) => {
     formik.setFieldValue('building', venue.building);
     formik.setFieldValue('venue', venue.value);
     
-    // If we want to update the dates and department as well
-    if (fromDate) formik.setFieldValue('fromDate', fromDate);
-    if (toDate) formik.setFieldValue('toDate', toDate);
+    // Format dates consistently with the 12-hour format
+    if (fromDate) formik.setFieldValue('fromDate', formatDateTime12Hour(fromDate));
+    if (toDate) formik.setFieldValue('toDate', formatDateTime12Hour(toDate));
     if (department) formik.setFieldValue('department', department);
-  };
-
-  const handleVenueClick = (venue: any, fromDate: Date | null, toDate: Date | null, department: string): void => {
-    setSelectedVenue(venue);
-    setConfirmationOpen(true);
-  };
-
-  const handleCloseConfirmation = (): void => {
-    setConfirmationOpen(false);
-    setSelectedVenue(null);
-  };
-
-  const handleConfirmVenue = (): void => {
-    if (selectedVenue) {
-      handleVenueSelect(
-        selectedVenue,
-        formik.values.fromDate,
-        formik.values.toDate,
-        formik.values.department
-      );
-      handleCloseConfirmation();
-    }
   };
 
   return (
@@ -133,23 +119,13 @@ export const VenueDetailsSection: React.FC<IVenueDetailsSectionProps> = ({ formi
           venueList={venueList}
           departmentList={departmentList}
           departmentSectorMap={departmentSectorMap}
-          onVenueSelect={(venue, fromDate, toDate, department) => handleVenueClick(venue, fromDate, toDate, department)}
+          onVenueSelect={handleVenueSelect}
           initialDepartment={formik.values.department}
           initialBuilding={formik.values.building}
           initialFromDate={formik.values.fromDate}
           initialToDate={formik.values.toDate}
         />
       )}
-      
-      <ConfirmationDialog
-        open={confirmationOpen}
-        onClose={handleCloseConfirmation}
-        onConfirm={handleConfirmVenue}
-        title="Confirm Venue Selection"
-        message={`Do you want to select this venue: ${selectedVenue ? selectedVenue.value : ''}`}
-        confirmLabel="Select Venue"
-        cancelLabel="Cancel"
-      />
     </>
   );
 };

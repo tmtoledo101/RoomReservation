@@ -7,83 +7,67 @@
     box-sizing: border-box;
     padding: 20px;
   }
-  
+
   .width {
     max-width: 300px;
   }
 
-  .venueSearch {
-    position: relative;
-    width: 100%;
-    margin: 16px 0;
+  .error {
+    color: red;
+  }
 
-    .searchContainer {
-      position: relative;
-      width: 100%;
-    }
-
-    .searchResults {
-      position: absolute;
-      top: 100%;
-      left: 0;
-      right: 0;
-      z-index: 1000;
-      max-height: 300px;
-      overflow-y: auto;
-      margin-top: 4px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      background-color: $ms-color-white;
-    }
-  }
-  
-  .previewChip {
-    min-width: 160;
-    max-width: 210;
-  }
-  .closeBtn {
-    border: none;
-    padding: 5px 15px;
-    position: absolute;
-    right: -11px;
-    top: 2px;
-    outline: none;
-  }
-  .formHandle {
-    display: flex;
-    justify-content: end;
-    align-items: center;
-    button {
-      margin-left: 20px;
-    }
-  }
   .paper {
     padding: "5px";
     border-color: "transparent";
     font-family: "Roboto";
   }
-  .helpTextClasses {
-    color: red;
+
+  .tabbar {
+    margin-bottom: 20px;
   }
 
+  .button {
+    text-decoration: none;
+    height: 32px;
+    min-width: 80px;
+    background-color: $ms-color-themePrimary;
+    border-color: $ms-color-themePrimary;
+    color: $ms-color-white;
+    outline: transparent;
+    position: relative;
+    font-family: "Segoe UI WestEuropean", "Segoe UI", -apple-system,
+      BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    font-size: $ms-font-size-m;
+    font-weight: $ms-font-weight-regular;
+    border-width: 0;
+    text-align: center;
+    cursor: pointer;
+    display: inline-block;
+    padding: 0 16px;
+  }
+
+  .label {
+    font-weight: $ms-font-weight-semibold;
+    font-size: $ms-font-size-m;
+    height: 32px;
+    line-height: 32px;
+    margin: 0 4px;
+    vertical-align: top;
+    display: inline-block;
+  }
+
+  // Add dropzone styles
   .dropZone {
     min-height: 140px !important;
   }
-  .data {
-    width: 100%;
-    button {
-      margin-top: 10px;
-    }
+
+  .previewChip {
+    min-width: 160px;
+    max-width: 210px;
   }
 
-  .image {
-    margin-left: 19%;
-  }
-
-  img {
-    width: 50%;
-    height: 250px;
-  }
-
+  // Additional styles for facility section
   .facilityDetails {
     padding: 0 20px;
     margin-top: 20px;
@@ -100,65 +84,15 @@
   tr > td {
     text-align: center;
   }
+
   td {
     max-width: 200px;
     pre {
       white-space: break-spaces;
     }
   }
+
   table {
     width: 75%;
-  }
-
-  .error {
-    color: red;
-  }
- 
-  .label {
-    font-weight: $ms-font-weight-semibold;
-    font-size: $ms-font-size-m;
-    height: 32px;
-    line-height: 32px;
-    margin: 0 4px;
-    vertical-align: top;
-    display: inline-block;
-  }
-
-  .button {
-    // Our button
-    text-decoration: none;
-    height: 32px;
-
-    // Primary Button
-    min-width: 80px;
-    background-color: $ms-color-themePrimary;
-    border-color: $ms-color-themePrimary;
-    color: $ms-color-white;
-
-    // Basic Button
-    outline: transparent;
-    position: relative;
-    font-family: "Segoe UI WestEuropean", "Segoe UI", -apple-system,
-      BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif;
-    -webkit-font-smoothing: antialiased;
-    font-size: $ms-font-size-m;
-    font-weight: $ms-font-weight-regular;
-    border-width: 0;
-    text-align: center;
-    cursor: pointer;
-    display: inline-block;
-    padding: 0 16px;
-    .label {
-      font-weight: $ms-font-weight-semibold;
-      font-size: $ms-font-size-m;
-      height: 32px;
-      line-height: 32px;
-      margin: 0 4px;
-      vertical-align: top;
-      display: inline-block;
-    }
-  }
-  .tabbar {
-    min-width: 120px;
   }
 }
