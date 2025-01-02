@@ -2,6 +2,7 @@ import * as React from "react";
 import { Grid, Paper, TextField, Button, CircularProgress } from "@material-ui/core";
 import SearchIcon from "@material-ui/icons/Search";
 import { VenueSearchDialog } from "../common/VenueSearchDialog";
+import { ConfirmationDialog } from '../common/ConfirmationDialog';
 import { SharePointService } from "../services/SharePointService";
 import { IDropdownItem } from "../interfaces/IFacility";
 
@@ -16,6 +17,8 @@ export const VenueDetailsSection: React.FC<IVenueDetailsSectionProps> = ({ formi
   const [departmentList, setDepartmentList] = React.useState<IDropdownItem[]>([]);
   const [departmentSectorMap, setDepartmentSectorMap] = React.useState<{ [key: string]: string }>({});
   const [isLoading, setIsLoading] = React.useState(false);
+  const [confirmationOpen, setConfirmationOpen] = React.useState(false);
+  const [selectedVenue, setSelectedVenue] = React.useState<any | null>(null);
 
   React.useEffect(() => {
     const loadData = async () => {

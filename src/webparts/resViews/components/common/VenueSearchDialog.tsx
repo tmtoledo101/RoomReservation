@@ -21,6 +21,7 @@ import { SharePointService } from "../services/SharePointService";
 import styles from "../ResViews.module.scss";
 import {validationSchema} from "../utils/validation";
 import{ validateDateTime_, validateDateRange } from "../utils/helpers";
+import { ConfirmationDialog } from "./ConfirmationDialog";
 // Validation helper functions
 
 // Validation schema
@@ -56,6 +57,9 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
   const [filteredVenueList, setFilteredVenueList] = React.useState(venueList);
   const [unavailableVenues, setUnavailableVenues] = React.useState<string[]>([]);
   const [showResults, setShowResults] = React.useState(false);
+  const [confirmDeleteDialogOpen, setConfirmDeleteDialogOpen] = React.useState(false);
+  const [selectedVenue, setSelectedVenue] = React.useState<any>(null);
+  const [selectedFormikValues, setSelectedFormikValues] = React.useState<any>(null);
 
   const handleDepartmentChange = (e: any, formik: any): void => {
     const { value } = e.target;
@@ -96,13 +100,9 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
   };
 
   const handleVenueClick = (venue: any, values: any): void => {
-    onVenueSelect(
-      venue,
-      values.fromDate,
-      values.toDate,
-      values.department
-    );
-    onClose();
+    setSelectedVenue(venue);
+    setSelectedFormikValues(values);
+    setConfirmDeleteDialogOpen(true);
   };
 
   const handleDateChange = (date: Date | null, name: string, formik: any): void => {
@@ -285,6 +285,24 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
             );
           }}
         </Formik>
+        {selectedVenue && selectedFormikValues && (
+          <ConfirmationDialog
+            open={confirmDeleteDialogOpen}
+            title="Confirm Venue Selection"
+            message={`Are you sure you want to select ${selectedVenue.value} for the period from ${moment(selectedFormikValues.fromDate).format('LLL')} to ${moment(selectedFormikValues.toDate).format('LLL')}?`}
+            onClose={() => setConfirmDeleteDialogOpen(false)}
+            onConfirm={() => {
+              onVenueSelect(
+                selectedVenue,
+                selectedFormikValues.fromDate,
+                selectedFormikValues.toDate,
+                selectedFormikValues.department
+              );
+              onClose();
+              setConfirmDeleteDialogOpen(false);
+            }}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );

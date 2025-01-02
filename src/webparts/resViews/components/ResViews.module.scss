@@ -95,4 +95,16 @@
   table {
     width: 75%;
   }
+
+  .closeBtn {
+    position: absolute;
+    top: 0;
+    right: 0;
+    cursor: pointer;
+    z-index: 1;
+    padding: 0;
+    background: none;
+    border: none;
+    outline: none;
+  }
 }
