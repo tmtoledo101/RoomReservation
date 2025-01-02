@@ -41,10 +41,11 @@ export const CustomTable: React.FC<ICustomTableProps> = ({ title, data, onView }
           title: "Venue",
           field: "venue",
         },
-        {
+        /*{
           title: "Reference No.",
           field: "referenceNumber",
         },
+
         {
           title: "Purpose of Use",
           field: "purposeOfUse",
@@ -53,6 +54,7 @@ export const CustomTable: React.FC<ICustomTableProps> = ({ title, data, onView }
           title: "Number of Participants",
           field: "numberOfParticipants",
         },
+        */
         {
           title: "Requested By",
           field: "requestedBy",
@@ -65,10 +67,12 @@ export const CustomTable: React.FC<ICustomTableProps> = ({ title, data, onView }
           title: "Contact No.",
           field: "contactNumber",
         },
+        /*
         {
           title: "Status",
           field: "status",
         },
+       */ 
       ]}
       data={data}
       options={{

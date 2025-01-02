@@ -21,7 +21,7 @@ export const CustomDateTimePicker: React.FC<ICustomDateTimePickerProps> = ({ nam
               <DatePicker
                 clearable
                 autoOk
-                format="MM/dd/yyyy hh:mm a"
+                format="MM/dd/yyyy"
                 value={field.value ? field.value : null}
                 onChange={(e: Date | null) => {
                   form.setFieldValue(name, e);

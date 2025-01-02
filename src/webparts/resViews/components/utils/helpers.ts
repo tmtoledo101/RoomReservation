@@ -9,7 +9,7 @@ export const formatDate = (dateString: string): string => {
 };
 
 export const validateDateTime = (fromDate: Date, toDate: Date): boolean => {
-  return moment(toDate).isAfter(moment(fromDate));
+  return moment(toDate).isSameOrAfter(moment(fromDate));
 };
 
 export const dateConverter = (date: string, type: number): string => {
