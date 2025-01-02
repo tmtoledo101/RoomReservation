@@ -40,6 +40,8 @@ export const CustomTable: React.FC<ICustomTableProps> = ({ title, data, onView }
         {
           title: "Venue",
           field: "venue",
+          customFilterAndSearch: (term: string, rowData: ITableItem) => 
+            term === rowData.venue
         },
         /*{
           title: "Reference No.",
