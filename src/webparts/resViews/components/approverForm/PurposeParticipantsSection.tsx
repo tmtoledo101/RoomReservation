@@ -7,9 +7,8 @@ export const PurposeParticipantsSection: React.FC<{
   purposeOfUseList: IDropdownItem[];
 }> = ({ formik, purposeOfUseList }) => {
   const participantOptions = [
-    { id: "Non-BSP Personnel", value: "Non-BSP Personnel" },
-    { id: "Personnel from other BSP Office", value: "Personnel from other BSP Office" },
-    { id: "BSP-QC Personnel", value: "BSP-QC Personnel" }
+    { id: "Non-BSP", value: "Non-BSP" },
+    { id: "BSP-Personnel", value: "BSP-Personnel" }
   ];
 
   return (

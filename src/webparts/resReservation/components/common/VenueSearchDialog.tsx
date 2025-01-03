@@ -1,4 +1,5 @@
 import * as React from "react";
+import * as moment from "moment";
 import {
   TextField,
   List,
@@ -11,6 +12,8 @@ import {
 } from "@material-ui/core";
 import SearchIcon from "@material-ui/icons/Search";
 import { Formik } from "formik";
+
+
 import { ModalPopup } from "./ModalPopup";
 import { CustomDateTimePicker, Dropdown } from "./FormComponents";
 import { validationSchema } from "../utils/validation";
@@ -70,7 +73,17 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
 
     setFilteredVenueList(newVenue);
     formik.setFieldValue("department", value);
-    setSelectedBuilding("");
+    formik.setFieldTouched("department", true);
+    formik.setFieldValue("department", value);
+    setShowResults(false);
+  };
+
+  const handleBuildingChange = (e: any, formik: any): void => {
+    const { value } = e.target;
+    setSelectedBuilding(value);
+    formik.setFieldValue("building", value);
+    formik.setFieldTouched("building", true);
+    formik.setFieldValue("building", value);
     setShowResults(false);
   };
 
@@ -168,11 +181,26 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
                 <Grid item xs={12}>
                   <div className={styles.width}>
                     <div className={styles.label}>Department</div>
-                    <Dropdown
-                      items={departmentList}
-                      name="department"
-                      handleChange={(e) => handleDepartmentChange(e, formik)}
-                    />
+                      <TextField
+                         select
+                        fullWidth
+                        variant="outlined"
+                        name="department"
+                        value={formik.values.department}
+                        onChange={(e) => handleDepartmentChange(e, formik)}
+                        error={formik.touched.department && Boolean(formik.errors.department)}
+                        helperText={formik.touched.department && formik.errors.department}
+                        SelectProps={{
+                          native: true
+                        }}
+                        >
+                        <option value="">Select Department</option>
+                        {departmentList.map((dept) => (
+                        <option key={dept.id} value={dept.value}>
+                        {dept.value}
+                        </option>
+                        ))}
+                      </TextField>
                   </div>
                 </Grid>
 
@@ -184,11 +212,11 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
                       select
                       fullWidth
                       variant="outlined"
-                      value={selectedBuilding}
-                      onChange={(e) => {
-                        setSelectedBuilding(e.target.value);
-                        setShowResults(false);
-                      }}
+                      name="building"
+                      value={formik.values.building}
+                      onChange={(e) => handleBuildingChange(e, formik)}
+                      error={formik.touched.building && Boolean(formik.errors.building)}
+                      helperText={formik.touched.building && formik.errors.building}
                       SelectProps={{
                         native: true
                       }}
@@ -283,10 +311,11 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
         onClose={() => setConfirmationOpen(false)}
         onConfirm={handleConfirmVenue}
         title="Confirm Venue Booking"
-        message={`Do you want to book this venue: ${selectedVenue && selectedVenue.value ? selectedVenue.value : ''}`}
+        message={`Do you want to book this venue: ${selectedVenue && selectedVenue.value ? selectedVenue.value : ''} ${selectedFormikValues ? `for the period from ${moment(selectedFormikValues.fromDate).format('LLL')} to ${moment(selectedFormikValues.toDate).format('LLL')}` : ''}?`}
         confirmLabel="Book Venue"
         cancelLabel="Cancel"
       />
+
     </>
   );
 };

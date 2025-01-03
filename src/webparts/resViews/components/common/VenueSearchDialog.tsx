@@ -22,6 +22,7 @@ import styles from "../ResViews.module.scss";
 import {validationSchema} from "../utils/validation";
 import{ validateDateTime_, validateDateRange } from "../utils/helpers";
 import { ConfirmationDialog } from "./ConfirmationDialog";
+import { ModalPopup } from "./ModalPopup";
 // Validation helper functions
 
 // Validation schema
@@ -126,8 +127,9 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
   };
 
   return (
-    <Dialog
+    <ModalPopup
       open={open}
+      title=""
       onClose={onClose}
       maxWidth="lg"
       fullWidth={true}
@@ -304,6 +306,6 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
           />
         )}
       </DialogContent>
-    </Dialog>
+    </ModalPopup>
   );
 };

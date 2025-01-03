@@ -29,6 +29,7 @@ import { CRSDFieldsSection } from "./approverForm/CRSDFieldsSection";
 import { DateTimeSection } from "./approverForm/DateTimeSection";
 import { PurposeParticipantsSection } from "./approverForm/PurposeParticipantsSection";
 import { FacilitiesSection } from "./approverForm/FacilitiesSection";
+import { ModalPopup } from "./common/ModalPopup";
 
 interface IApproverReservationFormProps {
   isOpen: boolean;
@@ -244,13 +245,14 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
 
   return (
     <>
-      <Dialog 
+      <ModalPopup 
         open={isOpen} 
+        title=""
         onClose={onClose}
         maxWidth="lg"
         fullWidth
-        disableBackdropClick={isSubmitting}
-        disableEscapeKeyDown={isSubmitting}
+        //disableBackdropClick={isSubmitting}
+        //disableEscapeKeyDown={isSubmitting}
       >
         <DialogTitle>
           Modify Reservation Request - {selectedReservation.referenceNumber}
@@ -344,7 +346,7 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
             )}
           </Formik>
         </DialogContent>
-      </Dialog>
+      </ModalPopup>
 
       <Snackbar 
         open={notification.show} 
