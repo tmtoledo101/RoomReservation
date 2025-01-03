@@ -56,7 +56,7 @@ export default class ResViews extends React.Component<IResViewsProps, IResViewSt
           this.props.siteUrl +
             "/SitePages/DisplayReservation_appge.aspx?pid=" +
             rowData.ID,
-          "_self"
+          "_blank"
         );
       }
     }
