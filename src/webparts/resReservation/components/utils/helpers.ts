@@ -1,6 +1,92 @@
 import * as moment from "moment";
 import { sp } from "@pnp/sp";
 import { IEmailProperties } from "@pnp/sp/sputilities";
+import "@pnp/sp/sputilities";
+import { graph } from "@pnp/graph";
+import "@pnp/graph/users";
+import "@pnp/graph/messages";
+
+interface IEmailResult {
+  success: boolean;
+  error?: string;
+}
+
+const validateEmailProps = (emailProps: IEmailProperties): string | null => {
+  if (!emailProps.To || emailProps.To.length === 0) {
+    return "Recipient (To) email address is required";
+  }
+  
+  if (!emailProps.Subject) {
+    return "Email subject is required";
+  }
+  
+  if (!emailProps.Body) {
+    return "Email body is required";
+  }
+
+  // Basic email format validation for To and CC recipients
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const invalidTo = emailProps.To.some(email => !emailRegex.test(email));
+  if (invalidTo) {
+    return "Invalid recipient email address format";
+  }
+
+  if (emailProps.CC && emailProps.CC.length > 0) {
+    const invalidCC = emailProps.CC.some(email => !emailRegex.test(email));
+    if (invalidCC) {
+      return "Invalid CC email address format";
+    }
+  }
+
+  return null;
+};
+
+const sendEnhancedEmail = async (emailProps: IEmailProperties): Promise<IEmailResult> => {
+  try {
+    // Validate email properties
+    const validationError = validateEmailProps(emailProps);
+    if (validationError) {
+      return {
+        success: false,
+        error: validationError
+      };
+    }
+
+    if (emailProps.From) {
+      try {
+        // Send using PnP utility method
+        await sp.utility.sendEmail({
+          ...emailProps,
+          AdditionalHeaders: {
+            "content-type": "text/html",
+            "X-SendAs": emailProps.From
+          }
+        });
+        return { success: true };
+      } catch (error) {
+        console.error("Failed to send email via Graph API:", error);
+        
+        // Fallback to SharePoint if Graph API fails
+        console.warn("Falling back to SharePoint email service");
+        await sp.utility.sendEmail(emailProps);
+        return { 
+          success: true,
+          error: "Used fallback SharePoint email service" 
+        };
+      }
+    } else {
+      // No From address specified, use SharePoint system account
+      await sp.utility.sendEmail(emailProps);
+      return { success: true };
+    }
+  } catch (error) {
+    console.error("Failed to send email:", error);
+    return {
+      success: false,
+      error: error.message || "Failed to send email"
+    };
+  }
+};
 
 export const PENDING = "Pending for Approval";
 export const FSS = "FSS";
@@ -23,7 +109,7 @@ export const getCount = (count, padlen = 2) => {
   return newCount.padStart(padlen,'0');
 };
 
-export const newResEmail = async (to: Array<string>, cc: Array<string>, values: any, type: any, facilitiesAvailable: any, siteUrl: string, id) => {
+export const newResEmail = async (to: Array<string>, cc: Array<string>, values: any, type: any, facilitiesAvailable: any, siteUrl: string, id): Promise<IEmailResult> => {
   const toEmail = [...to];
   const ccEmail = [...cc];
   const emailProps: IEmailProperties = {
@@ -104,7 +190,11 @@ export const newResEmail = async (to: Array<string>, cc: Array<string>, values: 
     `;
   }
 
-  await sp.utility.sendEmail(emailProps);
+  const result = await sendEnhancedEmail(emailProps);
+  if (!result.success) {
+    console.error("Failed to send reservation email:", result.error);
+  }
+  return result;
 };
 
 export const checkRoomAvailability = async (venueId: string, fromDate: string, toDate: string) => {
