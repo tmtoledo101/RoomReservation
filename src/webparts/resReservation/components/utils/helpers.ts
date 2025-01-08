@@ -44,6 +44,7 @@ const validateEmailProps = (emailProps: IEmailProperties): string | null => {
 const sendEnhancedEmail = async (emailProps: IEmailProperties): Promise<IEmailResult> => {
   try {
     // Validate email properties
+    console.log("Sending email From:", emailProps.From);
     const validationError = validateEmailProps(emailProps);
     if (validationError) {
       return {
@@ -55,6 +56,7 @@ const sendEnhancedEmail = async (emailProps: IEmailProperties): Promise<IEmailRe
     if (emailProps.From) {
       try {
         // Send using PnP utility method
+        console.log("Sending email via Graph API");
         await sp.utility.sendEmail({
           ...emailProps,
           AdditionalHeaders: {
@@ -122,6 +124,7 @@ export const newResEmail = async (to: Array<string>, cc: Array<string>, values: 
       "content-type": "application/json;odata=verbose",
     }
   };
+  emailProps.From = "TDO365ASMEDEV1_SYS@bsp.gov.ph"; 
   
   if(type === 1) {
     emailProps.Subject = `New Room Reservation Request: ${id}. Date of Use: ${dateFormat(values.fromDate)} to ${dateFormat(values.toDate)}`;

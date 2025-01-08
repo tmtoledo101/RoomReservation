@@ -46,25 +46,50 @@ export const VenueDetailsSection: React.FC<IVenueDetailsSectionProps> = ({ formi
     loadData();
   }, [formik.values.requestedBy]); // Add dependency on requestedBy
 
-  const formatDateTime12Hour = (date: Date | null): string => {
-    if (!date) return "";
-    let hours = date.getHours();
-    const minutes = date.getMinutes();
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12;
-    hours = hours ? hours : 12;
-    const formattedMinutes = minutes < 10 ? '0' + minutes : minutes;
-    return `${date.toLocaleDateString()} ${hours}:${formattedMinutes} ${ampm}`;
+  const formatDateTime12Hour = (dateInput: Date | null): string => {
+    if (!dateInput) return "";
+    
+    try {
+      // Ensure we have a valid Date object
+      const date = new Date(dateInput);
+      if (isNaN(date.getTime())) {
+        console.error('Invalid date provided to formatDateTime12Hour');
+        return "";
+      }
+
+      let hours = date.getHours();
+      const minutes = date.getMinutes();
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+      const formattedMinutes = minutes < 10 ? '0' + minutes : minutes;
+      return `${date.toLocaleDateString()} ${hours}:${formattedMinutes} ${ampm}`;
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return "";
+    }
   };
 
   const handleVenueSelect = (venue: any, fromDate: Date | null, toDate: Date | null, department: string) => {
-    formik.setFieldValue('building', venue.building);
-    formik.setFieldValue('venue', venue.value);
-    
-    // Format dates consistently with the 12-hour format
-    if (fromDate) formik.setFieldValue('fromDate', formatDateTime12Hour(fromDate));
-    if (toDate) formik.setFieldValue('toDate', formatDateTime12Hour(toDate));
-    if (department) formik.setFieldValue('department', department);
+    try {
+      formik.setFieldValue('building', venue.building);
+      formik.setFieldValue('venue', venue.value);
+      
+      // Ensure dates are valid before formatting and setting
+      if (fromDate instanceof Date && !isNaN(fromDate.getTime())) {
+        formik.setFieldValue('fromDate', formatDateTime12Hour(fromDate));
+      }
+      
+      if (toDate instanceof Date && !isNaN(toDate.getTime())) {
+        formik.setFieldValue('toDate', formatDateTime12Hour(toDate));
+      }
+      
+      if (department) {
+        formik.setFieldValue('department', department);
+      }
+    } catch (error) {
+      console.error('Error in handleVenueSelect:', error);
+    }
   };
 
   return (

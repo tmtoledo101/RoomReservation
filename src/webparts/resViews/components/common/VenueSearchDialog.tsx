@@ -294,14 +294,33 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
             message={`Are you sure you want to select ${selectedVenue.value} for the period from ${moment(selectedFormikValues.fromDate).format('LLL')} to ${moment(selectedFormikValues.toDate).format('LLL')}?`}
             onClose={() => setConfirmDeleteDialogOpen(false)}
             onConfirm={() => {
-              onVenueSelect(
-                selectedVenue,
-                selectedFormikValues.fromDate,
-                selectedFormikValues.toDate,
-                selectedFormikValues.department
-              );
-              onClose();
-              setConfirmDeleteDialogOpen(false);
+              try {
+                // Ensure we have valid dates
+                const fromDate = selectedFormikValues.fromDate ? new Date(selectedFormikValues.fromDate) : null;
+                const toDate = selectedFormikValues.toDate ? new Date(selectedFormikValues.toDate) : null;
+
+                // Validate dates
+                if (fromDate && isNaN(fromDate.getTime())) {
+                  console.error('Invalid fromDate');
+                  return;
+                }
+                if (toDate && isNaN(toDate.getTime())) {
+                  console.error('Invalid toDate');
+                  return;
+                }
+
+                // Call onVenueSelect with validated dates
+                onVenueSelect(
+                  selectedVenue,
+                  fromDate,
+                  toDate,
+                  selectedFormikValues.department
+                );
+                onClose();
+                setConfirmDeleteDialogOpen(false);
+              } catch (error) {
+                console.error('Error in venue selection confirmation:', error);
+              }
             }}
           />
         )}
