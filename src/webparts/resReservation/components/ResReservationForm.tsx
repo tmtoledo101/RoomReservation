@@ -263,6 +263,7 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
         ];
 
         await newResEmail(
+          this.props.context,
           toEmails,
           [...new Set(ccEmails)],
           formik.values,

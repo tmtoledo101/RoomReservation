@@ -41,7 +41,8 @@ export default class ResReservationWebPart extends BaseClientSideWebPart<IResRes
       ResReservation,
       {
         description: this.properties.description,
-        siteUrl: this.context.pageContext.web.absoluteUrl
+        siteUrl: this.context.pageContext.web.absoluteUrl,
+        context: this.context
       }
     );
 

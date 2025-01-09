@@ -7,7 +7,8 @@ export default class ResReservation extends React.Component<IResReservationProps
     return (
       <ResReservationForm 
         siteUrl={this.props.siteUrl}
-        description="" 
+        description=""
+        context={this.props.context}
       />
     );
   }

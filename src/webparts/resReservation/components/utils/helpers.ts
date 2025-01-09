@@ -2,9 +2,7 @@ import * as moment from "moment";
 import { sp } from "@pnp/sp";
 import { IEmailProperties } from "@pnp/sp/sputilities";
 import "@pnp/sp/sputilities";
-import { graph } from "@pnp/graph";
-import "@pnp/graph/users";
-import "@pnp/graph/messages";
+import { MSGraphClient } from "@microsoft/sp-http";
 
 interface IEmailResult {
   success: boolean;
@@ -41,7 +39,7 @@ const validateEmailProps = (emailProps: IEmailProperties): string | null => {
   return null;
 };
 
-const sendEnhancedEmail = async (emailProps: IEmailProperties): Promise<IEmailResult> => {
+const sendEnhancedEmail = async (context: any, emailProps: IEmailProperties): Promise<IEmailResult> => {
   try {
     // Validate email properties
     console.log("Sending email From:", emailProps.From);
@@ -55,14 +53,26 @@ const sendEnhancedEmail = async (emailProps: IEmailProperties): Promise<IEmailRe
 
     if (emailProps.From) {
       try {
-        // Send using PnP utility method
+        // Send using Microsoft Graph API
         console.log("Sending email via Graph API");
-        await sp.utility.sendEmail({
-          ...emailProps,
-          AdditionalHeaders: {
-            "content-type": "text/html",
-            "X-SendAs": emailProps.From
-          }
+        const graphClient: MSGraphClient = await context.msGraphClientFactory.getClient();
+        await graphClient.api(`/users/${emailProps.From}/sendMail`).post({
+          message: {
+            subject: emailProps.Subject,
+            body: {
+              contentType: "HTML",
+              content: emailProps.Body
+            },
+            toRecipients: emailProps.To.map(email => ({
+              emailAddress: { address: email }
+            })),
+            ...(emailProps.CC && emailProps.CC.length > 0 ? {
+              ccRecipients: emailProps.CC.map(email => ({
+                emailAddress: { address: email }
+              }))
+            } : {})
+          },
+          saveToSentItems: true
         });
         return { success: true };
       } catch (error) {
@@ -111,11 +121,11 @@ export const getCount = (count, padlen = 2) => {
   return newCount.padStart(padlen,'0');
 };
 
-export const newResEmail = async (to: Array<string>, cc: Array<string>, values: any, type: any, facilitiesAvailable: any, siteUrl: string, id): Promise<IEmailResult> => {
+export const newResEmail = async (context: any, to: Array<string>, cc: Array<string>, values: any, type: any, facilitiesAvailable: any, siteUrl: string, id): Promise<IEmailResult> => {
   const toEmail = [...to];
   const ccEmail = [...cc];
   const emailProps: IEmailProperties = {
-    From: "TDO365ASMEDEV1_SYS@bsp.gov.ph",
+    From: "DO365ASMEDEV1_SYS@bsp.gov.ph",
     To: toEmail,
     CC: ccEmail,
     Subject: '',
@@ -124,7 +134,7 @@ export const newResEmail = async (to: Array<string>, cc: Array<string>, values: 
       "content-type": "application/json;odata=verbose",
     }
   };
-  emailProps.From = "TDO365ASMEDEV1_SYS@bsp.gov.ph"; 
+  //emailProps.From = "TDO365ASMEDEV1_SYS@bsp.gov.ph"; 
   
   if(type === 1) {
     emailProps.Subject = `New Room Reservation Request: ${id}. Date of Use: ${dateFormat(values.fromDate)} to ${dateFormat(values.toDate)}`;
@@ -193,7 +203,7 @@ export const newResEmail = async (to: Array<string>, cc: Array<string>, values: 
     `;
   }
 
-  const result = await sendEnhancedEmail(emailProps);
+  const result = await sendEnhancedEmail(context, emailProps);
   if (!result.success) {
     console.error("Failed to send reservation email:", result.error);
   }
