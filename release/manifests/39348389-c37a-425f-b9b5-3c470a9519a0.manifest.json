@@ -2,7 +2,7 @@
   "id": "39348389-c37a-425f-b9b5-3c470a9519a0",
   "alias": "ResReservationWebPart",
   "componentType": "WebPart",
-  "version": "0.0.1",
+  "version": "2.0.0",
   "manifestVersion": 2,
   "requiresCustomScript": false,
   "supportsFullBleed": true,
@@ -16,14 +16,14 @@
         "default": "Other"
       },
       "title": {
-        "default": "ResReservation"
+        "default": "ResReservation_2025"
       },
       "description": {
         "default": "ResReservation description"
       },
       "officeFabricIconFontName": "Page",
       "properties": {
-        "description": "ResReservation"
+        "description": "ResReservation_2025"
       }
     }
   ],
@@ -35,7 +35,7 @@
     "scriptResources": {
       "res-reservation-web-part": {
         "type": "path",
-        "path": "res-reservation-web-part_2bd0cf06f89b59566e12.js"
+        "path": "res-reservation-web-part_79f3948868d6ec73a9d3.js"
       },
       "ResReservationWebPartStrings": {
         "type": "path",

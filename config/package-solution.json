@@ -10,6 +10,10 @@
       {
         "resource": "Microsoft Graph",
         "scope": "Mail.Send"
+      },
+      {
+        "resource": "Microsoft Graph",
+        "scope": "User.Read"
       }
     ]
   },

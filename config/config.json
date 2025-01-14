@@ -25,12 +25,21 @@
           "manifest": "./src/webparts/resViews/ResViewsWebPart.manifest.json"
         }
       ]
+    },
+    "send-email-web-part": {
+      "components": [
+        {
+          "entrypoint": "./lib/webparts/sendEmail/SendEmailWebPart.js",
+          "manifest": "./src/webparts/sendEmail/SendEmailWebPart.manifest.json"
+        }
+      ]
     }
   },
   "externals": {},
   "localizedResources": {
     "ResReservationWebPartStrings": "lib/webparts/resReservation/loc/{locale}.js",
     "ResDisplayWebPartStrings": "lib/webparts/resDisplay/loc/{locale}.js",
-    "ResViewsWebPartStrings": "lib/webparts/resViews/loc/{locale}.js"
+    "ResViewsWebPartStrings": "lib/webparts/resViews/loc/{locale}.js",
+    "SendEmailWebPartStrings": "lib/webparts/sendEmail/loc/{locale}.js"
   }
 }

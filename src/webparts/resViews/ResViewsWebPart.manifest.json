@@ -18,11 +18,11 @@
   "preconfiguredEntries": [{
     "groupId": "5c03119e-3074-46fd-976b-c60198311f70", // Other
     "group": { "default": "Other" },
-    "title": { "default": "resViews" },
+    "title": { "default": "resViews_2025" },
     "description": { "default": "it will display all the data stored for reservation" },
     "officeFabricIconFontName": "Page",
     "properties": {
-      "description": "resViews"
+      "description": "resViews_2025"
     }
   }]
 }

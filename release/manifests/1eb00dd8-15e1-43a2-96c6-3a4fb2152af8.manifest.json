@@ -2,7 +2,7 @@
   "id": "1eb00dd8-15e1-43a2-96c6-3a4fb2152af8",
   "alias": "ResDisplayWebPart",
   "componentType": "WebPart",
-  "version": "0.0.1",
+  "version": "2.0.0",
   "manifestVersion": 2,
   "requiresCustomScript": false,
   "supportsFullBleed": true,
@@ -16,14 +16,14 @@
         "default": "Other"
       },
       "title": {
-        "default": "resDisplay"
+        "default": "resDisplay_2025"
       },
       "description": {
         "default": "display reservation details"
       },
       "officeFabricIconFontName": "Page",
       "properties": {
-        "description": "resDisplay"
+        "description": "resDisplay_2025"
       }
     }
   ],
@@ -35,7 +35,7 @@
     "scriptResources": {
       "res-display-web-part": {
         "type": "path",
-        "path": "res-display-web-part_b200464dd418a40966f6.js"
+        "path": "res-display-web-part_7c6838db41d4c5045c68.js"
       },
       "ResDisplayWebPartStrings": {
         "type": "path",

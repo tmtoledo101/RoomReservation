@@ -2,7 +2,7 @@
   "id": "a6262c6d-135a-4b42-9128-78326e69df27",
   "alias": "ResViewsWebPart",
   "componentType": "WebPart",
-  "version": "0.0.1",
+  "version": "2.0.0",
   "manifestVersion": 2,
   "requiresCustomScript": false,
   "supportsFullBleed": true,
@@ -16,14 +16,14 @@
         "default": "Other"
       },
       "title": {
-        "default": "resViews"
+        "default": "resViews_2025"
       },
       "description": {
         "default": "it will display all the data stored for reservation"
       },
       "officeFabricIconFontName": "Page",
       "properties": {
-        "description": "resViews"
+        "description": "resViews_2025"
       }
     }
   ],
@@ -35,7 +35,7 @@
     "scriptResources": {
       "res-views-web-part": {
         "type": "path",
-        "path": "res-views-web-part_17054ca74d87a4712199.js"
+        "path": "res-views-web-part_32a983625d39b9b5e4b4.js"
       },
       "@microsoft/sp-loader": {
         "type": "component",
