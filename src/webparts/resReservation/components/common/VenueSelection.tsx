@@ -66,39 +66,33 @@ export const VenueSelection: React.FC<IVenueSelectionProps> = ({
 
   return (
     <>
-      <Grid container spacing={2}>
-        <Grid item xs={5}>
-          <div className={styles.width}>
-            <div className={styles.label}>Building</div>
-            <CustomInput
-              name="building"
-              disabled
-            />
-          </div>
-        </Grid>
-
-        <Grid item xs={5}>
-          <div className={styles.width}>
-            <div className={styles.label}>Venue</div>
-            <CustomInput
-              name="venue"
-              disabled
-            />
-          </div>
-        </Grid>
-
+      <Grid container spacing={2} alignItems="flex-end">
         <Grid item xs={2}>
-          <div style={{ marginTop: "32px" }}>
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<SearchIcon />}
-              onClick={() => setIsSearchOpen(true)}
-              fullWidth
-            >
-              Search
-            </Button>
-          </div>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<SearchIcon />}
+            onClick={() => setIsSearchOpen(true)}
+            fullWidth
+          >
+            Search
+          </Button>
+        </Grid>
+      </Grid>
+      <Grid container spacing={1} alignItems="flex-end">
+        <Grid item xs={5}>
+          <div className={styles.label}>Building</div>
+          <CustomInput
+            name="building"
+            disabled
+          />
+        </Grid>
+        <Grid item xs={5} style={{ marginLeft: '75px' }}>
+          <div className={styles.label}>Venue</div>
+          <CustomInput
+            name="venue"
+            disabled
+          />
         </Grid>
       </Grid>
 
