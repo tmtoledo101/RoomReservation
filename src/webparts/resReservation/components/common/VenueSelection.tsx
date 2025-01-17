@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Grid, Button } from "@material-ui/core";
+import { Grid, Button, CircularProgress } from "@material-ui/core";
 import SearchIcon from "@material-ui/icons/Search";
 import { useFormikContext } from "formik";
 import * as moment from "moment";
@@ -32,7 +32,12 @@ export const VenueSelection: React.FC<IVenueSelectionProps> = ({
   facilitiesAvailable,
 }) => {
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
   const formik = useFormikContext<any>();
+
+  React.useEffect(() => {
+    setIsLoading(!formik.values.requestedBy);
+  }, [formik.values.requestedBy]);
 
   const handleVenueSelect = (venue: any, fromDate: Date | null, toDate: Date | null, department: string) => {
     // Set department value
@@ -71,11 +76,12 @@ export const VenueSelection: React.FC<IVenueSelectionProps> = ({
           <Button
             variant="contained"
             color="primary"
-            startIcon={<SearchIcon />}
+            startIcon={isLoading ? <CircularProgress size={20} /> : <SearchIcon />}
             onClick={() => setIsSearchOpen(true)}
             fullWidth
+            disabled={isLoading}
           >
-            Search
+            {isLoading ? 'Loading...' : 'Search'}
           </Button>
         </Grid>
       </Grid>
