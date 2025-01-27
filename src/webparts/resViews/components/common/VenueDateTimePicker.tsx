@@ -40,9 +40,9 @@ export const VenueDateTimePicker: React.FC<IVenueDateTimePickerProps> = ({ name,
                 views={["date", "hours", "minutes"]}
               />
             </MuiPickersUtilsProvider>
-            {error && touched ? (
-              <span className={styles.error}>{error}</span>
-            ) : null}
+            {error && touched && (
+              <div className={styles.error} style={{ color: 'red', marginTop: '4px', fontSize: '0.75rem' }}>{error}</div>
+            )}
           </FormControl>
         );
       }}
