@@ -280,11 +280,11 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
         isSavingDone: true,
         saveDialog: false,
       });
-      /*
+    
       setTimeout(() => {
         window.location.href = this.props.siteUrl + "/SitePages/Home.aspx";
       }, 1500);
-      */
+    
     } catch (error) {
       console.error('Error in handleSave:', error);
       this.setState({
@@ -387,7 +387,7 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
                         type="button"
                         variant="contained"
                         startIcon={<CloseIcon />}
-                        //onClick={() => window.location.href = this.props.siteUrl + "/SitePages/Home.aspx"}
+                        onClick={() => window.location.href = this.props.siteUrl + "/SitePages/Home.aspx"}
                         style={{ color: "lightgrey", background: "grey" }}
                       >
                         Close

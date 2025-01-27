@@ -40,73 +40,106 @@ export default function SendEmail(props: ISendEmailProps): JSX.Element {
         return;
       }
 
+      // Get the Graph client
       const graphClient: MSGraphClient = await props.context.msGraphClientFactory.getClient();
-      
-      // First try with /me endpoint
+
+      // Get user's profile for proper routing
+      const userProfile = await graphClient
+        .api('/me')
+        .select('mail,userPrincipalName')
+        .get();
+
+      console.log('User profile:', userProfile);
+
       try {
-        await graphClient.api('/me/sendMail').post({
-          message: {
-            subject: "Hello from SendEmail Webpart",
-            body: {
-              contentType: "HTML",
-              content: "Hello, World!"
+        console.log('Attempting to send email using v1.0 endpoint');
+        
+        const response = await graphClient
+          .api('/me/sendMail')
+          .version('v1.0')
+          .post({
+            message: {
+              subject: "Hello from SendEmail Webpart",
+              body: {
+                contentType: "HTML",
+                content: `<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+</head>
+<body>
+  <div style="font-family: Arial, sans-serif;">
+    Hello, World!
+  </div>
+</body>
+</html>`
+              },
+              toRecipients: [{
+                emailAddress: {
+                  address: "tmtoledo@kpmg.com"
+                }
+              }]
             },
-            toRecipients: [{
-              emailAddress: {
-                address: "tmtoledo@kpmg.com"
-              }
-            }],
-            from: {
-              emailAddress: {
-                address: currentUser
-              }
-            }
-          },
-          saveToSentItems: true
+            saveToSentItems: true
+          });
+
+        console.log('Email sent successfully:', {
+          userProfile,
+          response
         });
-      } catch (error) {
-        // If /me endpoint fails, try with /users endpoint
-        console.log("Falling back to /users endpoint...");
-        await graphClient.api(`/users/${currentUser}/sendMail`).post({
-          message: {
-            subject: "Hello from SendEmail Webpart",
-            body: {
-              contentType: "HTML",
-              content: "Hello, World!"
-            },
-            toRecipients: [{
-              emailAddress: {
-                address: "tmtoledo@kpmg.com"
-              }
-            }]
-          },
-          saveToSentItems: true
-        });
+        
+        alert('Email sent successfully!');
+      } catch (err) {
+        console.error('Failed to send email:', err);
+        throw err;
       }
 
-      alert('Email sent successfully!');
     } catch (error) {
       console.error("Failed to send email:", error);
       let errorMessage = "An error occurred while sending the email. ";
       
-      if (error.message.includes("Access denied")) {
+      if ( error &&
+        error.message &&
+        (error.message.includes("Access denied") || error.message.includes("5.7.708"))) {
         errorMessage += `
           The system is not allowing emails from this location. This could be due to:
           1. IP restrictions in your Microsoft 365 tenant
           2. Conditional Access policies
           3. Exchange Online Protection settings
           
-          Please contact your administrator to:
-          - Check Exchange Online Protection settings
-          - Verify Conditional Access policies
-          - Review IP restrictions for email sending
-          - Ensure the account has proper Exchange Online licenses`;
-      } else if (error.message.includes("Token request")) {
-        errorMessage += "Please ensure you are logged in to SharePoint and try again. If the issue persists, you may need to refresh the page.";
-      } else if (error.message.includes("permission")) {
-        errorMessage += "You may not have the required permissions. Please contact your administrator.";
+          Technical Details:
+          - Error Code: ${error.code || 'N/A'}
+          - Status Code: ${error.statusCode || 'N/A'}
+          - Request ID: ${error.requestId || 'N/A'}
+          
+          Recommended Actions:
+          1. Try accessing Outlook Web Access (OWA) directly to verify your account
+          2. Contact your administrator to:
+             - Check Exchange Online Protection settings
+             - Verify Conditional Access policies
+             - Review IP restrictions for email sending
+             - Ensure proper Exchange Online licenses
+          3. Consider using a different network or VPN if available`;
+      } else if ((error.message && error.message.includes("Token")) ||
+                (error.message && error.message.includes("authentication"))) {
+        errorMessage += `
+          Authentication error detected. Please try:
+          1. Logging out and back in to SharePoint
+          2. Clearing browser cache and cookies
+          3. Using a private/incognito window
+          4. Requesting a new authentication token`;
+      } else if (error.message && error.message.includes("permission")) {
+        errorMessage += `
+          Permission error detected. Required permissions:
+          - Mail.Send
+          - Mail.Send.Shared
+          - User.Read
+          
+          Please contact your administrator to grant necessary permissions.`;
       } else {
-        errorMessage += error.message;
+        errorMessage += `
+          Unexpected error: ${error.message}
+          
+          Please try again later or contact support if the issue persists.`;
       }
       
       setError(errorMessage);

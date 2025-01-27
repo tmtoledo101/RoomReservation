@@ -36,7 +36,7 @@ export const CustomInput = (props) => {
               className={styles.width}
             />
             {error && touched && (
-              <div className={styles.error}>{error}</div>
+              <div className={styles.error} style={{ color: 'red', marginTop: '4px', fontSize: '0.75rem' }}>{error}</div>
             )}
           </FormControl>
         );
@@ -99,7 +99,7 @@ export const Dropdown = (props) => {
               ))}
             </Select>
             {error && touched && (
-              <div className={styles.error}>{error}</div>
+              <div className={styles.error} style={{ color: 'red', marginTop: '4px', fontSize: '0.75rem' }}>{error}</div>
             )}
           </FormControl>
         );
@@ -140,7 +140,7 @@ export const CustomDateTimePicker = (props) => {
               />
             </MuiPickersUtilsProvider>
             {error && touched && (
-              <div className={styles.error}>{error}</div>
+              <div className={styles.error} style={{ color: 'red', marginTop: '4px', fontSize: '0.75rem' }}>{error}</div>
             )}
           </FormControl>
         );
