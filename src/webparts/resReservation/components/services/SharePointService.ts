@@ -19,15 +19,11 @@ export class SharePointService {
     console.log("Terence, here is the user : " + email);
     const deparmentData = await sp.web.lists
       .getByTitle("UsersPerDepartment")
-      .items.select(
-        "EmployeeName/EMail",
-        "Department/Department",
-      //).filter(`EmployeeName/EMail eq '${email}'`)
-      ).filter(`Title eq '${email}'`)
-      .expand(
-        "Department/FieldValuesAsText",
-        "EmployeeName/EMail",
-      )
+      .items
+      .select("EmployeeName/EMail", "Department/Department")
+      .expand("Department/FieldValuesAsText", "EmployeeName/EMail")
+      .filter(`Title eq '${email}'`)  // or EmployeeName/EMail eq ...
+      .top(5000)                      // optional if you expect < 5000 results
       .get();
       
     const deparmentList = await sp.web.lists
@@ -117,6 +113,7 @@ export class SharePointService {
         Status ne 'Cancelled' and Status ne 'Rejected' and
         ((FromDate le '${moment(toDate).toISOString()}' and ToDate ge '${moment(fromDate).toISOString()}'))
       `)
+      .top(5000)
       .get();
 
     // Return list of venue names that are already booked

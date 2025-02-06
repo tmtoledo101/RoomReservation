@@ -65,7 +65,6 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
   const handleDepartmentChange = (e: any, formik: any): void => {
     const { value } = e.target;
     let newVenue = venueList;
-    
     if (value && departmentSectorMap[value] !== "FSS") {
       newVenue = venueList.filter((item) => item.exclusiveTo !== "FSS");
     }

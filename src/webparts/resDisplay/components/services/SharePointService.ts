@@ -52,7 +52,9 @@ export class SharePointService {
         "Department/FieldValuesAsText",
         "EmployeeName/EMail",
       )
+      .top(5000)                      // optional if you expect < 5000 results
       .get();
+      
 
     const deparmentList: any[] = await sp.web.lists
       .getByTitle("Department")

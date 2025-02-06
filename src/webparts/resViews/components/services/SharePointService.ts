@@ -91,20 +91,56 @@ export class SharePointService {
     }
   }
 
+  private static async getDepartmentsBatch(departmentNames: string[]): Promise<any[]> {
+    const BATCH_SIZE = 10; // Process 10 departments at a time
+    const allResults = [];
+    
+    for (let i = 0; i < departmentNames.length; i += BATCH_SIZE) {
+      const batchDepts = departmentNames.slice(i, i + BATCH_SIZE);
+      const filterQuery = batchDepts.map(dept => `Title eq '${dept}'`).join(' or ');
+      
+      try {
+        const batchResults = await sp.web.lists
+          .getByTitle("Department")
+          .items.select("Title", "Sector")
+          .filter(filterQuery)
+          .get();
+          
+        allResults.push(...batchResults);
+      } catch (error) {
+        console.error(`Error processing department batch: ${batchDepts.join(', ')}`, error);
+      }
+    }
+    
+    return allResults;
+  }
+
   public static async getDepartments(currentUserTitle: string): Promise<{
     departmentList: IDropdownItem[];
     departmentSectorMap: { [key: string]: string };
   }> {
     try {
-      // First get the user's department
-      const userDepartment = await sp.web.lists
+      // Get user's departments with pagination
+      const userDepartments = [];
+      let page = await sp.web.lists
         .getByTitle("UsersPerDepartment")
         .items.select("Department/Department")
         .filter(`Title eq '${currentUserTitle}'`)
         .expand("Department/FieldValuesAsText")
-        .get();
+        .top(100)  // Smaller batch size for better performance
+        .getPaged();
 
-      if (userDepartment.length === 0) {
+      while (true) {
+        userDepartments.push(...page.results);
+        
+        if (page.hasNext) {
+          page = await page.getNext();
+        } else {
+          break;
+        }
+      }
+
+      if (userDepartments.length === 0) {
         console.error('User department not found');
         return {
           departmentList: [],
@@ -112,22 +148,26 @@ export class SharePointService {
         };
       }
 
-      // Then get the department details
-      const departments = await sp.web.lists
-        .getByTitle("Department")
-        .items.select("Title", "Sector")
-        .filter(`Title eq '${userDepartment[0].Department.Department}'`)
-        .get();
+      // Get unique department names
+      const departmentNames = [...new Set(
+        userDepartments.map(item => item.Department.Department)
+      )];
 
+      // Get departments in batches
+      const departments = await this.getDepartmentsBatch(departmentNames);
+
+      // Process results
       const departmentList: IDropdownItem[] = [];
       const departmentSectorMap: { [key: string]: string } = {};
 
       departments.forEach(dept => {
-        departmentList.push({
-          id: dept.Title,
-          value: dept.Title
-        });
-        departmentSectorMap[dept.Title] = dept.Sector;
+        if (dept.Title && !departmentList.some(item => item.id === dept.Title)) {
+          departmentList.push({
+            id: dept.Title,
+            value: dept.Title
+          });
+          departmentSectorMap[dept.Title] = dept.Sector;
+        }
       });
 
       return {
@@ -143,42 +183,99 @@ export class SharePointService {
     }
   }
 
+  private static async getRequestItemsBatch(dateRange: string, departments: string[]): Promise<any[]> {
+    try {
+      const BATCH_SIZE = 5; // Process 5 departments at a time
+      const allResults = [];
+      
+      // Process departments in batches
+      for (let i = 0; i < departments.length; i += BATCH_SIZE) {
+        const batchDepts = departments.slice(i, i + BATCH_SIZE);
+        console.log('Processing departments:', batchDepts);
+        
+        // Create filter query for current batch
+        const filterQuery = `${dateRange} and (${batchDepts.map(dept => `Department eq '${dept}'`).join(' or ')})`;
+        
+        try {
+          // Execute query for current batch
+          const batchResults = await sp.web.lists
+            .getByTitle("Request")
+            .items.select(
+              "Id",
+              "Building",
+              "Venue",
+              "FromDate",
+              "ToDate",
+              "ReferenceNumber",
+              "PurposeOfUse",
+              "NoParticipant",
+              "RequestedBy",
+              "Department",
+              "ContactNumber",
+              "Status",
+              "Layout",
+              "ContactPerson",
+              "PrincipalUser",
+              "TitleDescription",
+              "Participant",
+              "OtherRequirement"
+            )
+            .filter(filterQuery)
+            .orderBy("Id", false)
+            .top(5000)                      // optional if you expect < 5000 results
+            .get();
+            
+          console.log(`Batch results for departments ${batchDepts.join(', ')}:`, batchResults);
+          allResults.push(...batchResults);
+        } catch (error) {
+          console.error(`Error processing batch for departments ${batchDepts.join(', ')}:`, error);
+        }
+      }
+      
+      return allResults;
+    } catch (error) {
+      console.error('Error in getRequestItemsBatch:', error);
+      return [];
+    }
+  }
+
   public static async getRequestItems(from: string, to: string, department: string[]): Promise<{
     referenceNumberList: ITableItem[];
     pastRequestList: ITableItem[];
     approvalRequest: ITableItem[];
   }> {
     const dateRange = `FromDate ge datetime'${dateConverter(from, 1)}' and ToDate le datetime'${dateConverter(to, 2)}'`;
-    let filterQuery = department.length 
-      ? `${dateRange} and ${department.map(item => `Department eq '${item}'`).join(' or ')}`
-      : dateRange;
-
-    const RequestItem: any[] = await sp.web.lists
-      .getByTitle("Request")
-      .items.select(
-        "Id",
-        "Building",
-        "Venue",
-        "FromDate",
-        "ToDate",
-        "ReferenceNumber",
-        "PurposeOfUse",
-        "NoParticipant",
-        "RequestedBy",
-        "Department",
-        "ContactNumber",
-        "Status",
-        "Layout",
-        "ContactPerson",
-        "PrincipalUser",
-        "TitleDescription",
-        "Participant",
-        "OtherRequirement"
-      )
-      .filter(filterQuery)
-      .orderBy("Id", false)
-      .get();
-
+    
+    // If no departments specified, get all items
+    const RequestItem: any[] = department.length
+      ? await this.getRequestItemsBatch(dateRange, department)
+      : await sp.web.lists
+          .getByTitle("Request")
+          .items.select(
+            "Id",
+            "Building",
+            "Venue",
+            "FromDate",
+            "ToDate",
+            "ReferenceNumber",
+            "PurposeOfUse",
+            "NoParticipant",
+            "RequestedBy",
+            "Department",
+            "ContactNumber",
+            "Status",
+            "Layout",
+            "ContactPerson",
+            "PrincipalUser",
+            "TitleDescription",
+            "Participant",
+            "OtherRequirement"
+          )
+          .filter(dateRange)
+          .orderBy("Id", false)
+          .get();
+    
+    console.log('Request items:', RequestItem);
     const itemArray1: ITableItem[] = [];
     const itemArray2: ITableItem[] = [];
     const itemArray3: ITableItem[] = [];
@@ -246,6 +343,7 @@ export class SharePointService {
         "Department/FieldValuesAsText",
         "EmployeeName/EMail",
       )
+      .top(5000)                      // optional if you expect < 5000 results
       .get();
 
     const departments = departmentData.map(item => item.Department.Department);

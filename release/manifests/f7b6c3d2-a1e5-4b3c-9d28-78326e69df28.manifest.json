@@ -43,7 +43,7 @@
     "scriptResources": {
       "send-email-web-part": {
         "type": "path",
-        "path": "send-email-web-part_7349f36f177d921798dd.js"
+        "path": "send-email-web-part_35ff463a127e13c202f7.js"
       },
       "@microsoft/sp-property-pane": {
         "type": "component",

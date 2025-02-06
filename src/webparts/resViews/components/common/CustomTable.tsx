@@ -23,6 +23,7 @@ export const CustomTable: React.FC<ICustomTableProps> = ({ title, data, onView }
             minWidth: 150,
           },
           render: (rowData) => formatDate(rowData.fromDate),
+          defaultSort: "desc"
         },
         {
           title: "Date of use - To",
@@ -86,6 +87,7 @@ export const CustomTable: React.FC<ICustomTableProps> = ({ title, data, onView }
         selection: false,
         columnsButton: false,
         exportButton: true,
+        sorting: true
       }}
       actions={[
         {
