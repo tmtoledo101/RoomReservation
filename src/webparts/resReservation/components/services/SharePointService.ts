@@ -7,12 +7,20 @@ import { Web } from "@pnp/sp/webs";
 import { IDropdownItem, IVenueItem } from "../interfaces/IResReservation";
 import { arrayToDropDownValues, dateFormat, getCount } from "../utils/helpers";
 import * as moment from "moment";
-
+import { configService } from "../../../shared/services/ConfigurationService";
+import { result } from "lodash";
 export class SharePointService {
-  private web = Web("https://bspgovph.sharepoint.com/sites/AccessControl");
+  private web = Web( configService.getAccessControlUrl() );
 
   public async getCurrentUser() {
-    return await sp.web.currentUser.get();
+
+    const user = await sp.web.currentUser.get();
+
+    const currentUser = {
+      Email: configService.isTestEnvironment() ? user.Title : user.Email,
+      Title: user.Title
+    };
+    return currentUser;
   }
 
   public async getDepartments(email: string) {
@@ -111,7 +119,7 @@ export class SharePointService {
       )
       .filter(`
         Status ne 'Cancelled' and Status ne 'Rejected' and
-        ((FromDate le '${moment(toDate).toISOString()}' and ToDate ge '${moment(fromDate).toISOString()}'))
+        ((FromDate lt '${moment(toDate).toISOString()}' and ToDate gt '${moment(fromDate).toISOString()}'))
       `)
       .top(5000)
       .get();
@@ -250,17 +258,17 @@ export class SharePointService {
 
       for (const file of files) {
         if (file.size <= 10485760) {
-          const result = await sp.web.getFolderByServerRelativeUrl(folderPath)
+          const fileUploadResult = await sp.web.getFolderByServerRelativeUrl(folderPath)
             .files.add(file.name, file, true);
-          await result.file.getItem().then(fileItem => {
+          await fileUploadResult.file.getItem().then(fileItem => {
             return fileItem.update({
               RequestId: item.data.ID
             });
           });
         } else {
-          const result = await sp.web.getFolderByServerRelativeUrl(folderPath)
+          const chunkedUploadResult = await sp.web.getFolderByServerRelativeUrl(folderPath)
             .files.addChunked(file.name, file);
-          await result.file.getItem().then(fileItem => {
+          await chunkedUploadResult.file.getItem().then(fileItem => {
             return fileItem.update({
               RequestId: item.data.ID
             });

@@ -8,10 +8,15 @@ import { IEmailProperties } from "@pnp/sp/sputilities";
 import * as moment from "moment";
 import { IFacilityData } from "../interfaces/IResDisplay";
 import { dateFormat } from "../utils/helpers";
+import { configService } from "../../../shared/services/ConfigurationService";
 
 export class SharePointService {
-  private web = Web("https://bspgovph.sharepoint.com/sites/AccessControl");
+  private web: any;
 
+  constructor() {
+    this.web = Web(configService.getAccessControlUrl());
+  }
+  
   public async getLoggedinUser() {
     return await sp.web.currentUser.get();
   }

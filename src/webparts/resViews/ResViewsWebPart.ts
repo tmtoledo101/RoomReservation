@@ -12,31 +12,33 @@ import ResViews from './components/ResViews';
 import { IResViewsProps } from './components/IResViewsProps';
 import { sp } from "@pnp/sp/presets/all";
 import { SPComponentLoader } from '@microsoft/sp-loader';
-
+import { configService } from '../shared/services/ConfigurationService';
 export interface IResViewsWebPartProps {
   description: string;
   siteUrl: string;
 }
 
 export default class ResViewsWebPart extends BaseClientSideWebPart<IResViewsWebPartProps> {
-  protected onInit(): Promise<void> {
-    return super.onInit().then(_ => {
-      SPComponentLoader.loadCss('https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap');
-      SPComponentLoader.loadCss('https://fonts.googleapis.com/icon?family=Material+Icons');
-      SPComponentLoader.loadCss('https://bspgovph.sharepoint.com/sites/ResourceReservation/Shared%20Documents/commentHide.css');
-
-      sp.setup({
-        spfxContext: this.context,
-        sp: {
-
-          headers: {
-            Accept: "application/json;odata=verbose",
-          },
-          baseUrl: this.context.pageContext.web.absoluteUrl,
-        },
-      });
-    });
-  }
+  protected async onInit(): Promise<void> {
+     return super.onInit().then(_ => {
+       // Load common CSS files
+       SPComponentLoader.loadCss('https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap');
+       SPComponentLoader.loadCss('https://fonts.googleapis.com/icon?family=Material+Icons');
+       
+       // Load environment-specific CSS
+       SPComponentLoader.loadCss(configService.getCommentHideCssUrl());
+   
+       sp.setup({
+         spfxContext: this.context,
+         sp: {
+           headers: {
+             Accept: "application/json;odata=verbose",
+           },
+           baseUrl: this.context.pageContext.web.absoluteUrl,
+         }
+       });
+     });
+   }
   public render(): void {
     const element: React.ReactElement<IResViewsProps > = React.createElement(
       ResViews,

@@ -2,8 +2,8 @@
   "$schema": "https://developer.microsoft.com/json-schemas/core-build/serve.schema.json",
   "port": 4321,
   "https": true,
-  //"initialPage": "https://s5b36.sharepoint.com/sites/DeveloperSite/_layouts/15/workbench.aspx",
-   "initialPage": "https://bspgovph.sharepoint.com/sites/ResourceReservationDev/_layouts/15/workbench.aspx",
+  //"initialPage": "https://s5b36.sharepoint.com/sites/ResourceReservationDev/_layouts/15/workbench.aspx",
+  "initialPage": "https://bspgovph.sharepoint.com/sites/ResourceReservationDev/_layouts/15/workbench.aspx",
   
   "api": {
     "port": 5432,

@@ -74,7 +74,7 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
     const currentUser = await this.spService.getCurrentUser();
     console.log("Terence, this the current user:");
     console.log(currentUser);
-    const { departments, departmentSectorMap } = await this.spService.getDepartments(currentUser.Title);
+    const { departments, departmentSectorMap } = await this.spService.getDepartments(currentUser.Email);
     const { buildings, venues } = await this.spService.getBuildings();
     const layouts = await this.spService.getLayouts();
     const purposeOfUse = await this.spService.getPurposeOfUse();

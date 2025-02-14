@@ -8,10 +8,14 @@ import { Web } from "@pnp/sp/webs";
 import { ITableItem, STATUS } from "../interfaces/IResViews";
 import { IFacilityMapItem, IDropdownItem, IFacilityData } from "../interfaces/IFacility";
 import { dateConverter } from "../utils/helpers";
-
+import { configService } from "../../../shared/services/ConfigurationService";
 export class SharePointService {
-  private static web = Web("https://bspgovph.sharepoint.com/sites/AccessControl");
-
+  
+  private web: any;
+  
+    constructor() {
+      this.web = Web(configService.getAccessControlUrl());
+    }
   public static async checkVenueAvailability(fromDate: Date, toDate: Date): Promise<string[]> {
     try {
       const reservations = await sp.web.lists
@@ -474,7 +478,7 @@ export class SharePointService {
 
   public static async getPrincipalUsers(dept: string): Promise<{ [key: string]: string[] }> {
     try {
-      const principalData = await this.web.lists.getByTitle("Employees")
+      const principalData = await sp.web.lists.getByTitle("Employees")
         .items.select("Name", "Dept")
         .filter(`Dept eq '${dept}'`)
         .get();
