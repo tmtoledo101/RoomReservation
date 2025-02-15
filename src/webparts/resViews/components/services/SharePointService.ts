@@ -9,20 +9,50 @@ import { ITableItem, STATUS } from "../interfaces/IResViews";
 import { IFacilityMapItem, IDropdownItem, IFacilityData } from "../interfaces/IFacility";
 import { dateConverter } from "../utils/helpers";
 import { configService } from "../../../shared/services/ConfigurationService";
+
+export interface IPaginatedResult<T> {
+  items: T[];
+  totalCount: number;
+  hasNextPage: boolean;
+}
+
 export class SharePointService {
-  
   private web: any;
   
-    constructor() {
-      this.web = Web(configService.getAccessControlUrl());
-    }
+  private static formatRequestItems(items: any[]): ITableItem[] {
+    return items.map((item: any) => ({
+      building: item.Building,
+      venue: item.Venue,
+      fromDate: item.FromDate,
+      toDate: item.ToDate,
+      referenceNumber: item.ReferenceNumber,
+      purposeOfUse: item.PurposeOfUse,
+      numberOfParticipants: item.NoParticipant,
+      requestedBy: item.RequestedBy,
+      department: item.Department,
+      contactNumber: item.ContactNumber,
+      status: item.Status,
+      ID: item.Id,
+      layout: item.Layout || "",
+      contactPerson: item.ContactPerson || "",
+      principal: item.PrincipalUser || "",
+      titleDesc: item.TitleDescription || "",
+      participant: item.Participant ? JSON.parse(item.Participant) : [],
+      otherRequirment: item.OtherRequirement || ""
+    }));
+  }
+
+  constructor() {
+    this.web = Web(configService.getAccessControlUrl());
+  }
+
   public static async checkVenueAvailability(fromDate: Date, toDate: Date): Promise<string[]> {
     try {
       const reservations = await sp.web.lists
         .getByTitle("Request")
         .items.select("Venue")
         .filter(`
-          Status eq '${STATUS.APPROVED}' and 
+          Status eq '${STATUS.APPROVED}' and
           ((FromDate le datetime'${toDate.toISOString()}' and ToDate ge datetime'${fromDate.toISOString()}') or
           (FromDate ge datetime'${fromDate.toISOString()}' and FromDate le datetime'${toDate.toISOString()}'))
         `)
@@ -32,6 +62,90 @@ export class SharePointService {
     } catch (error) {
       console.error('Error checking venue availability:', error);
       return [];
+    }
+  }
+
+  public static async getPaginatedRequestItems(
+    from: string,
+    to: string,
+    department: string[],
+    pageSize: number = 100,
+    pageNumber: number = 0
+  ): Promise<IPaginatedResult<ITableItem>> {
+    try {
+      const skipToken = pageNumber * pageSize;
+      const dateRange = `FromDate ge datetime'${dateConverter(from, 1)}' and ToDate le datetime'${dateConverter(to, 2)}'`;
+
+
+      // Process departments in batches
+      const BATCH_SIZE = 5; // Process 5 departments at a time
+      const batchResults: any[] = [];
+      
+      // Process each batch of departments
+      for (let i = 0; i < department.length; i += BATCH_SIZE) {
+        const batchDepts = department.slice(i, i + BATCH_SIZE);
+        const filterQuery = `${dateRange} and (${batchDepts.map(dept => `Department eq '${dept}'`).join(' or ')})`;
+        console.log('Processing departments:', batchDepts);
+        try {
+          let page = await sp.web.lists
+            .getByTitle("Request")
+            .items.select(
+              "Id",
+              "Building",
+              "Venue",
+              "FromDate",
+              "ToDate",
+              "ReferenceNumber",
+              "PurposeOfUse",
+              "NoParticipant",
+              "RequestedBy",
+              "Department",
+              "ContactNumber",
+              "Status",
+              "Layout",
+              "ContactPerson",
+              "PrincipalUser",
+              "TitleDescription",
+              "Participant",
+              "OtherRequirement"
+            )
+            .filter(filterQuery)
+            .orderBy("Id", false)
+            .getPaged();
+
+          while (page) {
+            batchResults.push(...page.results);
+            if (page.hasNext) {
+              page = await page.getNext();
+            } else {
+              break;
+            }
+          }
+        } catch (error) {
+          console.error(`Error processing batch for departments ${batchDepts.join(', ')}:`, error);
+        }
+      }
+
+      // Sort all items by ID in descending order
+      batchResults.sort((a, b) => b.Id - a.Id);
+
+      const batchCount = batchResults.length;
+
+      // Apply pagination to the combined results
+      const batchPageItems = batchResults.slice(skipToken, skipToken + pageSize);
+console.log('Batch Page Items:', batchPageItems);
+      return {
+        items: this.formatRequestItems(batchPageItems),
+        totalCount: batchCount,
+        hasNextPage: batchCount > (skipToken + pageSize)
+      };
+    } catch (error) {
+      console.error('Error fetching paginated request items:', error);
+      return {
+        items: [],
+        totalCount: 0,
+        hasNextPage: false
+      };
     }
   }
 
@@ -127,7 +241,7 @@ export class SharePointService {
     }
     
     return allResults;
-}
+  }
 
   public static async getDepartments(currentUserTitle: string): Promise<{
     departmentList: IDropdownItem[];
@@ -241,7 +355,7 @@ export class SharePointService {
 
           // Collect all pages for current batch
           while (true) {
-            console.log(`Got ${page.results.length} results for departments ${batchDepts.join(', ')}`);
+            console.log(`  For Iteration ${i} Got ${page.results.length} results for departments ${batchDepts.join(', ')}`);
             allResults.push(...page.results);
             
             if (page.hasNext) {
@@ -260,7 +374,7 @@ export class SharePointService {
       console.error('Error in getRequestItemsBatch:', error);
       return [];
     }
-}
+  }
 
   public static async getRequestItems(from: string, to: string, department: string[]): Promise<{
     referenceNumberList: ITableItem[];

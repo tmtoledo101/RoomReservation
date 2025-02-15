@@ -3,14 +3,37 @@ import MaterialTable from "material-table";
 import VisibilityIcon from "@material-ui/icons/Visibility";
 import { ITableItem } from "../interfaces/IResViews";
 import { formatDate } from "../utils/helpers";
+import CircularProgress from "@material-ui/core/CircularProgress";
 
 interface ICustomTableProps {
   title: string;
+  from: string;
+  to: string;
+  departments: string[];
   data: ITableItem[];
   onView: (event: any, data: ITableItem | ITableItem[]) => void;
+  pageSize: number;
+  currentPage: number;
+  totalCount: number;
+  isLoading: boolean;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (pageSize: number) => void;
 }
 
-export const CustomTable: React.FC<ICustomTableProps> = ({ title, data, onView }) => {
+export const CustomTable: React.FC<ICustomTableProps> = ({ 
+  title, 
+  onView, 
+  from,
+  to,
+  departments,
+  data,
+  pageSize,
+  currentPage,
+  totalCount,
+  isLoading,
+  onPageChange,
+  onPageSizeChange
+}) => {
   return (
     <MaterialTable
       title={title}
@@ -44,20 +67,6 @@ export const CustomTable: React.FC<ICustomTableProps> = ({ title, data, onView }
           customFilterAndSearch: (term: string, rowData: ITableItem) => 
             term === rowData.venue
         },
-        /*{
-          title: "Reference No.",
-          field: "referenceNumber",
-        },
-
-        {
-          title: "Purpose of Use",
-          field: "purposeOfUse",
-        },
-        {
-          title: "Number of Participants",
-          field: "numberOfParticipants",
-        },
-        */
         {
           title: "Requested By",
           field: "requestedBy",
@@ -70,24 +79,19 @@ export const CustomTable: React.FC<ICustomTableProps> = ({ title, data, onView }
           title: "Contact No.",
           field: "contactNumber",
         },
-        /*
-        {
-          title: "Status",
-          field: "status",
-        },
-       */ 
       ]}
-      data={data}
+      data={data || []}
       options={{
         filtering: true,
-        pageSize: 5,
-        pageSizeOptions: [5, 10, data.length],
+        pageSize: pageSize,
+        pageSizeOptions: [5,10, 100, 200, 500],
         search: false,
         grouping: true,
         selection: false,
         columnsButton: false,
         exportButton: true,
-        sorting: true
+        sorting: true,
+        debounceInterval: 500
       }}
       actions={[
         {
@@ -96,6 +100,28 @@ export const CustomTable: React.FC<ICustomTableProps> = ({ title, data, onView }
           onClick: onView,
         },
       ]}
+      components={{
+        OverlayLoading: () => (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
+            width: '100%',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            backgroundColor: 'rgba(255, 255, 255, 0.7)'
+          }}>
+            <CircularProgress />
+          </div>
+        )
+      }}
+      isLoading={isLoading}
+      onChangePage={onPageChange}
+      onChangeRowsPerPage={onPageSizeChange}
+      page={currentPage}
+      totalCount={totalCount}
     />
   );
 };

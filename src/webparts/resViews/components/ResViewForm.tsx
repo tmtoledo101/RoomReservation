@@ -12,25 +12,43 @@ import styles from "./ResViews.module.scss";
 interface IResViewFormProps {
   tabValue: number;
   menuTabs: string[];
-  data: ITableItem[];
   onTabChange: (event: React.ChangeEvent<{}>, value: number) => void;
   onSearch: (fromDate: Date | null, toDate: Date | null) => void;
   onView: (event: any, data: ITableItem | ITableItem[]) => void;
   onClose: () => void;
+  departments: string[];
+  pageSize: number;
+  currentPage: number;
+  totalCount: number;
+  isLoading: boolean;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (pageSize: number) => void;
+  fromDate: string | null;
+  toDate: string | null;
+  items: ITableItem[];
 }
 
 export const ResViewForm: React.FC<IResViewFormProps> = ({
   tabValue,
   menuTabs,
-  data,
   onTabChange,
   onSearch,
   onView,
   onClose,
+  departments,
+  pageSize,
+  currentPage,
+  totalCount,
+  isLoading,
+  onPageChange,
+  onPageSizeChange,
+  fromDate: initialFromDate,
+  toDate: initialToDate,
+  items
 }) => {
   const initialValues: IFormValues = {
-    fromDate: null,
-    toDate: null,
+    fromDate: initialFromDate ? new Date(initialFromDate) : null,
+    toDate: initialToDate ? new Date(initialToDate) : null,
   };
 
   return (
@@ -38,6 +56,7 @@ export const ResViewForm: React.FC<IResViewFormProps> = ({
       initialValues={initialValues}
       validationSchema={resViewValidationSchema}
       onSubmit={() => {}}
+      enableReinitialize
     >
       {(formik) => (
         <form onSubmit={formik.handleSubmit}>
@@ -84,8 +103,17 @@ export const ResViewForm: React.FC<IResViewFormProps> = ({
               <Paper variant="outlined" className={styles.paper}>
                 <CustomTable
                   title={HEADER_OBJ[`${tabValue}`]}
-                  data={data}
                   onView={onView}
+                  from={formik.values.fromDate ? formik.values.fromDate.toISOString() : ''}
+                  to={formik.values.toDate ? formik.values.toDate.toISOString() : ''}
+                  departments={departments}
+                  data={items}
+                  pageSize={pageSize}
+                  currentPage={currentPage}
+                  totalCount={totalCount}
+                  isLoading={isLoading}
+                  onPageChange={onPageChange}
+                  onPageSizeChange={onPageSizeChange}
                 />
               </Paper>
             </Grid>
