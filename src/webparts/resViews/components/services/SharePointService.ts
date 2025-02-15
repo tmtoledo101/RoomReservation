@@ -104,20 +104,30 @@ export class SharePointService {
       const filterQuery = batchDepts.map(dept => `Title eq '${dept}'`).join(' or ');
       
       try {
-        const batchResults = await sp.web.lists
+        let page = await sp.web.lists
           .getByTitle("Department")
           .items.select("Title", "Sector")
           .filter(filterQuery)
-          .get();
+          .top(100)  // Smaller batch size for better performance
+          .getPaged();
+
+        // Collect all pages
+        while (true) {
+          allResults.push(...page.results);
           
-        allResults.push(...batchResults);
+          if (page.hasNext) {
+            page = await page.getNext();
+          } else {
+            break;
+          }
+        }
       } catch (error) {
         console.error(`Error processing department batch: ${batchDepts.join(', ')}`, error);
       }
     }
     
     return allResults;
-  }
+}
 
   public static async getDepartments(currentUserTitle: string): Promise<{
     departmentList: IDropdownItem[];
@@ -201,8 +211,8 @@ export class SharePointService {
         const filterQuery = `${dateRange} and (${batchDepts.map(dept => `Department eq '${dept}'`).join(' or ')})`;
         
         try {
-          // Execute query for current batch
-          const batchResults = await sp.web.lists
+          // Execute query for current batch with pagination
+          let page = await sp.web.lists
             .getByTitle("Request")
             .items.select(
               "Id",
@@ -226,11 +236,20 @@ export class SharePointService {
             )
             .filter(filterQuery)
             .orderBy("Id", false)
-            .top(5000)                      // optional if you expect < 5000 results
-            .get();
+            .top(100)  // Smaller batch size for better performance
+            .getPaged();
+
+          // Collect all pages for current batch
+          while (true) {
+            console.log(`Got ${page.results.length} results for departments ${batchDepts.join(', ')}`);
+            allResults.push(...page.results);
             
-          console.log(`Batch results for departments ${batchDepts.join(', ')}:`, batchResults);
-          allResults.push(...batchResults);
+            if (page.hasNext) {
+              page = await page.getNext();
+            } else {
+              break;
+            }
+          }
         } catch (error) {
           console.error(`Error processing batch for departments ${batchDepts.join(', ')}:`, error);
         }
@@ -241,7 +260,7 @@ export class SharePointService {
       console.error('Error in getRequestItemsBatch:', error);
       return [];
     }
-  }
+}
 
   public static async getRequestItems(from: string, to: string, department: string[]): Promise<{
     referenceNumberList: ITableItem[];

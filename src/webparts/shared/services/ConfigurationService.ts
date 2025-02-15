@@ -5,7 +5,7 @@ import "@pnp/sp/items";
 
 export class ConfigurationService {
   private static instance: ConfigurationService;
-  private environment: string = "test";
+  private environment: string = "prd";
   private user : string = "dev";
   
   public readonly TEST_URL = "https://s5b36.sharepoint.com";

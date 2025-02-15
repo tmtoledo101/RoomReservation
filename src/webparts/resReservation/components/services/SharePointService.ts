@@ -27,36 +27,52 @@ export class SharePointService {
     console.log("Terence, here is the user : " + email);
 
 
-    let departmentData; 
-    if( configService.isDevUser() && !configService.isTestEnvironment() ) {
+    let departmentData = [];
+    
 
-    const filterText = configService.isDevUser() && !configService.isTestEnvironment() 
+      // Get departments with pagination
+      let page;
+      if (configService.isDevUser() && !configService.isTestEnvironment()) {
+        const filterText = configService.isDevUser() && !configService.isTestEnvironment() 
         ? `Title eq '${email}'` 
         : `EmployeeName/Email eq '${email}'`;  // Changed EMail to Email
-    const selectText = configService.isTestEnvironment() ? 
-      "Department/Title" : "Department/Department";
-    const firstExpandText = configService.isTestEnvironment() ? 
-    "Department": "Department/FieldValuesAsText";
-    const secondExpandText = configService.isTestEnvironment() ? 
-    "EmployeeName": "EmployeeName/EMail" ;
-     departmentData = await sp.web.lists
-      .getByTitle("UsersPerDepartment")
-      .items
-      .select("EmployeeName/EMail", selectText)
-      .expand(firstExpandText, secondExpandText)
-      .filter(filterText)   // or EmployeeName/EMail eq ...
-      .top(5000)                      // optional if you expect < 5000 results
-      .get();
-    } else {
-      departmentData = await sp.web.lists
-      .getByTitle("UsersPerDepartment")
-      .items
-      .select("EmployeeName/EMail", "Department/Department")  // Use correct field names
-      .expand("Department", "EmployeeName")  // Expand lookup fields only
-      .filter(`EmployeeName/EMail eq '${email}'`)  // Filter by correct field
-      .top(5000)
-      .get();
-    }
+        const selectText = configService.isTestEnvironment() ? 
+          "Department/Title" : "Department/Department";
+        const firstExpandText = configService.isTestEnvironment() ? 
+          "Department": "Department/FieldValuesAsText";
+        const secondExpandText = configService.isTestEnvironment() ? 
+          "EmployeeName": "EmployeeName/EMail";
+
+        page = await sp.web.lists
+          .getByTitle("UsersPerDepartment")
+          .items
+          .select("EmployeeName/EMail", selectText)
+          .expand(firstExpandText, secondExpandText)
+          .filter(filterText)
+          .top(5000)  // Process 100 items at a time
+          .getPaged();
+      } else {
+        page = await sp.web.lists
+          .getByTitle("UsersPerDepartment")
+          .items
+          .select("EmployeeName/EMail", "Department/Department")
+          .expand("Department", "EmployeeName")
+          .filter(`EmployeeName/EMail eq '${email}'`)
+          .top(5000)
+          .getPaged();
+      }
+
+      // Collect all pages
+      while (true) {
+        departmentData.push(...page.results);
+        
+        if (page.hasNext) {
+          page = await page.getNext();
+        } else {
+          break;
+        }
+      }
+
       
     const deparmentList = await sp.web.lists
       .getByTitle("Department")
@@ -133,24 +149,42 @@ export class SharePointService {
   }
 
   public async checkVenueAvailability(fromDate: Date, toDate: Date): Promise<string[]> {
-    // Get all reservations that overlap with the requested time period
-    const reservations = await sp.web.lists
-      .getByTitle("Request")
-      .items.select(
-        "Venue",
-        "FromDate",
-        "ToDate",
-        "Status"
-      )
-      .filter(`
-        Status ne 'Cancelled' and Status ne 'Rejected' and
-        ((FromDate lt '${moment(toDate).toISOString()}' and ToDate gt '${moment(fromDate).toISOString()}'))
-      `)
-      .top(5000)
-      .get();
+    const reservations = [];
+    try {
+      // Get reservations with pagination
+      let page = await sp.web.lists
+        .getByTitle("Request")
+        .items.select(
+          "Venue",
+          "FromDate",
+          "ToDate",
+          "Status"
+        )
+        .filter(`
+          Status ne 'Cancelled' and Status ne 'Rejected' and
+          ((FromDate lt '${moment(toDate).toISOString()}' and ToDate gt '${moment(fromDate).toISOString()}'))
+        `)
+        .top(1000)  // Smaller batch size for better performance
+        .getPaged();
 
-    // Return list of venue names that are already booked
-    return reservations.map(res => res.Venue);
+      // Collect all pages
+      while (true) {
+        reservations.push(...page.results);
+        
+        if (page.hasNext) {
+          page = await page.getNext();
+        } else {
+          break;
+        }
+      }
+
+      // Return list of venue names that are already booked
+      return reservations.map(res => res.Venue);
+      
+    } catch (error) {
+      console.error("Error checking venue availability:", error);
+      return [];
+    }
   }
 
   public async getLayouts() {
@@ -292,14 +326,15 @@ public async getFacilities() {
       FromDate: moment(formData["fromDate"]).toISOString(),
       ToDate: moment(formData["toDate"]).toISOString(),
       OtherRequirement: formData["otherRequirment"],
+      IsCSDR: formData["IsCSDR"],
       //IsCSDR: formData["IsCSDR"] || false,
-      //IsCSDR:  false,
       FacilityData: facility,
       Status: isFssManaged ? "Approved" : "Pending for Approval",
       RequestorEmail: formData["requestorEmail"],
       referCount: `${count + 1}`,
       ReferenceNumber: ReferenceNumber,
     });
+    console.log("Created item:", item.data);
 
     if (files.length > 0) {
       const folderPath = `/sites/ResourceReservation/ReservationDocs/${item.data.GUID}`;
