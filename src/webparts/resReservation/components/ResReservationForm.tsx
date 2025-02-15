@@ -187,7 +187,7 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
     }
 
     this.formikRef.current.setFieldValue("venue", value);
-    this.formikRef.current.setFieldValue("isCSDR", selectedVenue && selectedVenue.group === 'CRSD');
+    this.formikRef.current.setFieldValue("IsCSDR", selectedVenue && selectedVenue.group === 'CRSD');
   }
 
   private participantHandler = (e: any): void => {
@@ -317,7 +317,7 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
           purposeOfUse: "",
           contactNumber: "",
           currentRecord: -1,
-          isCSDR: false,
+          IsCSDR: false,
         }}
         validationSchema={validationSchema}
         innerRef={this.formikRef}
@@ -441,7 +441,7 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
 
             <Checkbox
               color="primary"
-              name="isCSDR"
+              name="IsCSDR"
               style={{ display: "none" }}
               {...formik.getFieldProps("isCSDR")}
             />

@@ -17,7 +17,7 @@ export class SharePointService {
     const user = await sp.web.currentUser.get();
 
     const currentUser = {
-      Email: configService.isTestEnvironment() ? user.Title : user.Email,
+      Email: configService.isDevUser() && !configService.isTestEnvironment()  ? user.Title : user.Email,
       Title: user.Title
     };
     return currentUser;
@@ -25,14 +25,38 @@ export class SharePointService {
 
   public async getDepartments(email: string) {
     console.log("Terence, here is the user : " + email);
-    const deparmentData = await sp.web.lists
+
+
+    let departmentData; 
+    if( configService.isDevUser() && !configService.isTestEnvironment() ) {
+
+    const filterText = configService.isDevUser() && !configService.isTestEnvironment() 
+        ? `Title eq '${email}'` 
+        : `EmployeeName/Email eq '${email}'`;  // Changed EMail to Email
+    const selectText = configService.isTestEnvironment() ? 
+      "Department/Title" : "Department/Department";
+    const firstExpandText = configService.isTestEnvironment() ? 
+    "Department": "Department/FieldValuesAsText";
+    const secondExpandText = configService.isTestEnvironment() ? 
+    "EmployeeName": "EmployeeName/EMail" ;
+     departmentData = await sp.web.lists
       .getByTitle("UsersPerDepartment")
       .items
-      .select("EmployeeName/EMail", "Department/Department")
-      .expand("Department/FieldValuesAsText", "EmployeeName/EMail")
-      .filter(`Title eq '${email}'`)  // or EmployeeName/EMail eq ...
+      .select("EmployeeName/EMail", selectText)
+      .expand(firstExpandText, secondExpandText)
+      .filter(filterText)   // or EmployeeName/EMail eq ...
       .top(5000)                      // optional if you expect < 5000 results
       .get();
+    } else {
+      departmentData = await sp.web.lists
+      .getByTitle("UsersPerDepartment")
+      .items
+      .select("EmployeeName/EMail", "Department/Department")  // Use correct field names
+      .expand("Department", "EmployeeName")  // Expand lookup fields only
+      .filter(`EmployeeName/EMail eq '${email}'`)  // Filter by correct field
+      .top(5000)
+      .get();
+    }
       
     const deparmentList = await sp.web.lists
       .getByTitle("Department")
@@ -48,7 +72,7 @@ export class SharePointService {
     });
 
     const departmentSectorMap = {};
-    deparmentData.forEach((item) => {
+    departmentData.forEach((item) => {
       departmentSectorMap[item.Department.Department] = deprtObj[item.Department.Department];
     });
 
@@ -57,6 +81,7 @@ export class SharePointService {
       departmentSectorMap
     };
   }
+
 
   public async getBuildings() {
     const buildingData = await sp.web.lists
@@ -183,7 +208,7 @@ export class SharePointService {
 
     return arrayToDropDownValues(participants.map(item => item.Title));
   }
-
+/*
   public async getFacilities() {
     const facilities = await sp.web.lists
       .getByTitle("Facility")
@@ -201,6 +226,29 @@ export class SharePointService {
 
     return facilityMap;
   }
+*/
+public async getFacilities() {
+  const facilities = await sp.web.lists
+    .getByTitle("Facility")
+    .items.select("Title", "AssetNumber", "Facility", "Quantity", "FacilityOwner/Title", "FacilityOwner/ID", "FacilityOwner/EMail")
+    .expand("FacilityOwner")
+    .get();
+
+  const facilityMap = {};
+  facilities.forEach((item) => {
+    facilityMap[item.Facility] = { 
+      ...item, 
+      "FacilityOwner": 
+        item.FacilityOwner && item.FacilityOwner.results && item.FacilityOwner.results.length > 0
+          ? item.FacilityOwner.results[0].EMail 
+          : null // Or provide a default value like an empty string
+    };
+});
+
+
+  return facilityMap;
+}
+
 
   public async getGroupMembers() {
     const crsdUsers = await sp.web.siteGroups.getByName("CRSD").users();
@@ -223,7 +271,7 @@ export class SharePointService {
       .top(1)
       .orderBy("Id", false)
       .get();
-      
+      console.log("this is ISCRSD:" + formData["IsCSDR"]);
     const count = itemLength.length ? Number(itemLength[0].referCount) : 0;
     const ReferenceNumber = `RR-${moment().year()}${getCount(moment().month())}-${getCount(count, 4)}`;
 
@@ -244,7 +292,8 @@ export class SharePointService {
       FromDate: moment(formData["fromDate"]).toISOString(),
       ToDate: moment(formData["toDate"]).toISOString(),
       OtherRequirement: formData["otherRequirment"],
-      IsCSDR: formData["isCSDR"],
+      //IsCSDR: formData["IsCSDR"] || false,
+      //IsCSDR:  false,
       FacilityData: facility,
       Status: isFssManaged ? "Approved" : "Pending for Approval",
       RequestorEmail: formData["requestorEmail"],

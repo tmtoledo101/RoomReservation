@@ -5,7 +5,8 @@ import "@pnp/sp/items";
 
 export class ConfigurationService {
   private static instance: ConfigurationService;
-  private environment: string = "prod";
+  private environment: string = "test";
+  private user : string = "dev";
   
   public readonly TEST_URL = "https://s5b36.sharepoint.com";
   public readonly PROD_URL = "https://bspgovph.sharepoint.com";
@@ -18,6 +19,7 @@ export class ConfigurationService {
   public testEnvironmentConfig(): void {
     console.log("Current environment configuration:");
     console.log("Environment:", this.environment);
+    console.log("User:", this.user);
     console.log("Is test environment:", this.isTestEnvironment());
     console.log("Base URL:", this.getBaseUrl());
     console.log("Access Control URL:", this.getAccessControlUrl());
@@ -37,13 +39,14 @@ export class ConfigurationService {
     console.log(`Environment changed from ${previousEnv} to ${this.environment}`);
     this.testEnvironmentConfig();
   }
-
+/*
   public toggleEnvironment(): void {
     const newEnv = this.isTestEnvironment() ? 'prod' : 'test';
     this.setEnvironment(newEnv);
     console.log(`Environment toggled to: ${newEnv}`);
     console.log(`New workbench URL should be: ${this.getWorkbenchUrl()}`);
   }
+*/
 
   public getWorkbenchUrl(): string {
     return `${this.getBaseUrl()}/sites/ResourceReservationDev/_layouts/15/workbench.aspx`;
@@ -69,6 +72,9 @@ export class ConfigurationService {
 
   public isTestEnvironment(): boolean {
     return this.environment.includes("test");
+  }
+  public isDevUser(): boolean {
+    return this.user.includes("dev");
   }
 
   public getBaseUrl(): string {
