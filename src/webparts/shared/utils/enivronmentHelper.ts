@@ -13,5 +13,3 @@ export const hasGroupMembersAccess = (): boolean => {
   
   return configService.isTestEnvironment();
 };
-
-configService.isDevUser() && configService.isTestEnvironment()

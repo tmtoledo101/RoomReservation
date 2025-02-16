@@ -12,8 +12,4 @@ export interface IResViewState {
   selectedReservation: ITableItem | null;
   fromDate: string | null;
   toDate: string | null;
-  pageSize: number;
-  currentPage: number;
-  totalCount: number;
-  isLoading: boolean;
 }

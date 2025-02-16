@@ -9,8 +9,7 @@ import { ITableItem, STATUS } from "../interfaces/IResViews";
 import { IFacilityMapItem, IDropdownItem, IFacilityData } from "../interfaces/IFacility";
 import { dateConverter } from "../utils/helpers";
 import { configService } from "../../../shared/services/ConfigurationService";
-import { isDevelopmentMode } from "../../../shared/utils/enivronmentHelper";
-import { tr } from "date-fns/locale";
+import { isDevelopmentMode, hasGroupMembersAccess } from "../../../shared/utils/enivronmentHelper";
 
 export interface IPaginatedResult<T> {
   items: T[];
@@ -477,15 +476,15 @@ console.log('Batch Page Items:', batchPageItems);
       const userEmail = currentUser.Email;
 
       // Get users from CRSD and DD groups
-      const crsdUsers = await sp.web.siteGroups.getByName("CRSD").users();
-      const ddUsers = await sp.web.siteGroups.getByName("DD").users();
+      const crsdUsers = hasGroupMembersAccess()? await sp.web.siteGroups.getByName("CRSD").users():[];
+      const ddUsers = hasGroupMembersAccess()?await sp.web.siteGroups.getByName("DD").users():[];
 
       // Extract email lists
       const crsdEmails = crsdUsers.map(item => item.Email);
       const ddEmails = ddUsers.map(item => item.Email);
 
       // Check if user is an approver
-      const isApprover =isDevelopmentMode?
+      const isApprover =hasGroupMembersAccess()?
       crsdEmails.includes(userEmail) || ddEmails.includes(userEmail):true;
 
       const filterText = isDevelopmentMode? `Title eq '${userEmail}'` : `EmployeeName/Email eq '${userEmail}'`;  
