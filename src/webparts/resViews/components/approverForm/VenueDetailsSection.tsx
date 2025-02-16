@@ -8,9 +8,13 @@ import { IDropdownItem } from "../interfaces/IFacility";
 
 interface IVenueDetailsSectionProps {
   formik: any;
+  onVenueSelect?: (venue: any) => void;
 }
 
-export const VenueDetailsSection: React.FC<IVenueDetailsSectionProps> = ({ formik }) => {
+export const VenueDetailsSection: React.FC<IVenueDetailsSectionProps> = ({
+  formik,
+  onVenueSelect
+}) => {
   const [showVenueSearch, setShowVenueSearch] = React.useState(false);
   const [buildingList, setBuildingList] = React.useState<IDropdownItem[]>([]);
   const [venueList, setVenueList] = React.useState<any[]>([]);
@@ -70,10 +74,15 @@ export const VenueDetailsSection: React.FC<IVenueDetailsSectionProps> = ({ formi
     }
   };
 
-  const handleVenueSelect = (venue: any, fromDate: Date | null, toDate: Date | null, department: string) => {
+  const handleVenueSelect = async (venue: any, fromDate: Date | null, toDate: Date | null, department: string) => {
     try {
+      // First check if venue is CRSD
+      const isCRSD = await SharePointService.isVenueCRSD(venue.value);
+      
+      // Update form values
       formik.setFieldValue('building', venue.building);
       formik.setFieldValue('venue', venue.value);
+      formik.setFieldValue('isVenueCRSD', isCRSD);
       
       // Ensure dates are valid before formatting and setting
       if (fromDate instanceof Date && !isNaN(fromDate.getTime())) {
@@ -87,6 +96,14 @@ export const VenueDetailsSection: React.FC<IVenueDetailsSectionProps> = ({ formi
       if (department) {
         formik.setFieldValue('department', department);
       }
+
+      // Notify parent component about venue selection
+      if (onVenueSelect) {
+        onVenueSelect(venue);
+      }
+
+      // Close venue search dialog
+      setShowVenueSearch(false);
     } catch (error) {
       console.error('Error in handleVenueSelect:', error);
     }

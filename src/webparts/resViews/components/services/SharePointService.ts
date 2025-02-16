@@ -10,7 +10,7 @@ import { IFacilityMapItem, IDropdownItem, IFacilityData } from "../interfaces/IF
 import { dateConverter } from "../utils/helpers";
 import { configService } from "../../../shared/services/ConfigurationService";
 import { isDevelopmentMode, hasGroupMembersAccess } from "../../../shared/utils/enivronmentHelper";
-
+import * as moment from "moment";
 export interface IPaginatedResult<T> {
   items: T[];
   totalCount: number;
@@ -18,7 +18,7 @@ export interface IPaginatedResult<T> {
 }
 
 export class SharePointService {
-  private web: any;
+  private web = Web( configService.getAccessControlUrl() );
   
   private static formatRequestItems(items: any[]): ITableItem[] {
     return items.map((item: any) => ({
@@ -43,28 +43,46 @@ export class SharePointService {
     }));
   }
 
-  constructor() {
-    this.web = Web(configService.getAccessControlUrl());
-  }
+ 
 
   public static async checkVenueAvailability(fromDate: Date, toDate: Date): Promise<string[]> {
-    try {
-      const reservations = await sp.web.lists
-        .getByTitle("Request")
-        .items.select("Venue")
-        .filter(`
-          Status eq '${STATUS.APPROVED}' and
-          ((FromDate le datetime'${toDate.toISOString()}' and ToDate ge datetime'${fromDate.toISOString()}') or
-          (FromDate ge datetime'${fromDate.toISOString()}' and FromDate le datetime'${toDate.toISOString()}'))
-        `)
-        .get();
-
-      return reservations.map(item => item.Venue);
-    } catch (error) {
-      console.error('Error checking venue availability:', error);
-      return [];
-    }
-  }
+      const reservations = [];
+        try {
+          // Get reservations with pagination
+          let page = await sp.web.lists
+            .getByTitle("Request")
+            .items.select(
+              "Venue",
+              "FromDate",
+              "ToDate",
+              "Status"
+            )
+            .filter(`
+              Status ne 'Cancelled' and Status ne 'Rejected' and
+              ((FromDate lt '${moment(toDate).toISOString()}' and ToDate gt '${moment(fromDate).toISOString()}'))
+            `)
+            .top(1000)  // Smaller batch size for better performance
+            .getPaged();
+    
+          // Collect all pages
+          while (true) {
+            reservations.push(...page.results);
+            
+            if (page.hasNext) {
+              page = await page.getNext();
+            } else {
+              break;
+            }
+          }
+    
+          // Return list of venue names that are already booked
+          return reservations.map(res => res.Venue);
+          
+        } catch (error) {
+          console.error("Error checking venue availability:", error);
+          return [];
+        }
+      }
 
   public static async getPaginatedRequestItems(
     from: string,
@@ -636,26 +654,21 @@ console.log('Batch Page Items:', batchPageItems);
     }
   }
 
-  public static async getPrincipalUsers(dept: string): Promise<{ [key: string]: string[] }> {
-    try {
-      const principalData = await sp.web.lists.getByTitle("Employees")
-        .items.select("Name", "Dept")
-        .filter(`Dept eq '${dept}'`)
-        .get();
+  public async getPrincipalUsers(dept: string) {
+    const principalData = await this.web.lists.getByTitle("Employees")
+      .items.select("Name", "Dept")
+      .filter(`Dept eq '${dept}'`)
+      .get();
 
-      const principalMap = {};
-      principalData.forEach((item) => {
-        if (!principalMap[item.Dept]) {
-          principalMap[item.Dept] = [];
-        }
-        principalMap[item.Dept].push(item.Name);
-      });
+    const princialMap = {};
+    principalData.forEach((item) => {
+      if (!princialMap[item.Dept]) {
+        princialMap[item.Dept] = [];
+      }
+      princialMap[item.Dept].push(item.Name);
+    });
 
-      return principalMap;
-    } catch (error) {
-      console.error('Error getting principal users:', error);
-      return {};
-    }
+    return princialMap;
   }
 
   public static async getPurposeOfUse(): Promise<IDropdownItem[]> {

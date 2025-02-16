@@ -14,7 +14,6 @@ import {
 } from "@material-ui/core";
 import SearchIcon from "@material-ui/icons/Search";
 import { Formik } from "formik";
-import * as yup from "yup";
 import * as moment from "moment";
 import { VenueDateTimePicker } from "./VenueDateTimePicker";
 import { SharePointService } from "../services/SharePointService";

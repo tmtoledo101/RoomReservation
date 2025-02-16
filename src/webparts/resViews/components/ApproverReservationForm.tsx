@@ -18,10 +18,9 @@ import { Alert } from "@material-ui/lab";
 import { ITableItem, STATUS } from "./interfaces/IResViews";
 import { SharePointService } from "./services/SharePointService";
 import { approverValidationSchema } from "./utils/approverValidation";
-import { formatDateForInput } from "./utils/helpers";
 import { FacilityDialog } from "./common/FacilityDialog";
 import { IFacilityData, IDropdownItem, IFacilityMapItem } from "./interfaces/IFacility";
-
+import { ConfirmationDialog } from "./common/ConfirmationDialog";
 // Import new components
 import { BasicInformationSection } from "./approverForm/BasicInformationSection";
 import { VenueDetailsSection } from "./approverForm/VenueDetailsSection";
@@ -79,6 +78,9 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
     severity: "success"
   });
 
+  const [showConfirmDialog, setShowConfirmDialog] = React.useState(false);
+  const [pendingValues, setPendingValues] = React.useState<any>(null);
+
   const [status, setStatus] = React.useState<string>(selectedReservation? selectedReservation.status : STATUS.PENDING);
 
   React.useEffect(() => {
@@ -99,6 +101,7 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
           
           // Then check venue group if no facility data exists
           if (selectedReservation.venue) {
+            console.log('Selected venue:', selectedReservation.venue);
             const isCRSD = await SharePointService.isVenueCRSD(selectedReservation.venue);
             setShowCSRDField(isCRSD);
 
@@ -109,7 +112,8 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
 
               // Load principal users for the department
               if (selectedReservation.department) {
-                const principalMap = await SharePointService.getPrincipalUsers(selectedReservation.department);
+                const spService = new SharePointService();
+                const principalMap = await spService.getPrincipalUsers(selectedReservation.department);
                 if (principalMap[selectedReservation.department]) {
                   setPrincipalList(
                     principalMap[selectedReservation.department].map(name => ({
@@ -155,16 +159,21 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
     titleDesc: selectedReservation.titleDesc || "",
     purposeOfUse: selectedReservation.purposeOfUse || "",
     participant: selectedReservation.participant || [],
-    otherRequirment: selectedReservation.otherRequirment || ""
+    otherRequirment: selectedReservation.otherRequirment || "",
+    isVenueCRSD: false
   };
 
-  const handleSubmit = async (values: any) => {
+  const handleConfirmedSubmit = async () => {
+    if (!pendingValues) return;
+    
     try {
       setIsSubmitting(true);
+      setShowConfirmDialog(false);
+      
       await SharePointService.updateReservation(
         selectedReservation.ID,
         {
-          ...values,
+          ...pendingValues,
           status,
           facilityData: showCSRDField ? facilityData : []
         }
@@ -190,6 +199,11 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleSubmit = async (values: any) => {
+    setPendingValues(values);
+    setShowConfirmDialog(true);
   };
 
   const handleFacilitySave = (form: any): void => {
@@ -268,7 +282,40 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
                 <form onSubmit={formik.handleSubmit}>
                   <Grid container spacing={3}>
                     <BasicInformationSection formik={formik} />
-                    <VenueDetailsSection formik={formik} />
+                    <VenueDetailsSection
+                      formik={formik}
+                      onVenueSelect={async (venue) => {
+                        try {
+                          const isCRSD = await SharePointService.isVenueCRSD(venue.value);
+                          setShowCSRDField(isCRSD);
+                          formik.setFieldValue('isVenueCRSD', isCRSD);
+                          
+                          if (isCRSD) {
+                            // Load layouts for the venue
+                            const layouts = await SharePointService.getLayouts(venue.value);
+                            setLayoutList(layouts);
+
+                            // Load principal users if department is set
+                            if (formik.values.department) {
+                              const spService = new SharePointService();
+                              const principalMap = await spService.getPrincipalUsers(formik.values.department);
+                              if (principalMap[formik.values.department]) {
+                                setPrincipalList(
+                                  principalMap[formik.values.department].map(name => ({
+                                    id: name,
+                                    value: name
+                                  }))
+                                );
+                              }
+                            }
+                          }
+                        } catch (error) {
+                          console.error('Error handling venue selection:', error);
+                          setShowCSRDField(false);
+                          formik.setFieldValue('isVenueCRSD', false);
+                        }
+                      }}
+                    />
                     <CRSDFieldsSection 
                       formik={formik}
                       showCSRDField={showCSRDField}
@@ -328,6 +375,15 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
                       {isSubmitting ? <CircularProgress size={24} /> : 'Update'}
                     </Button>
                   </DialogActions>
+
+                  <ConfirmationDialog
+                    open={showConfirmDialog}
+                    title="Confirm Update"
+                    message={`Are you sure you want to ${status.toLowerCase()} this reservation?`}
+                    onConfirm={handleConfirmedSubmit}
+                    onClose={() => setShowConfirmDialog(false)}
+                    confirmLabel="Update"
+                  />
                 </form>
 
                 {showCSRDField && (
