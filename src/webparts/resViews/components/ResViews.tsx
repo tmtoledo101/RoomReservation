@@ -27,7 +27,7 @@ export default class ResViews extends React.Component<IResViewsProps, IResViewSt
       selectedReservation: null,
       fromDate: null,
       toDate: null,
-      pageSize: 100,
+      pageSize: 10,
       currentPage: 0,
       totalCount: 0,
       isLoading: false
@@ -35,11 +35,7 @@ export default class ResViews extends React.Component<IResViewsProps, IResViewSt
   }
 
   protected handleTabChange = (event: React.ChangeEvent<{}>, tabValue: number): void => {
-    this.setState({ tabValue }, () => {
-      if (this.state.fromDate && this.state.toDate) {
-        this.getItems(this.state.fromDate, this.state.toDate);
-      }
-    });
+    this.setState({ tabValue });
   }
 
   protected handleView = (event: any, rowData: ITableItem | ITableItem[]): void => {
@@ -83,7 +79,11 @@ export default class ResViews extends React.Component<IResViewsProps, IResViewSt
       this.setState({ 
         fromDate: fromDate.toISOString(), 
         toDate: toDate.toISOString(),
-        currentPage: 0 // Reset to first page on new search
+        currentPage: 0, // Reset to first page on new search
+        referenceNumberList: [], // Clear existing data
+        pastRequestList: [],
+        approvalRequest: [],
+        isLoading: true
       });
       await this.getItems(fromDate.toISOString(), toDate.toISOString());
     }
@@ -94,22 +94,22 @@ export default class ResViews extends React.Component<IResViewsProps, IResViewSt
   }
 
   protected handlePageChange = (page: number): void => {
-    this.setState({ currentPage: page }, () => {
-      if (this.state.fromDate && this.state.toDate) {
+    if (this.state.fromDate && this.state.toDate) {
+      this.setState({ currentPage: page }, () => {
         this.getItems(this.state.fromDate, this.state.toDate);
-      }
-    });
+      });
+    }
   }
 
   protected handlePageSizeChange = (newPageSize: number): void => {
-    this.setState({ 
-      pageSize: newPageSize,
-      currentPage: 0 // Reset to first page when changing page size
-    }, () => {
-      if (this.state.fromDate && this.state.toDate) {
+    if (this.state.fromDate && this.state.toDate) {
+      this.setState({ 
+        pageSize: newPageSize,
+        currentPage: 0 // Reset to first page when changing page size
+      }, () => {
         this.getItems(this.state.fromDate, this.state.toDate);
-      }
-    });
+      });
+    }
   }
 
   public async componentDidMount(): Promise<void> {
@@ -128,7 +128,6 @@ export default class ResViews extends React.Component<IResViewsProps, IResViewSt
   private async getItems(from: string, to: string): Promise<void> {
     const { department, pageSize, currentPage } = this.state;
     
-    this.setState({ isLoading: true });
     try {
       const result = await SharePointService.getPaginatedRequestItems(
         from,
@@ -157,7 +156,12 @@ export default class ResViews extends React.Component<IResViewsProps, IResViewSt
       });
     } catch (error) {
       console.error('Error fetching items:', error);
-      this.setState({ isLoading: false });
+      this.setState({ 
+        isLoading: false,
+        referenceNumberList: [],
+        pastRequestList: [],
+        approvalRequest: []
+      });
     }
   }
 

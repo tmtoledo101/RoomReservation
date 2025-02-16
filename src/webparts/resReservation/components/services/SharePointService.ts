@@ -8,7 +8,7 @@ import { IDropdownItem, IVenueItem } from "../interfaces/IResReservation";
 import { arrayToDropDownValues, dateFormat, getCount } from "../utils/helpers";
 import * as moment from "moment";
 import { configService } from "../../../shared/services/ConfigurationService";
-import { result } from "lodash";
+import { isDevelopmentMode } from "../../../shared/utils/enivronmentHelper";
 export class SharePointService {
   private web = Web( configService.getAccessControlUrl() );
 
@@ -17,30 +17,29 @@ export class SharePointService {
     const user = await sp.web.currentUser.get();
 
     const currentUser = {
-      Email: configService.isDevUser() && !configService.isTestEnvironment()  ? user.Title : user.Email,
+      Email: isDevelopmentMode()? user.Title : user.Email,
       Title: user.Title
     };
     return currentUser;
   }
 
   public async getDepartments(email: string) {
-    console.log("Terence, here is the user : " + email);
-
+    console.log("Terence, here is the user : " + email, "developmentMode:",isDevelopmentMode());
 
     let departmentData = [];
     
 
       // Get departments with pagination
       let page;
-      if (configService.isDevUser() && !configService.isTestEnvironment()) {
-        const filterText = configService.isDevUser() && !configService.isTestEnvironment() 
-        ? `Title eq '${email}'` 
+      if (isDevelopmentMode()) {
+        const filterText = isDevelopmentMode() ? `Title eq '${email}'` 
         : `EmployeeName/Email eq '${email}'`;  // Changed EMail to Email
-        const selectText = configService.isTestEnvironment() ? 
-          "Department/Title" : "Department/Department";
-        const firstExpandText = configService.isTestEnvironment() ? 
+        //const selectText =isDevelopmentMode() ? 
+         // "Department/Title" : "Department/Department";
+         const selectText = "Department/Department";
+        const firstExpandText = isDevelopmentMode() ? 
           "Department": "Department/FieldValuesAsText";
-        const secondExpandText = configService.isTestEnvironment() ? 
+        const secondExpandText = isDevelopmentMode() ? 
           "EmployeeName": "EmployeeName/EMail";
 
         page = await sp.web.lists

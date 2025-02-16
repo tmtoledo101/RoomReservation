@@ -82,7 +82,7 @@ export const CustomTable: React.FC<ICustomTableProps> = ({
       ]}
       data={data || []}
       options={{
-        filtering: true,
+        filtering: false,
         pageSize: pageSize,
         pageSizeOptions: [5,10, 100, 200, 500],
         search: false,

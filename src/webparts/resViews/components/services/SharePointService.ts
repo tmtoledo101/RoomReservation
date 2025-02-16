@@ -9,6 +9,8 @@ import { ITableItem, STATUS } from "../interfaces/IResViews";
 import { IFacilityMapItem, IDropdownItem, IFacilityData } from "../interfaces/IFacility";
 import { dateConverter } from "../utils/helpers";
 import { configService } from "../../../shared/services/ConfigurationService";
+import { isDevelopmentMode } from "../../../shared/utils/enivronmentHelper";
+import { tr } from "date-fns/locale";
 
 export interface IPaginatedResult<T> {
   items: T[];
@@ -465,30 +467,56 @@ console.log('Batch Page Items:', batchPageItems);
     isApprover: boolean;
     departments: string[];
   }> {
-    const currentUser = await sp.web.currentUser.get();
-    const userEmail = currentUser.Title;
-    const isApprover = true;
-    
-    const departmentData: any[] = await sp.web.lists
-      .getByTitle("UsersPerDepartment")
-      .items.select(
-        "EmployeeName/EMail",
-        "Department/Department",
-      )
-      .filter(`Title eq '${userEmail}'`)
-      .expand(
-        "Department/FieldValuesAsText",
-        "EmployeeName/EMail",
-      )
-      .top(5000)                      // optional if you expect < 5000 results
-      .get();
+    try {
+      // Get current user
+      const user = await sp.web.currentUser.get();
+      const currentUser = {
+        Email: isDevelopmentMode ? user.Title : user.Email,
+        Title: user.Title
+      };
+      const userEmail = currentUser.Email;
 
-    const departments = departmentData.map(item => item.Department.Department);
+      // Get users from CRSD and DD groups
+      const crsdUsers = await sp.web.siteGroups.getByName("CRSD").users();
+      const ddUsers = await sp.web.siteGroups.getByName("DD").users();
 
-    return {
-      isApprover,
-      departments
-    };
+      // Extract email lists
+      const crsdEmails = crsdUsers.map(item => item.Email);
+      const ddEmails = ddUsers.map(item => item.Email);
+
+      // Check if user is an approver
+      const isApprover =isDevelopmentMode?
+      crsdEmails.includes(userEmail) || ddEmails.includes(userEmail):true;
+
+      const filterText = isDevelopmentMode? `Title eq '${userEmail}'` : `EmployeeName/Email eq '${userEmail}'`;  
+      // Get user departments
+      const departmentData: any[] = await sp.web.lists
+        .getByTitle("UsersPerDepartment")
+        .items.select(
+          "EmployeeName/EMail",
+          "Department/Department",
+        )
+        .filter(filterText)
+        .expand(
+          "Department/FieldValuesAsText",
+          "EmployeeName/EMail",
+        )
+        .top(5000)
+        .get();
+
+      const departments = departmentData.map(item => item.Department.Department);
+
+      return {
+        isApprover,
+        departments
+      };
+    } catch (error) {
+      console.error('Error in getCurrentUserGroups:', error);
+      return {
+        isApprover: false,
+        departments: []
+      };
+    }
   }
 
   public static async getFacilities(): Promise<{

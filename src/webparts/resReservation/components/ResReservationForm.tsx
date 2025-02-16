@@ -19,6 +19,8 @@ import { newResEmail } from "./utils/helpers";
 import { IResReservationState, IResReservationFormValues, IDropdownItem } from "./interfaces/IResReservation";
 import { IResReservationFormProps } from "./IResReservationProps";
 import styles from "./ResReservation.module.scss";
+import { hasGroupMembersAccess } from "../../shared/utils/enivronmentHelper";
+
 
 export class ResReservationForm extends React.Component<IResReservationFormProps, IResReservationState> {
   private spService: SharePointService;
@@ -75,12 +77,14 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
     console.log("Terence, this the current user:");
     console.log(currentUser);
     const { departments, departmentSectorMap } = await this.spService.getDepartments(currentUser.Email);
+    console.log("Terence, this the departments:", departments);
+    console.log("Terence, this the departmentSectorMap:", departmentSectorMap);
     const { buildings, venues } = await this.spService.getBuildings();
     const layouts = await this.spService.getLayouts();
     const purposeOfUse = await this.spService.getPurposeOfUse();
     const participants = await this.spService.getParticipants();
     const facilityMap = await this.spService.getFacilities();
-    //const { crsdMembers, ddMembers, fssMembers } = await this.spService.getGroupMembers();
+    const { crsdMembers, ddMembers, fssMembers } = hasGroupMembersAccess() ? await this.spService.getGroupMembers(): { crsdMembers: [], ddMembers: [], fssMembers: [] };
     
     this.venue = venues;
     this.layout = layouts;
@@ -105,9 +109,9 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
       purposeOfUseList: purposeOfUse,
       participantList: participants,
       facilityList, // Add the facilityList to state
-      //crsdMemberList: crsdMembers,
-      //ddMemeberList: ddMembers,
-      //fssMemberList: fssMembers,
+      crsdMemberList: crsdMembers,
+      ddMemeberList: ddMembers,
+      fssMemberList: fssMembers,
       requestorEmail: currentUser.Email,
     });
 
