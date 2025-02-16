@@ -128,7 +128,8 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
 
   
   const canSearch = (formik: any): boolean => {
-    return formik.values.department && 
+    return formik.values.department &&
+            formik.values.building && 
            formik.values.fromDate && 
            formik.values.toDate && 
            !formik.errors.fromDate && 

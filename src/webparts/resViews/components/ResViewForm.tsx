@@ -8,6 +8,7 @@ import { CustomTable } from "./common/CustomTable";
 import { resViewValidationSchema } from "./utils/validation";
 import { IFormValues, ITableItem, HEADER_OBJ } from "./interfaces/IResViews";
 import styles from "./ResViews.module.scss";
+import { useState } from "react"; 
 
 interface IResViewFormProps {
   tabValue: number;
@@ -28,9 +29,20 @@ export const ResViewForm: React.FC<IResViewFormProps> = ({
   onView,
   onClose,
 }) => {
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const initialValues: IFormValues = {
     fromDate: null,
     toDate: null,
+  };
+  const handleSearch = async (fromDate: Date | null, toDate: Date | null) => {
+    setIsLoading(true);
+    try {
+      await onSearch(fromDate, toDate);
+    } catch (error) {
+      console.error('Error searching:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -71,7 +83,7 @@ export const ResViewForm: React.FC<IResViewFormProps> = ({
                   type="button"
                   variant="contained"
                   onClick={() =>
-                    onSearch(formik.values.fromDate, formik.values.toDate)
+                    handleSearch(formik.values.fromDate, formik.values.toDate)
                   }
                   color="primary"
                   disabled={!formik.values.fromDate || !formik.values.toDate}
@@ -86,6 +98,7 @@ export const ResViewForm: React.FC<IResViewFormProps> = ({
                   title={HEADER_OBJ[`${tabValue}`]}
                   data={data}
                   onView={onView}
+                  isLoading={isLoading} // Pass your loading state here
                 />
               </Paper>
             </Grid>

@@ -1,6 +1,7 @@
 import * as React from "react";
 import MaterialTable from "material-table";
 import VisibilityIcon from "@material-ui/icons/Visibility";
+import { CircularProgress } from "@material-ui/core";
 import { ITableItem } from "../interfaces/IResViews";
 import { formatDate } from "../utils/helpers";
 
@@ -8,11 +9,36 @@ interface ICustomTableProps {
   title: string;
   data: ITableItem[];
   onView: (event: any, data: ITableItem | ITableItem[]) => void;
+  isLoading?: boolean; // Add this new prop
 }
 
-export const CustomTable: React.FC<ICustomTableProps> = ({ title, data, onView }) => {
+export const CustomTable: React.FC<ICustomTableProps> = ({ 
+  title, 
+  data, 
+  onView, 
+  isLoading = false // Default to false
+}) => {
   return (
-    <MaterialTable
+    <div style={{ position: 'relative' }}>
+      {isLoading && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: 'rgba(255, 255, 255, 0.7)',
+            zIndex: 1000,
+          }}
+        >
+          <CircularProgress />
+        </div>
+      )}
+      <MaterialTable
       title={title}
       columns={[
         {
@@ -96,6 +122,8 @@ export const CustomTable: React.FC<ICustomTableProps> = ({ title, data, onView }
           onClick: onView,
         },
       ]}
-    />
+      />
+    </div>
   );
 };
+

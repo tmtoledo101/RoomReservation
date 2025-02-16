@@ -84,6 +84,7 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
     setShowResults(false);
   };
 
+
   const handleSearch = async (formik: any): Promise<void> => {
     const { fromDate, toDate } = formik.values;
     
