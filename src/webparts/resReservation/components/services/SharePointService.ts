@@ -10,7 +10,7 @@ import * as moment from "moment";
 import { configService } from "../../../shared/services/ConfigurationService";
 import { isDevelopmentMode } from "../../../shared/utils/enivronmentHelper";
 export class SharePointService {
-  private web = Web( configService.isTestEnvironment? configService.getResourceReservationUrl(): configService.getAccessControlUrl() );
+  private web = Web( configService.isTestEnvironment()? configService.getResourceReservationUrl() :configService.getAccessControlUrl()  );
 
   public async getCurrentUser() {
 
@@ -213,16 +213,17 @@ export class SharePointService {
     
     try {
       let principalData;
-      if (!configService.isTestEnvironment()) {
+      if (configService.isTestEnvironment()) {
+     
+          console.log("SharePointService - Using test environment");
+          principalData = await sp.web.lists.getByTitle("Employees")     
+            .items.select("Name", "Dept")
+            .filter(`Dept eq '${dept}'`)
+            .top(5000)
+            .get();    
+      } else {
         console.log("SharePointService - Using production environment");
         principalData = await this.web.lists.getByTitle("Employees")     
-          .items.select("Name", "Dept")
-          .filter(`Dept eq '${dept}'`)
-          .top(5000)
-          .get();
-      } else {
-        console.log("SharePointService - Using test environment");
-        principalData = await sp.web.lists.getByTitle("Employees")     
           .items.select("Name", "Dept")
           .filter(`Dept eq '${dept}'`)
           .top(5000)

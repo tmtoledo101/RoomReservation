@@ -46,7 +46,7 @@ export const CustomInput = (props) => {
 };
 
 export const Dropdown = (props) => {
-  const { items, handleChange, name, multiple } = props;
+  const { items, handleChange, name, multiple, disabled } = props;
   
   const [localItems, setLocalItems] = React.useState(items || []);
   const [localValue, setLocalValue] = React.useState<string | string[]>(multiple ? [] : "");
@@ -151,7 +151,7 @@ export const Dropdown = (props) => {
                   return selected ? selected.toString() : "";
                 }
               }}
-              {...props}
+              disabled={disabled}
             >
               <MenuItem value="">
                 <em>None</em>

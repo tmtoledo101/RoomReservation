@@ -61,7 +61,7 @@ export const CSRDFields: React.FC<ICSRDFieldsProps> = ({
           <Dropdown 
             items={localPrincipalList} 
             name="principal"
-            onChange={async (e, formik) => {
+            handleChange={async (e, formik) => {
               const value = e.target.value;
               console.log("CSRDFields - Principal selection changed:", value);
               
