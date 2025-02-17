@@ -5,7 +5,7 @@ import styles from "../ResReservation.module.scss";
 
 interface IBasicInformationProps {
   departmentList: any[];
-  onDepartmentChange: (e: any) => void;
+  onDepartmentChange: (e: any, preserveBuilding?: boolean) => void;
 }
 
 export const BasicInformation: React.FC<IBasicInformationProps> = ({

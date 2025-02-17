@@ -1,6 +1,6 @@
 import * as yup from "yup";
 import * as moment from "moment";
-
+import { configService } from "../../../shared/services/ConfigurationService";
 export const validateDateTime = (startDateTime, endDateTime) =>
   startDateTime &&
   moment(startDateTime).isValid() &&
@@ -36,7 +36,7 @@ export const validationSchema = yup.object().shape({
   }),
   principal: yup.string().when("isCSDR", {
     is: (isCSDR) => isCSDR === true,
-    then: yup.string().required("Principal is required"),
+    then: configService.isTestEnvironment()?yup.string().required("Principal is required"):yup.string(),
     otherwise: yup.string(),
   }),
   contactPerson: yup.string().when("isCSDR", {

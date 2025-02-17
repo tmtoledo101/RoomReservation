@@ -71,7 +71,6 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
     setFilteredVenueList(newVenue);
     formik.setFieldValue("department", value);
     formik.setFieldTouched("department", true);
-    formik.setFieldValue("department", value);
     setShowResults(false);
   };
 

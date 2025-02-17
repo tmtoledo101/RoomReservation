@@ -76,6 +76,9 @@ export const VenueDetailsSection: React.FC<IVenueDetailsSectionProps> = ({
 
   const handleVenueSelect = async (venue: any, fromDate: Date | null, toDate: Date | null, department: string) => {
     try {
+      console.log('Department in handleVenueSelect:', department); // Add logging
+      console.log('Current formik values:', formik.values); // Log current formik values
+      
       // First check if venue is CRSD
       const isCRSD = await SharePointService.isVenueCRSD(venue.value);
       
@@ -93,8 +96,12 @@ export const VenueDetailsSection: React.FC<IVenueDetailsSectionProps> = ({
         formik.setFieldValue('toDate', formatDateTime12Hour(toDate));
       }
       
+      // Set department value and ensure it's set
       if (department) {
-        formik.setFieldValue('department', department);
+        console.log('Setting department value:', department); // Log before setting
+        await formik.setFieldValue('department', department);
+        console.log('Department after setting:', formik.values.department); // Log after setting
+        console.log('Updated formik values:', formik.values); // Log all updated values
       }
 
       // Notify parent component about venue selection

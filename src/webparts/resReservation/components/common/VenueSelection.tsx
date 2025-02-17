@@ -14,7 +14,7 @@ interface IVenueSelectionProps {
   departmentList: any[];
   departmentSectorMap: { [key: string]: string };
   onVenueChange: (e: any) => void;
-  onDepartmentChange: (e: any) => void;
+  onDepartmentChange: (e: any, preserveBuilding?: boolean) => void;
   venueImage: string;
   capacityperLayout: string;
   facilitiesAvailable: any;
@@ -39,33 +39,79 @@ export const VenueSelection: React.FC<IVenueSelectionProps> = ({
     setIsLoading(!formik.values.requestedBy);
   }, [formik.values.requestedBy]);
 
-  const handleVenueSelect = (venue: any, fromDate: Date | null, toDate: Date | null, department: string) => {
-    // Set department value
-    formik.setFieldValue("department", department);
-    onDepartmentChange({
-      target: {
-        value: department,
-        name: "department"
-      }
+  const handleVenueSelect = async (venue: any, fromDate: Date | null, toDate: Date | null, department: string) => {
+    console.log("VenueSelection - Starting venue selection with:", {
+      venue,
+      fromDate,
+      toDate,
+      department
     });
+    
+    try {
+      // First call department change handler and wait for it to complete
+      await new Promise<void>((resolve) => {
+        onDepartmentChange({
+          target: {
+            value: department,
+            name: "department"
+          }
+        }, true); // Pass preserveBuilding=true to keep building value
+        setTimeout(resolve, 100);
+      });
 
-    // Update venue selection
-    onVenueChange({
-      target: {
-        value: venue.value,
-        name: "venue"
+      // Set form values and wait for each update
+      await formik.setFieldValue("department", department);
+      await formik.setFieldTouched("department", true);
+
+      await formik.setFieldValue("building", venue.building || "");
+      await formik.setFieldTouched("building", true);
+
+      await formik.setFieldValue("venue", venue.value);
+      await formik.setFieldTouched("venue", true);
+
+      await formik.setFieldValue("IsCSDR", venue.group === 'CRSD');
+      await formik.setFieldTouched("IsCSDR", true);
+      
+      if (fromDate) {
+        await formik.setFieldValue("fromDate", moment(fromDate).format("MM/DD/YYYY hh:mm A"));
+        await formik.setFieldTouched("fromDate", true);
       }
-    });
+      if (toDate) {
+        await formik.setFieldValue("toDate", moment(toDate).format("MM/DD/YYYY hh:mm A"));
+        await formik.setFieldTouched("toDate", true);
+      }
 
-    // Set building value
-    formik.setFieldValue("building", venue.building || "");
+      // Wait for form updates to complete
+      await new Promise(resolve => setTimeout(resolve, 100));
 
-    // Set date values in the required format
-    if (fromDate) {
-      formik.setFieldValue("fromDate", moment(fromDate).format("MM/DD/YYYY hh:mm A"));
-    }
-    if (toDate) {
-      formik.setFieldValue("toDate", moment(toDate).format("MM/DD/YYYY hh:mm A"));
+      // Call venue change handler last
+      await new Promise<void>((resolve) => {
+        onVenueChange({
+          target: {
+            value: venue.value,
+            name: "venue"
+          }
+        });
+        setTimeout(resolve, 100);
+      });
+
+      // Validate form
+      const errors = await formik.validateForm();
+      console.log("VenueSelection - Form validation result:", errors);
+
+      console.log("VenueSelection - Selection complete:", {
+        formikValues: formik.values,
+        venue,
+        department,
+        touched: formik.touched,
+        errors: formik.errors
+      });
+    } catch (error) {
+      console.error("VenueSelection - Error in handleVenueSelect:", error);
+      // Reset form values on error
+      await formik.setFieldValue("venue", "");
+      await formik.setFieldValue("building", "");
+      await formik.setFieldValue("IsCSDR", false);
     }
   };
 

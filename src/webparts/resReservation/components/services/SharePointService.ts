@@ -10,7 +10,7 @@ import * as moment from "moment";
 import { configService } from "../../../shared/services/ConfigurationService";
 import { isDevelopmentMode } from "../../../shared/utils/enivronmentHelper";
 export class SharePointService {
-  private web = Web( configService.getAccessControlUrl() );
+  private web = Web( configService.isTestEnvironment? configService.getResourceReservationUrl(): configService.getAccessControlUrl() );
 
   public async getCurrentUser() {
 
@@ -208,20 +208,43 @@ export class SharePointService {
   }
 
   public async getPrincipalUsers(dept: string) {
-    const principalData = await this.web.lists.getByTitle("Employees")
-      .items.select("Name", "Dept")
-      .filter(`Dept eq '${dept}'`)
-      .get();
-
-    const princialMap = {};
-    principalData.forEach((item) => {
-      if (!princialMap[item.Dept]) {
-        princialMap[item.Dept] = [];
+    console.log("SharePointService - Getting principal users for department:", dept);
+    console.log("SharePointService - Is test environment:", configService.isTestEnvironment());
+    
+    try {
+      let principalData;
+      if (!configService.isTestEnvironment()) {
+        console.log("SharePointService - Using production environment");
+        principalData = await this.web.lists.getByTitle("Employees")     
+          .items.select("Name", "Dept")
+          .filter(`Dept eq '${dept}'`)
+          .top(5000)
+          .get();
+      } else {
+        console.log("SharePointService - Using test environment");
+        principalData = await sp.web.lists.getByTitle("Employees")     
+          .items.select("Name", "Dept")
+          .filter(`Dept eq '${dept}'`)
+          .top(5000)
+          .get();
       }
-      princialMap[item.Dept].push(item.Name);
-    });
 
-    return princialMap;
+      console.log("SharePointService - Principal data:", principalData);
+
+      const princialMap = {};
+      principalData.forEach((item) => {
+        if (!princialMap[item.Dept]) {
+          princialMap[item.Dept] = [];
+        }
+        princialMap[item.Dept].push(item.Name);
+      });
+
+      console.log("SharePointService - Principal map:", princialMap);
+      return princialMap;
+    } catch (error) {
+      console.error("SharePointService - Error getting principal users:", error);
+      return {};
+    }
   }
 
   public async getPurposeOfUse(): Promise<IDropdownItem[]> {

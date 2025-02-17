@@ -63,19 +63,39 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
     setSelectedBuilding(initialBuilding);
   }, [initialBuilding]);
 
-  const handleDepartmentChange = (e: any, formik: any): void => {
+  const handleDepartmentChange = async (e: any, formik: any): Promise<void> => {
     const { value } = e.target;
-    let newVenue = venueList;
+    console.log("VenueSearchDialog - Department changing to:", value);
     
-    if (value && departmentSectorMap[value] !== "FSS") {
-      newVenue = venueList.filter((item) => item.exclusiveTo !== "FSS");
-    }
+    try {
+      let newVenue = venueList;
+      
+      if (value && departmentSectorMap[value] !== "FSS") {
+        newVenue = venueList.filter((item) => item.exclusiveTo !== "FSS");
+      }
 
-    setFilteredVenueList(newVenue);
-    formik.setFieldValue("department", value);
-    formik.setFieldTouched("department", true);
-    formik.setFieldValue("department", value);
-    setShowResults(false);
+      // Update filtered venue list
+      setFilteredVenueList(newVenue);
+
+      // Set department value in formik
+      await formik.setFieldValue("department", value);
+      await formik.setFieldTouched("department", true);
+      
+      // Reset principal value since department changed
+      await formik.setFieldValue("principal", "");
+      
+      // Reset search results
+      setShowResults(false);
+
+      // Log updated formik values
+      console.log("VenueSearchDialog - Updated formik values:", {
+        department: formik.values.department,
+        principal: formik.values.principal,
+        allValues: formik.values
+      });
+    } catch (error) {
+      console.error("VenueSearchDialog - Error in handleDepartmentChange:", error);
+    }
   };
 
   const handleBuildingChange = (e: any, formik: any): void => {
@@ -100,10 +120,42 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
     }
   };
 
-  const handleVenueClick = (venue: any, values: any): void => {
-    setSelectedVenue(venue);
-    setSelectedFormikValues(values);
-    setConfirmationOpen(true);
+  const handleVenueClick = async (venue: any, formikValues: any): Promise<void> => {
+    try {
+      console.log("VenueSearchDialog - Venue clicked with values:", {
+        venue,
+        formikValues,
+        department: formikValues.department
+      });
+
+      if (!formikValues.department) {
+        console.error("VenueSearchDialog - Department is required");
+        return;
+      }
+
+      // Create complete form values
+      const completeValues = {
+        ...formikValues,
+        building: venue.building || "",
+        venue: venue.value,
+        IsCSDR: venue.group === 'CRSD'
+      };
+
+      // Store values in state
+      setSelectedVenue(venue);
+      setSelectedFormikValues(completeValues);
+
+      // Open confirmation dialog
+      setConfirmationOpen(true);
+
+      console.log("VenueSearchDialog - Values prepared:", {
+        venue,
+        completeValues,
+        originalValues: formikValues
+      });
+    } catch (error) {
+      console.error("VenueSearchDialog - Error in handleVenueClick:", error);
+    }
   };
   const handleCloseDialog = (): void => {
     setUnavailableVenues([]);
@@ -114,15 +166,37 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
     onClose();
   };
 
-  const handleConfirmVenue = (): void => {
-    if (selectedVenue && selectedFormikValues) {
-      onVenueSelect(
-        selectedVenue, 
+  const handleConfirmVenue = async (): Promise<void> => {
+    if (!selectedVenue || !selectedFormikValues) {
+      console.warn("VenueSearchDialog - Missing venue or form values");
+      return;
+    }
+
+    try {
+      console.log("VenueSearchDialog - Confirming venue selection:", {
+        venue: selectedVenue,
+        formValues: selectedFormikValues
+      });
+
+      if (!selectedFormikValues.department) {
+        console.error("VenueSearchDialog - Department value is missing");
+        return;
+      }
+
+      // Call onVenueSelect with complete values
+      await onVenueSelect(
+        selectedVenue,
         selectedFormikValues.fromDate, 
         selectedFormikValues.toDate,
         selectedFormikValues.department
       );
+
+      console.log("VenueSearchDialog - Venue selection confirmed successfully");
       handleCloseDialog();
+    } catch (error) {
+      console.error("VenueSearchDialog - Error confirming venue selection:", error);
+      // Keep dialog open on error
+      setConfirmationOpen(false);
     }
   };
 

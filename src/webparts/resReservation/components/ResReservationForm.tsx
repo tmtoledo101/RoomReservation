@@ -118,14 +118,32 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
     this.formikRef.current.setFieldValue("requestedBy", currentUser.Title);
   }
 
-  private resetFormFields(): void {
+  private resetFormFields(preserveBuilding: boolean = false): void {
     const formik = this.formikRef.current;
+    const currentPrincipal = formik.values.principal; // Save current principal value
+    const currentBuilding = formik.values.building; // Save current building value
+    
+    // Reset other fields
     formik.setFieldValue("venue", "");
-    formik.setFieldValue("building", "");
+    if (!preserveBuilding) {
+      formik.setFieldValue("building", "");
+    } else {
+      // Restore building value if we need to preserve it
+      formik.setFieldValue("building", currentBuilding);
+    }
     formik.setFieldValue("layout", "");
-    formik.setFieldValue("principal", "");
     formik.setFieldValue("contactPerson", "");
     formik.setFieldValue("isCSDR", false);
+    
+    // Restore principal value if it exists
+    if (currentPrincipal) {
+      formik.setFieldValue("principal", currentPrincipal);
+    }
+    
+    console.log("ResReservationForm - After reset:", {
+      principal: formik.values.principal,
+      building: formik.values.building
+    });
   }
 
   private createQuantityList(quantity: number): IDropdownItem[] {
@@ -135,63 +153,169 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
     }));
   }
 
-  private handleDepartmentChange = (e: any): void => {
+  private handleDepartmentChange = async (e: any, preserveBuilding: boolean = false): Promise<void> => {
     const { value } = e.target;
-    let newVenue = this.venue;
-    const { venueList: data } = this.state;
+    console.log("ResReservationForm - Department changing to:", value, "preserveBuilding:", preserveBuilding);
     
-    if (value && this.state.departmentSectorMap[value] !== "FSS") {
-      newVenue = data.filter((item) => item.exclusiveTo !== "FSS");
-      this.setState({ isFssManaged: false });
-    } else {
-      this.setState({ isFssManaged: true });
+    try {
+      // First update formik values
+      await this.formikRef.current.setFieldValue("department", value);
+      await this.formikRef.current.setFieldTouched("department", true);
+      console.log("ResReservationForm - Department set in formik:", this.formikRef.current.values.department);
+
+      // Then update FSS state
+      let newVenue = this.venue;
+      const { venueList: data } = this.state;
+      const isFssManaged = value ? this.state.departmentSectorMap[value] === "FSS" : false;
+      
+      if (!isFssManaged) {
+        newVenue = data.filter((item) => item.exclusiveTo !== "FSS");
+      }
+
+      // Update state and wait for it to complete
+      await new Promise<void>(resolve => {
+        this.setState({
+          isFssManaged,
+          venueList: newVenue,
+          venueImage: "https://wallpaperaccess.com/full/2119702.jpg",
+          showCSRDField: false,
+          toggler: !this.state.toggler,
+          facilitiesAvailable: "",
+          capacityperLayout: "",
+          facilityData: [],
+          selectedID: 0,
+          princialList: [] // Clear principal list when department changes
+        }, resolve);
+      });
+
+      // Get principal users for the new department if it exists
+      if (value) {
+        try {
+          const principalMap = await this.spService.getPrincipalUsers(value);
+          console.log("ResReservationForm - Principal map for new department:", principalMap);
+          
+          if (principalMap[value]) {
+            const principalList = principalMap[value].sort().map(name => ({
+              id: name,
+              value: name
+            }));
+            console.log("ResReservationForm - Setting principal list for new department:", principalList);
+            
+            await new Promise<void>(resolve => {
+              this.setState({
+                princialList: principalList
+              }, resolve);
+            });
+          }
+        } catch (error) {
+          console.error("Error getting principal users for new department:", error);
+        }
+      }
+
+      // Reset form fields after state update
+      await this.resetFormFields(preserveBuilding);
+      
+      console.log("ResReservationForm - Department change complete:", {
+        formikValues: this.formikRef.current.values,
+        state: {
+          isFssManaged: this.state.isFssManaged,
+          showCSRDField: this.state.showCSRDField,
+          principalList: this.state.princialList
+        }
+      });
+    } catch (error) {
+      console.error("ResReservationForm - Error in handleDepartmentChange:", error);
     }
-
-    this.setState({
-      venueList: newVenue,
-      venueImage: "https://wallpaperaccess.com/full/2119702.jpg",
-      showCSRDField: false,
-      toggler: !this.state.toggler,
-      facilitiesAvailable: "",
-      capacityperLayout: "",
-      facilityData: [],
-      selectedID: 0,
-    });
-
-    this.resetFormFields();
   }
 
   private handleVenueChange = async (e: any): Promise<void> => {
-    const { value } = e.target;
-    const selectedVenue = this.state.venueList.find(v => v.value === value);
-    
-    if (selectedVenue) {
-      const isCRSD = selectedVenue.group === 'CRSD';
-      const layouts = this.layout[value] || [];
-
-      this.setState({
-        venueImage: selectedVenue.venueImage,
-        facilitiesAvailable: JSON.parse(selectedVenue.facilitiesAvailable),
-        capacityperLayout: selectedVenue.capacityperLayout,
-        venueId: selectedVenue.venueId,
-        selectedID: selectedVenue.itemId,
-        showCSRDField: isCRSD,
-        layoutList: layouts,
-      });
-
-      if (isCRSD) {
-        const department = this.formikRef.current.values.department;
-        const principalMap = await this.spService.getPrincipalUsers(department);
-        if (principalMap[department]) {
+    try {
+      const { value } = e.target;
+      console.log("ResReservationForm - Starting venue change with value:", value);
+      console.log("ResReservationForm - Current formik values:", this.formikRef.current.values);
+      
+      const selectedVenue = this.state.venueList.find(v => v.value === value);
+      console.log("ResReservationForm - Selected venue:", selectedVenue);
+      
+      if (selectedVenue) {
+        const isCRSD = selectedVenue.group === 'CRSD';
+        const layouts = this.layout[value] || [];
+        
+        // Set venue and CRSD values
+        await this.formikRef.current.setFieldValue("venue", value);
+        await this.formikRef.current.setFieldTouched("venue", true);
+        
+        await this.formikRef.current.setFieldValue("IsCSDR", isCRSD);
+        await this.formikRef.current.setFieldTouched("IsCSDR", true);
+        
+        // Update state and wait for it to complete
+        await new Promise<void>(resolve => {
           this.setState({
-            princialList: principalMap[department].sort().map(name => ({ id: name, value: name })),
-          });
+            venueImage: selectedVenue.venueImage,
+            facilitiesAvailable: JSON.parse(selectedVenue.facilitiesAvailable),
+            capacityperLayout: selectedVenue.capacityperLayout,
+            venueId: selectedVenue.venueId,
+            selectedID: selectedVenue.itemId,
+            showCSRDField: isCRSD,
+            layoutList: layouts,
+          }, resolve);
+        });
+
+        if (isCRSD) {
+          // Get the department value
+          const department = this.formikRef.current.values.department;
+          console.log("ResReservationForm - Department value for principal users:", department);
+          
+          if (department) {
+            try {
+              // Get principal users
+              const principalMap = await this.spService.getPrincipalUsers(department);
+              console.log("ResReservationForm - Principal map:", principalMap);
+              
+              if (principalMap[department]) {
+                const principalList = principalMap[department].sort().map(name => ({
+                  id: name,
+                  value: name
+                }));
+                console.log("ResReservationForm - Setting principal list:", principalList);
+                
+                // Wait for principal list to be set
+                await new Promise<void>(resolve => {
+                  this.setState({
+                    princialList: principalList
+                  }, resolve);
+                });
+
+                // Only reset principal value if it's not in the new principal list
+                const currentPrincipal = this.formikRef.current.values.principal;
+                if (currentPrincipal && !principalList.find(p => p.value === currentPrincipal)) {
+                  await this.formikRef.current.setFieldValue("principal", "");
+                  await this.formikRef.current.setFieldTouched("principal", true);
+                }
+                
+                console.log("ResReservationForm - Venue change complete:", {
+                  venue: value,
+                  isCRSD,
+                  department,
+                  principalList,
+                  currentPrincipal,
+                  formikValues: this.formikRef.current.values,
+                  touched: this.formikRef.current.touched
+                });
+              } else {
+                console.log("ResReservationForm - No principals found for department:", department);
+              }
+            } catch (error) {
+              console.error("Error getting principal users:", error);
+            }
+          } else {
+            console.log("ResReservationForm - Department value is not set");
+          }
         }
       }
+    } catch (error) {
+      console.error("Error in handleVenueChange:", error);
     }
-
-    this.formikRef.current.setFieldValue("venue", value);
-    this.formikRef.current.setFieldValue("IsCSDR", selectedVenue && selectedVenue.group === 'CRSD');
   }
 
   private participantHandler = (e: any): void => {
