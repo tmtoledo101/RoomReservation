@@ -488,7 +488,7 @@ console.log('Batch Page Items:', batchPageItems);
       // Get current user
       const user = await sp.web.currentUser.get();
       const currentUser = {
-        Email: isDevelopmentMode ? user.Title : user.Email,
+        Email: isDevelopmentMode() ? user.Title : user.Email,
         Title: user.Title
       };
       const userEmail = currentUser.Email;
@@ -496,7 +496,8 @@ console.log('Batch Page Items:', batchPageItems);
       // Get users from CRSD and DD groups
       const crsdUsers = hasGroupMembersAccess()? await sp.web.siteGroups.getByName("CRSD").users():[];
       const ddUsers = hasGroupMembersAccess()?await sp.web.siteGroups.getByName("DD").users():[];
-
+      console.log('CRSD Users:', crsdUsers);
+      console.log('DD Users:', ddUsers);
       // Extract email lists
       const crsdEmails = crsdUsers.map(item => item.Email);
       const ddEmails = ddUsers.map(item => item.Email);
@@ -504,22 +505,51 @@ console.log('Batch Page Items:', batchPageItems);
       // Check if user is an approver
       const isApprover =hasGroupMembersAccess()?
       crsdEmails.includes(userEmail) || ddEmails.includes(userEmail):true;
+      
+      let departmentData = [];
+      // Get departments with pagination
+      let page;
+      if (isDevelopmentMode()) {
+        const filterText = isDevelopmentMode() ? `Title eq '${userEmail}'` 
+        : `EmployeeName/Email eq '${userEmail}'`;  // Changed EMail to Email
+        //const selectText =isDevelopmentMode() ? 
+         // "Department/Title" : "Department/Department";
+         const selectText = "Department/Department";
+        const firstExpandText = isDevelopmentMode() ? 
+          "Department": "Department/FieldValuesAsText";
+        const secondExpandText = isDevelopmentMode() ? 
+          "EmployeeName": "EmployeeName/EMail";
 
-      const filterText = isDevelopmentMode? `Title eq '${userEmail}'` : `EmployeeName/Email eq '${userEmail}'`;  
-      // Get user departments
-      const departmentData: any[] = await sp.web.lists
-        .getByTitle("UsersPerDepartment")
-        .items.select(
-          "EmployeeName/EMail",
-          "Department/Department",
-        )
-        .filter(filterText)
-        .expand(
-          "Department/FieldValuesAsText",
-          "EmployeeName/EMail",
-        )
-        .top(5000)
-        .get();
+        page = await sp.web.lists
+          .getByTitle("UsersPerDepartment")
+          .items
+          .select("EmployeeName/EMail", selectText)
+          .expand(firstExpandText, secondExpandText)
+          .filter(filterText)
+          .top(5000)  // Process 100 items at a time
+          .getPaged();
+      } else {
+        page = await sp.web.lists
+          .getByTitle("UsersPerDepartment")
+          .items
+          .select("EmployeeName/EMail", "Department/Department")
+          .expand("Department", "EmployeeName")
+          .filter(`EmployeeName/EMail eq '${userEmail}'`)
+          .top(5000)
+          .getPaged();
+      }
+
+      // Collect all pages
+      while (true) {
+        departmentData.push(...page.results);
+        
+        if (page.hasNext) {
+          page = await page.getNext();
+        } else {
+          break;
+        }
+      }
+
 
       const departments = departmentData.map(item => item.Department.Department);
 
@@ -655,20 +685,45 @@ console.log('Batch Page Items:', batchPageItems);
   }
 
   public async getPrincipalUsers(dept: string) {
-    const principalData = await this.web.lists.getByTitle("Employees")
-      .items.select("Name", "Dept")
-      .filter(`Dept eq '${dept}'`)
-      .get();
 
-    const princialMap = {};
-    principalData.forEach((item) => {
-      if (!princialMap[item.Dept]) {
-        princialMap[item.Dept] = [];
+    console.log("SharePointService - Getting principal users for department:", dept);
+    console.log("SharePointService - Is test environment:", configService.isTestEnvironment());
+    
+    try {
+      let principalData;
+      if (configService.isTestEnvironment()) {
+     
+          console.log("SharePointService - Using test environment");
+          principalData = await sp.web.lists.getByTitle("Employees")     
+            .items.select("Name", "Dept")
+            .filter(`Dept eq '${dept}'`)
+            .top(5000)
+            .get();    
+      } else {
+        console.log("SharePointService - Using production environment");
+        principalData = await this.web.lists.getByTitle("Employees")     
+          .items.select("Name", "Dept")
+          .filter(`Dept eq '${dept}'`)
+          .top(5000)
+          .get();
       }
-      princialMap[item.Dept].push(item.Name);
-    });
 
-    return princialMap;
+      console.log("SharePointService - Principal data:", principalData);
+
+      const princialMap = {};
+      principalData.forEach((item) => {
+        if (!princialMap[item.Dept]) {
+          princialMap[item.Dept] = [];
+        }
+        princialMap[item.Dept].push(item.Name);
+      });
+
+      console.log("SharePointService - Principal map:", princialMap);
+      return princialMap;
+    } catch (error) {
+      console.error("SharePointService - Error getting principal users:", error);
+      return {};
+    }
   }
 
   public static async getPurposeOfUse(): Promise<IDropdownItem[]> {

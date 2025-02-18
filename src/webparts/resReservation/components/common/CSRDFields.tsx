@@ -93,7 +93,7 @@ export const CSRDFields: React.FC<ICSRDFieldsProps> = ({
                 await formik.setFieldValue("principal", "");
               }
             }}
-            disabled={!showCSRDField || localPrincipalList.length === 0}
+            disabled={!showCSRDField}
           />
         </div>
       </Grid>
