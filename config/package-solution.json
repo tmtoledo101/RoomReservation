@@ -2,7 +2,7 @@
   "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
   "solution": {
     "name": "res-reservation-client-side-solution_2025",
-    "id": "831d38b2-12a3-4d25-91dd-acd5b3d8da0c",
+    "id": "097f4ff4-7d6d-431f-adbf-14581da5c7bb",
     "version": "1.0.0.0",
     "includeClientSideAssets": true,
     "isDomainIsolated": false,
