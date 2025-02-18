@@ -118,31 +118,40 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
     this.formikRef.current.setFieldValue("requestedBy", currentUser.Title);
   }
 
-  private resetFormFields(preserveBuilding: boolean = false): void {
-    const formik = this.formikRef.current;
-    const currentPrincipal = formik.values.principal; // Save current principal value
-    const currentBuilding = formik.values.building; // Save current building value
+  private resetFormFields(preserveBuilding: boolean = false, preserveVenue: boolean = false): void {
+    const formikInstance = this.formikRef.current;
+    const currentPrincipal = formikInstance.values.principal;
+    const currentBuilding = formikInstance.values.building;
+    const currentVenue = formikInstance.values.venue;
     
-    // Reset other fields
-    formik.setFieldValue("venue", "");
-    if (!preserveBuilding) {
-      formik.setFieldValue("building", "");
+    // Only reset venue if not preserving it
+    if (!preserveVenue) {
+      formikInstance.setFieldValue("venue", "");
     } else {
-      // Restore building value if we need to preserve it
-      formik.setFieldValue("building", currentBuilding);
+      formikInstance.setFieldValue("venue", currentVenue);
     }
-    formik.setFieldValue("layout", "");
-    formik.setFieldValue("contactPerson", "");
-    formik.setFieldValue("isCSDR", false);
+
+    // Handle building field
+    if (!preserveBuilding) {
+      formikInstance.setFieldValue("building", "");
+    } else {
+      formikInstance.setFieldValue("building", currentBuilding);
+    }
+
+    // Always reset these fields
+    formikInstance.setFieldValue("layout", "");
+    formikInstance.setFieldValue("contactPerson", "");
+    formikInstance.setFieldValue("isCSDR", false);
     
-    // Restore principal value if it exists
+    // Always preserve principal if it exists
     if (currentPrincipal) {
-      formik.setFieldValue("principal", currentPrincipal);
+      formikInstance.setFieldValue("principal", currentPrincipal);
     }
     
     console.log("ResReservationForm - After reset:", {
-      principal: formik.values.principal,
-      building: formik.values.building
+      principal: formikInstance.values.principal,
+      building: formikInstance.values.building,
+      venue: formikInstance.values.venue
     });
   }
 
@@ -168,25 +177,56 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
       const { venueList: data } = this.state;
       const isFssManaged = value ? this.state.departmentSectorMap[value] === "FSS" : false;
       
-      if (!isFssManaged) {
+      // If department is cleared, reset all venue-related fields
+      if (!value) {
+        console.log("ResReservationForm - Department cleared, resetting all venue-related fields");
+        const departmentFormik = this.formikRef.current;
+        departmentFormik.setFieldValue("venue", "");
+        departmentFormik.setFieldTouched("venue", false);
+        departmentFormik.setFieldValue("isCSDR", false);
+        departmentFormik.setFieldTouched("isCSDR", false);
+        departmentFormik.setFieldValue("layout", "");
+        departmentFormik.setFieldTouched("layout", false);
+        newVenue = [];
+      } else if (!isFssManaged) {
         newVenue = data.filter((item) => item.exclusiveTo !== "FSS");
       }
+
+      // Get current venue value before state update
+      const currentVenue = this.formikRef.current.values.venue;
+      console.log("ResReservationForm - Current venue before state update:", currentVenue);
+      
+      // Check if current venue will still be valid after update
+      const willVenueBeValid = currentVenue ? newVenue.some(v => v.value === currentVenue) : false;
+      console.log("ResReservationForm - Will venue remain valid:", willVenueBeValid);
 
       // Update state and wait for it to complete
       await new Promise<void>(resolve => {
         this.setState({
           isFssManaged,
           venueList: newVenue,
-          venueImage: "https://wallpaperaccess.com/full/2119702.jpg",
+          venueImage: willVenueBeValid ? this.state.venueImage : "https://wallpaperaccess.com/full/2119702.jpg",
           showCSRDField: false,
           toggler: !this.state.toggler,
-          facilitiesAvailable: "",
-          capacityperLayout: "",
+          facilitiesAvailable: willVenueBeValid ? this.state.facilitiesAvailable : "",
+          capacityperLayout: willVenueBeValid ? this.state.capacityperLayout : "",
           facilityData: [],
-          selectedID: 0,
+          selectedID: willVenueBeValid ? this.state.selectedID : 0,
           princialList: [] // Clear principal list when department changes
         }, resolve);
       });
+
+      // If venue will become invalid, reset venue-related fields
+      if (!willVenueBeValid && currentVenue) {
+        console.log("ResReservationForm - Resetting venue and related fields as venue is no longer valid");
+        const invalidVenueFormik = this.formikRef.current;
+        invalidVenueFormik.setFieldValue("venue", "");
+        invalidVenueFormik.setFieldTouched("venue", false);
+        invalidVenueFormik.setFieldValue("isCSDR", false);
+        invalidVenueFormik.setFieldTouched("isCSDR", false);
+        invalidVenueFormik.setFieldValue("layout", "");
+        invalidVenueFormik.setFieldTouched("layout", false);
+      }
 
       // Get principal users for the new department if it exists
       if (value) {
@@ -212,8 +252,18 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
         }
       }
 
-      // Reset form fields after state update
-      await this.resetFormFields(preserveBuilding);
+      // Reset non-venue related fields
+      const formikInstance = this.formikRef.current;
+      
+      // Handle building field
+      if (!preserveBuilding) {
+        formikInstance.setFieldValue("building", "");
+        formikInstance.setFieldTouched("building", false);
+      }
+
+      // Always reset contact person
+      formikInstance.setFieldValue("contactPerson", "");
+      formikInstance.setFieldTouched("contactPerson", false);
       
       console.log("ResReservationForm - Department change complete:", {
         formikValues: this.formikRef.current.values,
@@ -232,85 +282,141 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
     try {
       const { value } = e.target;
       console.log("ResReservationForm - Starting venue change with value:", value);
-      console.log("ResReservationForm - Current formik values:", this.formikRef.current.values);
+
+      // Check if department is set
+      const currentDepartment = this.formikRef.current.values.department;
+      if (!currentDepartment && value) {
+        console.log("ResReservationForm - Cannot select venue without department");
+        const formikInstance = this.formikRef.current;
+        formikInstance.setFieldValue("venue", "");
+        formikInstance.setFieldTouched("venue", false);
+        return;
+      }
+
+      // If venue is cleared, reset all venue-related fields
+      if (!value) {
+        console.log("ResReservationForm - Venue cleared, resetting all venue-related fields");
+        const venueFormik = this.formikRef.current;
+        venueFormik.setFieldValue("venue", "");
+        venueFormik.setFieldTouched("venue", false);
+        venueFormik.setFieldValue("isCSDR", false);
+        venueFormik.setFieldTouched("isCSDR", false);
+        venueFormik.setFieldValue("layout", "");
+        venueFormik.setFieldTouched("layout", false);
+
+        this.setState({
+          venueImage: "https://wallpaperaccess.com/full/2119702.jpg",
+          facilitiesAvailable: "",
+          capacityperLayout: "",
+          venueId: "",
+          selectedID: 0,
+          showCSRDField: false,
+          layoutList: [],
+          princialList: []
+        });
+        return;
+      }
       
       const selectedVenue = this.state.venueList.find(v => v.value === value);
       console.log("ResReservationForm - Selected venue:", selectedVenue);
       
-      if (selectedVenue) {
-        const isCRSD = selectedVenue.group === 'CRSD';
-        const layouts = this.layout[value] || [];
-        
-        // Set venue and CRSD values
-        await this.formikRef.current.setFieldValue("venue", value);
-        await this.formikRef.current.setFieldTouched("venue", true);
-        
-        await this.formikRef.current.setFieldValue("IsCSDR", isCRSD);
-        await this.formikRef.current.setFieldTouched("IsCSDR", true);
-        
-        // Update state and wait for it to complete
-        await new Promise<void>(resolve => {
-          this.setState({
-            venueImage: selectedVenue.venueImage,
-            facilitiesAvailable: JSON.parse(selectedVenue.facilitiesAvailable),
-            capacityperLayout: selectedVenue.capacityperLayout,
-            venueId: selectedVenue.venueId,
-            selectedID: selectedVenue.itemId,
-            showCSRDField: isCRSD,
-            layoutList: layouts,
-          }, resolve);
+      // Validate that selected venue exists in current venue list
+      if (!selectedVenue) {
+        console.log("ResReservationForm - Selected venue not found in current venue list");
+        const validateVenueFormik = this.formikRef.current;
+        validateVenueFormik.setFieldValue("venue", "");
+        validateVenueFormik.setFieldTouched("venue", false);
+        validateVenueFormik.setFieldValue("isCSDR", false);
+        validateVenueFormik.setFieldTouched("isCSDR", false);
+        validateVenueFormik.setFieldValue("layout", "");
+        validateVenueFormik.setFieldTouched("layout", false);
+
+        this.setState({
+          venueImage: "https://wallpaperaccess.com/full/2119702.jpg",
+          facilitiesAvailable: "",
+          capacityperLayout: "",
+          venueId: "",
+          selectedID: 0,
+          showCSRDField: false,
+          layoutList: [],
+          princialList: []
         });
+        return;
+      }
+      
+      // Process valid venue selection
+      const isCRSD = selectedVenue.group === 'CRSD';
+      const layouts = this.layout[value] || [];
+      
+      // Set venue and CRSD values first
+      this.formikRef.current.setFieldValue("venue", value);
+      this.formikRef.current.setFieldTouched("venue", true);
+      
+      this.formikRef.current.setFieldValue("isCSDR", isCRSD);
+      this.formikRef.current.setFieldTouched("isCSDR", true);
+      
+      // Update state and wait for it to complete
+      await new Promise<void>(resolve => {
+        this.setState({
+          venueImage: selectedVenue.venueImage,
+          facilitiesAvailable: JSON.parse(selectedVenue.facilitiesAvailable),
+          capacityperLayout: selectedVenue.capacityperLayout,
+          venueId: selectedVenue.venueId,
+          selectedID: selectedVenue.itemId,
+          showCSRDField: isCRSD,
+          layoutList: layouts,
+        }, resolve);
+      });
 
-        if (isCRSD) {
-          // Get the department value
-          const department = this.formikRef.current.values.department;
-          console.log("ResReservationForm - Department value for principal users:", department);
-          
-          if (department) {
-            try {
-              // Get principal users
-              const principalMap = await this.spService.getPrincipalUsers(department);
-              console.log("ResReservationForm - Principal map:", principalMap);
+      if (isCRSD) {
+        // Get the department value
+        const selectedDepartment = this.formikRef.current.values.department;
+        console.log("ResReservationForm - Department value for principal users:", selectedDepartment);
+        
+        if (selectedDepartment) {
+          try {
+            // Get principal users
+            const principalMap = await this.spService.getPrincipalUsers(selectedDepartment);
+            console.log("ResReservationForm - Principal map:", principalMap);
+            
+            if (principalMap[selectedDepartment]) {
+              const principalList = principalMap[selectedDepartment].sort().map(name => ({
+                id: name,
+                value: name
+              }));
+              console.log("ResReservationForm - Setting principal list:", principalList);
               
-              if (principalMap[department]) {
-                const principalList = principalMap[department].sort().map(name => ({
-                  id: name,
-                  value: name
-                }));
-                console.log("ResReservationForm - Setting principal list:", principalList);
-                
-                // Wait for principal list to be set
-                await new Promise<void>(resolve => {
-                  this.setState({
-                    princialList: principalList
-                  }, resolve);
-                });
+              // Wait for principal list to be set
+              await new Promise<void>(resolve => {
+                this.setState({
+                  princialList: principalList
+                }, resolve);
+              });
 
-                // Only reset principal value if it's not in the new principal list
-                const currentPrincipal = this.formikRef.current.values.principal;
-                if (currentPrincipal && !principalList.find(p => p.value === currentPrincipal)) {
-                  await this.formikRef.current.setFieldValue("principal", "");
-                  await this.formikRef.current.setFieldTouched("principal", true);
-                }
-                
-                console.log("ResReservationForm - Venue change complete:", {
-                  venue: value,
-                  isCRSD,
-                  department,
-                  principalList,
-                  currentPrincipal,
-                  formikValues: this.formikRef.current.values,
-                  touched: this.formikRef.current.touched
-                });
-              } else {
-                console.log("ResReservationForm - No principals found for department:", department);
+              // Only reset principal value if it's not in the new principal list
+              const currentPrincipal = this.formikRef.current.values.principal;
+              if (currentPrincipal && !principalList.find(p => p.value === currentPrincipal)) {
+                await this.formikRef.current.setFieldValue("principal", "");
+                await this.formikRef.current.setFieldTouched("principal", true);
               }
-            } catch (error) {
-              console.error("Error getting principal users:", error);
+              
+              console.log("ResReservationForm - Venue change complete:", {
+                venue: value,
+                isCRSD,
+                department: selectedDepartment,
+                principalList,
+                currentPrincipal,
+                formikValues: this.formikRef.current.values,
+                touched: this.formikRef.current.touched
+              });
+            } else {
+              console.log("ResReservationForm - No principals found for department:", selectedDepartment);
             }
-          } else {
-            console.log("ResReservationForm - Department value is not set");
+          } catch (error) {
+            console.error("Error getting principal users:", error);
           }
+        } else {
+          console.log("ResReservationForm - Department value is not set");
         }
       }
     } catch (error) {
@@ -365,12 +471,12 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
     this.formikRef.current.setFieldValue("assetNumber", this.facilityMap[facility].AssetNumber);
   }
 
-  private handleSave = async (formik): Promise<void> => {
+  private handleSave = async (formikProps): Promise<void> => {
     try {
       this.setState({ saveStart: true });
       
       const result = await this.spService.createReservation(
-        formik.values,
+        formikProps.values,
         this.state.facilityData,
         this.state.files,
         this.state.venueId,
@@ -381,7 +487,7 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
         //const toEmails = [this.state.requestorEmail];
         const toEmails = ['tmtoledo@kpmg.com'];
         const ccEmails = [
-          ...(formik.values.isCSDR ? this.state.crsdMemberList : []),
+          ...(formikProps.values.isCSDR ? this.state.crsdMemberList : []),
           ...(this.state.isFssManaged ? this.state.fssMemberList : []),
           ...(this.state.isddMember ? this.state.ddMemeberList : []),
           ...(this.state.facilityData.length > 0 
@@ -394,7 +500,7 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
           this.props.context,
           toEmails,
           [...new Set(ccEmails)],
-          formik.values,
+          formikProps.values,
           this.state.isFssManaged ? 4 : 1,
           this.state.facilitiesAvailable,
           this.props.siteUrl,
@@ -424,35 +530,38 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
   }
 
   public render(): React.ReactElement<IResReservationFormProps> {
+    const initialValues: IResReservationFormValues = {
+      requestedBy: "",
+      department: "",
+      venue: "",
+      building: "",
+      layout: "",
+      contactPerson: "",
+      principal: "",
+      numberOfParticipant: "",
+      fromDate: "",
+      toDate: "",
+      facility: "",
+      quantity: "",
+      otherRequirment: "",
+      titleDesc: "",
+      participant: [],
+      purposeOfUse: "",
+      contactNumber: "",
+      currentRecord: -1,
+      isCSDR: false,
+      assetNumber: "", // Add missing field
+    };
+
     return (
-      <Formik
-        initialValues={{
-          requestedBy: "",
-          department: "",
-          venue: "",
-          building: "",
-          layout: "",
-          contactPerson: "",
-          principal: "",
-          numberOfParticipant: "",
-          fromDate: "",
-          toDate: "",
-          facility: "",
-          quantity: "",
-          otherRequirment: "",
-          titleDesc: "",
-          participant: [],
-          purposeOfUse: "",
-          contactNumber: "",
-          currentRecord: -1,
-          IsCSDR: false,
-        }}
+      <Formik<IResReservationFormValues>
+        initialValues={initialValues}
         validationSchema={validationSchema}
         innerRef={this.formikRef}
         onSubmit={() => this.setState({ saveDialog: true })}
       >
-        {(formik) => (
-          <form onSubmit={formik.handleSubmit}>
+        {(formikProps) => (
+          <form onSubmit={formikProps.handleSubmit}>
             <div className={styles.resReservation}>
               <div className={styles.container}>
                 <Grid container spacing={4}>
@@ -491,7 +600,7 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
                     onParticipantChange={this.participantHandler}
                     showCSRDField={this.state.showCSRDField}
                     isddMember={this.state.isddMember}
-                    participantLength={formik.values.participant.length}
+                    participantLength={formikProps.values.participant.length}
                   />
 
                   <FacilitySection
@@ -500,10 +609,10 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
                     onAddClick={() => this.setState({ showFacilityDialog: true })}
                     onEditClick={(index) => {
                       const data = this.state.facilityData[index];
-                      formik.setFieldValue("facility", data.facility);
-                      formik.setFieldValue("quantity", data.quantity);
-                      formik.setFieldValue("assetNumber", data.assetNumber);
-                      formik.setFieldValue("currentRecord", index);
+                      formikProps.setFieldValue("facility", data.facility);
+                      formikProps.setFieldValue("quantity", data.quantity);
+                      formikProps.setFieldValue("assetNumber", data.assetNumber);
+                      formikProps.setFieldValue("currentRecord", index);
                       this.setState({ showFacilityDialog: true });
                     }}
                     onFilesChange={(files) => this.setState({ files })}
@@ -540,7 +649,7 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
               onClose={() => this.setState({ showFacilityDialog: false })}
               facilityList={this.state.facilityList}
               quantityList={this.state.quantityList}
-              formik={formik}
+              formik={formikProps}
               onSave={this.handleFacilitySave}
               onDelete={this.handleFacilityDelete}
               onFacilityChange={this.handleFacilityChange}
@@ -549,7 +658,7 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
             <ConfirmationDialog
               open={this.state.saveDialog}
               onClose={() => this.setState({ saveDialog: false })}
-              onConfirm={() => this.handleSave(formik)}
+              onConfirm={() => this.handleSave(formikProps)}
               title="Confirm Reservation"
               message="Do you want to create this request?"
             />
@@ -569,9 +678,9 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
 
             <Checkbox
               color="primary"
-              name="IsCSDR"
+              name="isCSDR"
               style={{ display: "none" }}
-              {...formik.getFieldProps("isCSDR")}
+              {...formikProps.getFieldProps("isCSDR")}
             />
           </form>
         )}

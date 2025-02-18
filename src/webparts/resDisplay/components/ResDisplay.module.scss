@@ -1,94 +1,149 @@
-@import '~@microsoft/sp-office-ui-fabric-core/dist/sass/SPFabricCore.scss';
+@import '~office-ui-fabric-react/dist/sass/References.scss';
 
 .resDisplay {
   .container {
-    max-width: 1200px;
-    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    box-sizing: border-box;
     padding: 20px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    background-color: $ms-color-white;
+  }
+  
+  .floatingbutton{
+    padding: 16px;
+    border-color: "transparent";
+  }
+
+  .paper {
+    padding: 16px;
+    border-color: "transparent";
+    font-family: "Roboto";
   }
 
   .label {
-    font-weight: 600;
-    margin-bottom: 8px;
-  }
-
-  .width {
-    width: 100%;
+    font-weight: $ms-font-weight-semibold;
+    font-size: $ms-font-size-m;
+    height: 32px;
+    line-height: 32px;
+    margin: 0 4px;
+    vertical-align: top;
+    display: inline-block;
   }
 
   .imageData {
-    width: 100%;
-    height: 300px;
-    overflow: hidden;
-    margin-bottom: 20px;
-
-    img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
+    margin-left: 19%;
   }
 
-  .facilityDetails {
+  .width {
+    max-width: 300px;
+  }
+  .data {
     width: 100%;
-    margin-top: 10px;
-    margin-bottom: 20px;
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-
-      th, td {
-        border: 1px solid #ddd;
-        padding: 8px;
-        text-align: left;
-      }
-
-      th {
-        background-color: $ms-color-themePrimary;
-        color: $ms-color-white;
-      }
-
-      tr:nth-child(even) {
-        background-color: $ms-color-neutralLighter;
-      }
+    button {
+      margin-top: 10px;
     }
+  }
+  img {
+    width: 50%;
+    height: 250px;
+  }
+  
+  .facilityDetails {
+    padding: 0 20px;
+    margin-top: 20px;
   }
 
   .closeBtn {
+    border: none;
+    padding: 5px 15px;
     position: absolute;
-    top: 0;
-    right: 0;
+    right: -11px;
+    top: 2px;
+    outline: none;
   }
 
+
   .dropZone {
+    min-height: 140px !important;
+  }
+
+  table,
+  th,
+  td {
+    border: 1px solid black;
+    border-collapse: collapse;
     min-height: 100px;
-    border: 2px dashed $ms-color-themePrimary;
-    padding: 20px;
+  }
+  td {
+    max-width: 200px;
+    pre {
+      white-space: break-spaces;
+    }
+  }
+
+  tr > td {
     text-align: center;
   }
 
+  table {
+    width: 75%;
+  }
+
   .error {
-    color: $ms-color-error;
-    font-size: 12px;
-    margin-top: 4px;
+    color: red;
   }
 
   .formHandle {
     display: flex;
-    justify-content: flex-end;
-    gap: 10px;
+    justify-content: end;
+    align-items: center;
+    button {
+      margin-left: 20px;
+    }
+  }
+  
+  .facilityDetails {
+    padding: 0 20px;
     margin-top: 20px;
   }
 
-  .previewChip {
-    margin: 3px;
-    height: 20px;
+  .previewChip{
+    min-width: 160;
+    max-width: 210;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
-
   .button {
-    margin-left: 10px;
+    // Our button
+    text-decoration: none;
+    height: 32px;
+
+    // Primary Button
+    min-width: 80px;
+    background-color: $ms-color-themePrimary;
+    border-color: $ms-color-themePrimary;
+    color: $ms-color-white;
+
+    // Basic Button
+    outline: transparent;
+    position: relative;
+    font-family: "Segoe UI WestEuropean","Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,"Helvetica Neue",sans-serif;
+    -webkit-font-smoothing: antialiased;
+    font-size: $ms-font-size-m;
+    font-weight: $ms-font-weight-regular;
+    border-width: 0;
+    text-align: center;
+    cursor: pointer;
+    display: inline-block;
+    padding: 0 16px;
+
+    .label {
+      font-weight: $ms-font-weight-semibold;
+      font-size: $ms-font-size-m;
+      height: 32px;
+      line-height: 32px;
+      margin: 0 4px;
+      vertical-align: top;
+      display: inline-block;
+    }
   }
 }

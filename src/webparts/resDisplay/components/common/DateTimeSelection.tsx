@@ -4,7 +4,7 @@ import { FormikProps } from "formik";
 import { CustomDateTimePicker } from "./FormComponents";
 import { IFormValues } from "../interfaces/IResDisplay";
 import styles from "../ResDisplay.module.scss";
-
+import * as moment from "moment"; // Add this import
 interface IDateTimeSelectionProps {
   formik: FormikProps<IFormValues>;
   isEditing: boolean;
@@ -15,6 +15,7 @@ export const DateTimeSelection: React.FC<IDateTimeSelectionProps> = ({
   formik,
   isEditing,
   handleDateChange
+
 }) => {
   return (
     <>
@@ -27,7 +28,7 @@ export const DateTimeSelection: React.FC<IDateTimeSelectionProps> = ({
               handleChange={handleDateChange}
             />
           ) : (
-            <div>{formik.values.fromDate}</div>
+            <div>{formik.values.fromDate ? moment(formik.values.fromDate).format("MM/DD/YYYY hh:mm A") : ""}</div>
           )}
         </div>
       </Grid>
@@ -40,7 +41,7 @@ export const DateTimeSelection: React.FC<IDateTimeSelectionProps> = ({
               handleChange={handleDateChange}
             />
           ) : (
-            <div>{formik.values.toDate}</div>
+            <div>{formik.values.toDate ? moment(formik.values.toDate).format("MM/DD/YYYY hh:mm A") : ""}</div>
           )}
         </div>
       </Grid>

@@ -136,7 +136,7 @@ export const CustomDateTimePicker: React.FC<ICustomDateTimePickerProps> = ({ nam
                 autoOk
                 hideTabs
                 ampm={false}
-                format="MM/dd/yyyy HH:MM"
+                 format="MM/dd/yyyy hh:mm a"
                 style={{
                   border: form.errors[field.name] ? "1px solid red" : "none"
                 }}

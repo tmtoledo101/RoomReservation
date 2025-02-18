@@ -360,28 +360,38 @@ public async getFacilities() {
     console.log("Created item:", item.data);
 
     if (files.length > 0) {
-      const folderPath = `/sites/ResourceReservation/ReservationDocs/${item.data.GUID}`;
-      await sp.web.lists.getByTitle("ReservationDocs").rootFolder.folders.add(item.data.GUID);
-
-      for (const file of files) {
-        if (file.size <= 10485760) {
-          const fileUploadResult = await sp.web.getFolderByServerRelativeUrl(folderPath)
-            .files.add(file.name, file, true);
-          await fileUploadResult.file.getItem().then(fileItem => {
-            return fileItem.update({
-              RequestId: item.data.ID
-            });
-          });
-        } else {
-          const chunkedUploadResult = await sp.web.getFolderByServerRelativeUrl(folderPath)
-            .files.addChunked(file.name, file);
-          await chunkedUploadResult.file.getItem().then(fileItem => {
-            return fileItem.update({
-              RequestId: item.data.ID
-            });
-          });
-        }
-      }
+      const _itemId = item.data.ID;
+      
+      const f = configService.isDevUser() ? "/sites/ResourceReservationDev" : "/sites/ResourceReservation" + "/ReservationDocs/" + item.data.GUID;
+      
+      await sp.web.lists.getByTitle("ReservationDocs").rootFolder.folders.add(item.data.GUID)
+        .then(r => {
+          Promise.all(files.map((file) => {
+            if (file.size <= 10485760) {
+              // Regular file upload
+              return sp.web.getFolderByServerRelativeUrl(f).files.add(file.name, file, true)
+                .then(fileResult => {
+                  return fileResult.file.getItem()
+                    .then(fileItem => {  // Renamed from 'item' to 'fileItem'
+                      return fileItem.update({
+                        RequestId: _itemId
+                      });
+                    });
+                });
+            } else {
+              // Chunked upload for large files
+              return sp.web.getFolderByServerRelativeUrl(f).files.addChunked(file.name, file, d1 => {
+                console.log({ data: d1 });
+              }, true)
+                .then(({ file: fileData }) => fileData.getItem())
+                .then((fileItem: any) => {  // Renamed from 'item' to 'fileItem'
+                  return fileItem.update({
+                    RequestId: _itemId
+                  });
+                });
+            }
+          }));
+        });
     }
 
     return item.data;

@@ -30,9 +30,19 @@ export class SharePointService {
 
     if (buildingData.length > 0) {
       const item = buildingData[0];
-      const image = JSON.parse(item.Image);
+      let venueImage = '';
+      
+      if (item.Image) {
+        try {
+          const image = JSON.parse(item.Image);
+          venueImage = (image && image.serverRelativeUrl) ? image.serverRelativeUrl : '';
+        } catch (error) {
+          console.warn('Error parsing image data:', error);
+        }
+      }
+      
       return {
-        venueImage: image.serverRelativeUrl,
+        venueImage,
         facilitiesAvailable: JSON.parse(JSON.stringify(item.FacilitiesAvailable)),
         capacityperLayout: item.CapacityperLayout,
         venueId: item.VenueId,
