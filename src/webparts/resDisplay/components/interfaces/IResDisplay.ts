@@ -1,3 +1,8 @@
+/**
+ * VenueDetails Component:
+ *
+ * This component displays details about a venue, including its image, capacity per layout, and facilities available.
+ */
 export interface IFacilityData {
   facility: string;
   quantity: string;

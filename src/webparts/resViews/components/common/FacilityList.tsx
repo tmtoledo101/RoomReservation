@@ -1,3 +1,5 @@
+{/*The FacilityList component displays a table of facilities with their details and provides functionality for 
+  adding and editing facilities in the Resource Reservation System.*/}
 import * as React from "react";
 import { Fab, Paper } from "@material-ui/core";
 import AddIcon from "@material-ui/icons/Add";
@@ -10,7 +12,7 @@ interface IFacilityListProps {
   onAddClick: () => void;
   onEditClick: (index: number) => void;
 }
-
+// Styles for consistent table appearance
 const tableHeaderStyle: React.CSSProperties = {
   padding: '12px',
   textAlign: 'left',
@@ -23,6 +25,7 @@ const tableCellStyle: React.CSSProperties = {
   borderBottom: '1px solid #ddd'
 };
 
+// Main component implementation
 export const FacilityList: React.FC<IFacilityListProps> = ({
   facilityData,
   onAddClick,

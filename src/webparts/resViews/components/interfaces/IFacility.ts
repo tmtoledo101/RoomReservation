@@ -1,3 +1,4 @@
+{/*This file contains TypeScript interfaces for facility management in the Resource Reservation System, defining data structures for facilities, dropdowns, and dialog props.*/}
 export interface IFacilityData {
   facility: string;
   quantity: string;

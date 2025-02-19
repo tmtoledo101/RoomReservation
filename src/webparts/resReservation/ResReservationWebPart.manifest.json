@@ -19,7 +19,7 @@
     "groupId": "5c03119e-3074-46fd-976b-c60198311f70", // Other
     "group": { "default": "Other" },
     "title": { "default": "ResReservation_2025" },
-    "description": { "default": "ResReservation description" },
+    "description": { "default": "The Reservation WebPart handles the creation and management of venue bookings, allowing users to select venues, specify booking times, and submit reservation requests. It includes features for handling file attachments, managing CRSD (Conference Room Service Division) specific requirements, and integrating with departmental approvals." },
     "officeFabricIconFontName": "Page",
     "properties": {
       "description": "ResReservation_2025"

@@ -1,3 +1,7 @@
+{/*The FacilityDialog component provides a modal dialog interface for adding and editing facility 
+  details in the Resource Reservation System. It manages facility selection, quantity, and asset number tracking.
+  */}
+
 import * as React from "react";
 import {
   Dialog,
@@ -22,12 +26,14 @@ export const FacilityDialog: React.FC<IFacilityDialogProps> = ({
   onFacilityChange
 }) => {
   return (
+    // Dialog wrapper with responsive width
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>
         {formik.values.currentRecord >= 0 ? "Edit Facility" : "Add Facility"}
       </DialogTitle>
       <DialogContent>
         <Grid container spacing={3}>
+           {/* Facility Selection Dropdown */}
           <Grid item xs={12}>
             <TextField
               fullWidth

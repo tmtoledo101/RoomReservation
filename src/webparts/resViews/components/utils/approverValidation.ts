@@ -1,3 +1,6 @@
+/*The service provides a comprehensive interface for all SharePoint operations 
+needed by the resView webpart, handling complex data relationships, permissions, and large dataset management.
+*/
 import * as yup from "yup";
 import * as moment from "moment";
 import { validateDateTime } from "./helpers";

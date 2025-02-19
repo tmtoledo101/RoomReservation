@@ -1,37 +1,41 @@
 import * as React from "react";
 import { Grid, Button } from "@material-ui/core";
 import { ModalPopup } from "./ModalPopup";
-
+// Interface defining the props for the ConfirmationDialog component
 interface IConfirmationDialogProps {
-  open: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-  title: string;
-  message: string;
-  confirmLabel?: string;
-  cancelLabel?: string;
+  open: boolean;  // Controls dialog visibility
+  onClose: () => void;  // Handler for dialog close action
+  onConfirm: () => void; // Dialog title
+  title: string;  // Dialog title
+  message: string; // Dialog message content
+  confirmLabel?: string; // Optional custom label for confirm button
+  cancelLabel?: string;  // Optional custom label for cancel button
 }
 
 export const ConfirmationDialog: React.FC<IConfirmationDialogProps> = ({
   open,
-  onClose,
+  onClose, 
   onConfirm,
   title,
   message,
-  confirmLabel = "Ok",
-  cancelLabel = "Cancel"
+  confirmLabel = "Ok",  // Default confirm button text
+  cancelLabel = "Cancel"  // Default cancel button text
 }) => {
   return (
+    // ModalPopup: Base dialog component with customizable header
     <ModalPopup
       title={title}
       hideCloseIcon={false}
       open={open}
       onClose={onClose}
     >
+       {/* Grid container for dialog content layout */}
       <Grid container spacing={2}>
+          {/* Message section */}
         <Grid item xs={12}>
           <h3>{message}</h3>
         </Grid>
+        {/* Action buttons section */}
         <Grid item xs={12}>
           <div
             style={{
@@ -40,6 +44,7 @@ export const ConfirmationDialog: React.FC<IConfirmationDialogProps> = ({
               alignItems: "center",
             }}
           >
+             {/* Cancel button */}
             <Button
               color="secondary"
               variant="contained"
@@ -47,6 +52,7 @@ export const ConfirmationDialog: React.FC<IConfirmationDialogProps> = ({
             >
               {cancelLabel}
             </Button>
+              {/* Confirm button */}
             <Button
               color="primary"
               variant="contained"

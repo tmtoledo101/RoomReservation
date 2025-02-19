@@ -1,3 +1,11 @@
+
+/**
+ * DateTimeSelection Component:
+ *
+ * This component renders date and time selection fields for a reservation form, including "Date and Time of use - From" and
+ * "Date and Time of use - To". It also displays a field for "Other Requirements" and the reservation status.
+ */
+
 import * as React from "react";
 import { Grid, TextField } from "@material-ui/core";
 import { FormikProps } from "formik";

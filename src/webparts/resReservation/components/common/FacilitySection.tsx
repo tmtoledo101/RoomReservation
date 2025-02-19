@@ -4,13 +4,14 @@ import { CustomInput } from "./FormComponents";
 import { FacilityList } from "./FacilityList";
 import { DropzoneArea } from "material-ui-dropzone";
 import styles from "../ResReservation.module.scss";
-
+// Props Interface
 interface IFacilitySectionProps {
-  showCSRDField: boolean;
-  facilityData: any[];
-  onAddClick: () => void;
-  onEditClick: (index: number) => void;
-  onFilesChange: (files: File[]) => void;
+  showCSRDField: boolean;  // Controls visibility of CRSD facility section
+  facilityData: any[]; // Array of facility data
+  onAddClick: () => void;  // Handler for adding new facilities
+  onEditClick: (index: number) => void; // Handler for editing facilities
+  onFilesChange: (files: File[]) => void; // Handler for file attachment changes
+
 }
 
 export const FacilitySection: React.FC<IFacilitySectionProps> = ({
@@ -53,6 +54,7 @@ export const FacilitySection: React.FC<IFacilitySectionProps> = ({
             classes: { root: styles.previewChip },
           }}
           previewText="Selected files"
+             // ... configuration options
           onChange={onFilesChange}
         />
       </Grid>

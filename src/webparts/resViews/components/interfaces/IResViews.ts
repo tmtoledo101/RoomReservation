@@ -1,3 +1,8 @@
+{/*
+  This file contains TypeScript interfaces and constants for managing reservation views, 
+  table data structures, and status management in the resView webpart.
+  */}
+
 export interface ITableItem {
   building: string;
   venue: string;

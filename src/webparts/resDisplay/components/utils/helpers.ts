@@ -1,3 +1,10 @@
+/**
+ * helpers.ts:
+ *
+ * This file provides helper functions for the ResDisplay components, including functions for validating date and time,
+ * formatting dates, and mapping arrays to objects and dropdown values.
+ */
+
 import * as moment from "moment";
 import { IDropdownItem } from "../interfaces/IResDisplay";
 

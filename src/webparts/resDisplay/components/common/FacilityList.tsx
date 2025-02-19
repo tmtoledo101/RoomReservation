@@ -1,3 +1,10 @@
+/**
+ * FacilityList Component:
+ *
+ * This component renders a table displaying a list of facilities, including their facility name, quantity, and asset number.
+ * It also provides an optional "View" action for each facility.
+ */
+
 import * as React from "react";
 import { IFacilityData } from "../interfaces/IResDisplay";
 import styles from "../ResDisplay.module.scss";

@@ -1,3 +1,8 @@
+/*
+This component provides a form for viewing reservation requests. It allows users to select a date range and search for reservations.
+ * It displays the results in a table, and allows users to view the details of a specific reservation.
+*/
+
 import * as React from "react";
 import { Formik } from "formik";
 import { Grid, Button, Paper } from "@material-ui/core";

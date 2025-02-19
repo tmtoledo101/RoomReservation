@@ -2,11 +2,11 @@ import * as React from "react";
 import { Grid } from "@material-ui/core";
 import { CustomInput, Dropdown } from "./FormComponents";
 import styles from "../ResReservation.module.scss";
-
+// Props Interface
 interface ICSRDFieldsProps {
-  showCSRDField: boolean;
-  layoutList: any[];
-  principalList: any[];
+  showCSRDField: boolean; // Controls visibility of CRSD fields
+  layoutList: any[]; // Available layout options
+  principalList: any[]; // List of principal users
 }
 
 export const CSRDFields: React.FC<ICSRDFieldsProps> = ({
@@ -14,9 +14,10 @@ export const CSRDFields: React.FC<ICSRDFieldsProps> = ({
   layoutList,
   principalList,
 }) => {
+  // Local state for principal list and initial load tracking
   const [localPrincipalList, setLocalPrincipalList] = React.useState(principalList);
   const [isInitialLoad, setIsInitialLoad] = React.useState(true);
-
+  // Updates local principal list when props change
   React.useEffect(() => {
     console.log("CSRDFields - Principal list updated:", {
       newList: principalList,
@@ -30,7 +31,7 @@ export const CSRDFields: React.FC<ICSRDFieldsProps> = ({
       setIsInitialLoad(false);
     }
   }, [principalList]);
-
+// Early return if CRSD fields should not be shown
   if (!showCSRDField) {
     console.log("CSRDFields - Not showing CRSD fields");
     return null;

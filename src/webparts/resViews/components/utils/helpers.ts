@@ -1,3 +1,5 @@
+/*The helpers.ts file contains utility functions for date formatting, validation, and conversion used throughout the resView wepart.
+*/
 import * as moment from "moment";
 
 export const formatDateForInput = (dateString: string): string => {

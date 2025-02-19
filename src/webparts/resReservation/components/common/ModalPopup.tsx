@@ -1,3 +1,5 @@
+{/*The ModalPopup component serves as a reusable dialog/modal window throughout the Resource Reservation System.
+   It provides a consistent way to display overlay content with a standardized header and close button.*/}
 import * as React from "react";
 import {
   Dialog,
@@ -9,13 +11,13 @@ import CloseIcon from "@material-ui/icons/Close";
 import styles from "../ResReservation.module.scss";
 
 interface IModalPopupProps {
-  children: React.ReactNode;
-  title: string;
-  open: boolean;
-  onClose: () => void;
-  hideCloseIcon?: boolean;
-  maxWidth?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | false;
-  fullWidth?: boolean;
+  children: React.ReactNode; // Content to be displayed in the modal
+  title: string;  // Modal header title
+  open: boolean;  // Controls modal visibility
+  onClose: () => void;  // Handler for close actions
+  hideCloseIcon?: boolean; // Option to hide the close button
+  maxWidth?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | false; // Modal size options
+  fullWidth?: boolean; // Controls if modal takes full width
 }
 
 export const ModalPopup: React.FC<IModalPopupProps> = ({ 

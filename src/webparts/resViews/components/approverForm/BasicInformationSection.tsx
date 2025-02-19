@@ -1,3 +1,6 @@
+
+{/*This component renders the basic information section of the approval form in the Resource Reservation System. 
+  It displays user and department details in a structured layout using Material-UI components.*/}
 import * as React from "react";
 import { Grid, Paper, TextField } from "@material-ui/core";
 
@@ -10,6 +13,7 @@ export const BasicInformationSection: React.FC<{
         <Grid item xs={12}>
           <h3 style={{ margin: 0 }}>Basic Information</h3>
         </Grid>
+        {/* Requester Information - Read-only field */}
         <Grid item xs={6}>
           <TextField
             fullWidth
@@ -20,6 +24,7 @@ export const BasicInformationSection: React.FC<{
             disabled
           />
         </Grid>
+        {/* Department Information - Read-only field */}
         <Grid item xs={6}>
           <TextField
             fullWidth

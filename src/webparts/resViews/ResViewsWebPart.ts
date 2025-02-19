@@ -1,3 +1,7 @@
+/*
+This class represents the ResViews web part, which is a client-side web part for displaying reservation requests in SharePoint.
+ * It initializes the web part, loads CSS files, sets up the SharePoint context, and renders the ResViews component.
+*/
 import * as React from 'react';
 import * as ReactDom from 'react-dom';
 import { Version } from '@microsoft/sp-core-library';

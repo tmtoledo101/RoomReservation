@@ -1,3 +1,7 @@
+
+{/*This utility file contains helper functions for email handling, date formatting, 
+  and venue availability management in the Resource Reservation System.*/}
+  
 import * as moment from "moment";
 import { sp } from "@pnp/sp";
 import { IEmailProperties } from "@pnp/sp/sputilities";

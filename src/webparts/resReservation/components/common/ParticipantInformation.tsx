@@ -1,3 +1,6 @@
+
+{/*The ParticipantInformation component handles participant-related details in venue reservation forms, 
+  including contact information, purpose of use, and participant selection.*/}
 import * as React from "react";
 import { Grid } from "@material-ui/core";
 import { CustomInput, Dropdown } from "./FormComponents";
@@ -22,6 +25,7 @@ export const ParticipantInformation: React.FC<IParticipantInformationProps> = ({
 }) => {
   return (
     <>
+      {/* Contact Information Section */}
       <Grid item xs={6}>
         <div className={styles.width}>
           <div className={styles.label}>Contact No.</div>

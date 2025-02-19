@@ -1,3 +1,10 @@
+/**
+ * SharePointService:
+ *
+ * This class provides methods for interacting with SharePoint, including retrieving venue information, user details,
+ * list data, and updating request items. It also includes methods for checking room availability and sending emails.
+ */
+
 import { sp } from "@pnp/sp";
 import "@pnp/sp/webs";
 import "@pnp/sp/lists";

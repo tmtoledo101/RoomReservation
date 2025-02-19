@@ -1,3 +1,5 @@
+{/*The SharePointService class manages all SharePoint data operations for the resView webpart, handling CRUD operations, 
+  data formatting, and complex queries.*/}
 import { sp } from "@pnp/sp";
 import "@pnp/sp/webs";
 import "@pnp/sp/lists";

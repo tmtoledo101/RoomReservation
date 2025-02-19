@@ -1,3 +1,9 @@
+/**
+ * ActionButtons Component:
+ *
+ * This component renders action buttons based on the provided props, determining which buttons to display based on the user's role,
+ * the status of the reservation, and whether the reservation is being edited.
+ */
 import * as React from "react";
 import { Grid, Button, Fab, Tooltip } from "@material-ui/core";
 import EditIcon from "@material-ui/icons/Edit";
@@ -65,7 +71,7 @@ export const ActionButtons: React.FC<IActionButtonsProps> = ({
               startIcon={<SaveIcon />}
               onClick={onApprove}
               color="primary"
-              disabled={saveStart}
+              disabled={saveStart}  // Disable the button while saving
             >
               Approve
             </Button>
@@ -76,7 +82,7 @@ export const ActionButtons: React.FC<IActionButtonsProps> = ({
               startIcon={<SaveIcon />}
               color="secondary"
               onClick={onDisapprove}
-              disabled={saveStart}
+              disabled={saveStart} // Disable the button while saving
             >
               Disapprove
             </Button>
@@ -94,7 +100,7 @@ export const ActionButtons: React.FC<IActionButtonsProps> = ({
               color: "lightgrey",
               background: "grey",
             }}
-            disabled={saveStart}
+            disabled={saveStart}  // Disable the button while saving
           >
             Cancel
           </Button>

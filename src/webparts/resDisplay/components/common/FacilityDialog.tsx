@@ -1,3 +1,10 @@
+
+/**
+ * FacilityDialog Component:
+ *
+ * This component renders a dialog for adding or editing facilities. It includes fields for facility, quantity, and asset number,
+ * and provides "Cancel", "Delete", and "Save" buttons.
+ */
 import * as React from "react";
 import { Grid, Button } from "@material-ui/core";
 import { FormikProps } from "formik";
@@ -27,6 +34,7 @@ export const FacilityDialog: React.FC<IFacilityDialogProps> = ({
   facilityHandler
 }) => {
   return (
+    // Use ModalPopup as the base for the facility dialog
     <ModalPopup
       title="Add Facilities"
       hideCloseIcon={false}

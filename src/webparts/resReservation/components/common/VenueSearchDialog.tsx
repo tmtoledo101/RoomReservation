@@ -1,3 +1,9 @@
+{/*The VenueSearchDialog component provides a comprehensive search interface for finding 
+  and booking available venues within the Resource Reservation System.The component is used in:
+Main reservation form for venue selection
+Venue availability checking
+Booking modification interfaces*/}
+
 import * as React from "react";
 import * as moment from "moment";
 import {

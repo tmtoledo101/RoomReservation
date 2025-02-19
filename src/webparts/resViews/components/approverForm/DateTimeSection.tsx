@@ -1,3 +1,10 @@
+{/*help provide comments on this file on what it all about and from where the file was used, 
+  provide in line comment some part of the code
+  This component is used in:
+ApprovalForm: For reviewing reservation date/time
+ReservationDetails: For displaying booking period
+ModificationReview: For checking date changes*/}
+
 import * as React from "react";
 import { Grid, Paper, TextField } from "@material-ui/core";
 
@@ -15,13 +22,14 @@ export const DateTimeSection: React.FC<{
             fullWidth
             label="From Date"
             type="text"
-            InputLabelProps={{ shrink: true }}
-            {...formik.getFieldProps('fromDate')}
+            InputLabelProps={{ shrink: true }}  // Keeps label visible when field has value
+            {...formik.getFieldProps('fromDate')}   // Formik field binding
             error={formik.touched.fromDate && Boolean(formik.errors.fromDate)}
             helperText={formik.touched.fromDate && formik.errors.fromDate}
             disabled
           />
         </Grid>
+         {/* To Date Field - Read-only */}
         <Grid item xs={6}>
           <TextField
             fullWidth

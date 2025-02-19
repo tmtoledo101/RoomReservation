@@ -5,16 +5,16 @@ import { ModalPopup } from "./ModalPopup";
 import { Dropdown, CustomInput } from "./FormComponents";
 import { IDropdownItem } from "../interfaces/IResReservation";
 import styles from "../ResReservation.module.scss";
-
+// Interface Definition
 interface IFacilityDialogProps {
-  open: boolean;
-  onClose: () => void;
-  facilityList: IDropdownItem[];
-  quantityList: IDropdownItem[];
-  formik: FormikProps<any>;
-  onSave: (form: FormikProps<any>) => void;
-  onDelete: (form: FormikProps<any>) => void;
-  onFacilityChange: (e: React.ChangeEvent<{ value: any }>) => void;
+  open: boolean;  //Controls dialog visibility
+  onClose: () => void;   // Handler for dialog close
+  facilityList: IDropdownItem[]; // Available facilities
+  quantityList: IDropdownItem[];  // Quantity options
+  formik: FormikProps<any>;  // Formik instance for form management
+  onSave: (form: FormikProps<any>) => void;  // Save handler
+  onDelete: (form: FormikProps<any>) => void;  // Delete handler
+  onFacilityChange: (e: React.ChangeEvent<{ value: any }>) => void; // Facility selection handler
 }
 
 export const FacilityDialog: React.FC<IFacilityDialogProps> = ({
@@ -35,6 +35,7 @@ export const FacilityDialog: React.FC<IFacilityDialogProps> = ({
       onClose={onClose}
     >
       <Grid container spacing={2}>
+          {/* Facility Selection */}
         <Grid item xs={6}>
           <div className={styles.label}>Facility</div>
           <div className={styles.data}>
@@ -46,6 +47,7 @@ export const FacilityDialog: React.FC<IFacilityDialogProps> = ({
             />
           </div>
         </Grid>
+          {/* Quantity Selection */}
         <Grid item xs={6}>
           <div className={styles.label}>Quantity</div>
           <div className={styles.data}>
@@ -56,6 +58,7 @@ export const FacilityDialog: React.FC<IFacilityDialogProps> = ({
             />
           </div>
         </Grid>
+        {/* Asset Number Display */}
         <Grid item xs={6}>
           <div className={styles.label}>Asset Number</div>
           <div className={styles.data}>

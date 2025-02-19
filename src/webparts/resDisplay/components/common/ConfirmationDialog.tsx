@@ -1,3 +1,10 @@
+/**
+ * ConfirmationDialog Component:
+ *
+ * This component renders a confirmation dialog, displaying a message asking the user if they want to perform an action and providing
+ * "Cancel" and "Ok" buttons for the user to confirm or cancel the action.
+ */
+
 import * as React from "react";
 import { Grid, Button } from "@material-ui/core";
 import { FormikProps } from "formik";
@@ -42,7 +49,7 @@ export const ConfirmationDialog: React.FC<IConfirmationDialogProps> = ({
             <Button
               color="secondary"
               variant="contained"
-              onClick={onClose}
+              onClick={onClose} // Call onClose when Cancel is clicked
             >
               Cancel
             </Button>
@@ -52,7 +59,7 @@ export const ConfirmationDialog: React.FC<IConfirmationDialogProps> = ({
               style={{
                 marginLeft: "20px",
               }}
-              onClick={() => onConfirm(formik)}
+              onClick={() => onConfirm(formik)} // Call onConfirm with formik when Ok is clicked
             >
               Ok
             </Button>

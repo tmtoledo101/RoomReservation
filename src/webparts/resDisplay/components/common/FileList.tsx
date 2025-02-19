@@ -1,3 +1,9 @@
+/**
+ * FileList Component:
+ *
+ * This component renders a list of files. When in editing mode, it renders a DropzoneArea for uploading files.
+ * When not in editing mode, it renders a list of Chip components, each representing a file.
+ */
 import * as React from "react";
 import { Chip } from "@material-ui/core";
 import AttachFileIcon from "@material-ui/icons/AttachFile";

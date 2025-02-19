@@ -1,3 +1,6 @@
+
+{/*The ModalPopup component provides a reusable modal dialog with consistent styling and behavior 
+  across the Resource Reservation System.*/}
 import * as React from "react";
 import {
   Dialog,
@@ -28,6 +31,7 @@ export const ModalPopup: React.FC<IModalPopupProps> = ({
   fullWidth = true
 }) => {
   return (
+    // Material-UI Dialog with accessibility attributes
     <Dialog
       open={open}
       keepMounted

@@ -1,3 +1,10 @@
+
+{/*help provide comments on this file on what it all about and from where the file was used, 
+  provide in line comment some part of the code.This component is used in:
+Reservation listing pages
+Admin dashboards
+History views
+Report interfaces*/}
 import * as React from "react";
 import MaterialTable from "material-table";
 import VisibilityIcon from "@material-ui/icons/Visibility";
@@ -115,6 +122,7 @@ export const CustomTable: React.FC<ICustomTableProps> = ({
         exportButton: true,
         sorting: true
       }}
+      // Action buttons configuration
       actions={[
         {
           icon: () => <VisibilityIcon />,

@@ -1,3 +1,6 @@
+
+{/*This utility file contains validation schemas and helper functions for form validation 
+  in the Resource Reservation System using Yup validation library.*/}
 import * as yup from "yup";
 import * as moment from "moment";
 import { configService } from "../../../shared/services/ConfigurationService";
@@ -9,6 +12,9 @@ export const validateDateTime = (startDateTime, endDateTime) =>
   moment(endDateTime).isAfter(startDateTime);
 
 export const validateDateRange = (startDate, endDate) => {
+   // Validates reservation duration:
+  // - Maximum 3 months between dates
+  // - Handles null date checks
   if (!startDate || !endDate) return true;
   const start = moment(startDate);
   const end = moment(endDate);
@@ -45,6 +51,9 @@ export const validationSchema = yup.object().shape({
     otherwise: yup.string(),
   }),
   fromDate: yup.lazy((data) => {
+    // Handles date format validation
+    // Required field validation
+    // Custom date logic
     if (data) {
       return yup
         .mixed()

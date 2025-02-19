@@ -1,3 +1,8 @@
+/*
+This file defines the interfaces for the ResReservation component, including the data structures for facility data,
+ * venue items, dropdown items, reservation state, reservation form values, and facility map items.
+ */
+
 export interface IFacilityData {
     facility: string;
     quantity: string;

@@ -1,3 +1,6 @@
+{/*The SharePointService class provides a comprehensive interface for interacting with SharePoint lists and libraries within the Resource Reservation System. 
+  It handles data operations, file management, and user permissions.*/}
+
 import { sp } from "@pnp/sp";
 import "@pnp/sp/webs";
 import "@pnp/sp/lists";
@@ -10,10 +13,12 @@ import * as moment from "moment";
 import { configService } from "../../../shared/services/ConfigurationService";
 import { isDevelopmentMode } from "../../../shared/utils/enivronmentHelper";
 export class SharePointService {
+
   private web = Web( configService.isTestEnvironment()? configService.getResourceReservationUrl() :configService.getAccessControlUrl()  );
-
+  // User authentication and department access
   public async getCurrentUser() {
-
+    // Fetches current user details
+    // Handles both development and production environments
     const user = await sp.web.currentUser.get();
 
     const currentUser = {
@@ -24,6 +29,8 @@ export class SharePointService {
   }
 
   public async getDepartments(email: string) {
+  // Retrieves department information for a user
+  // Includes sector mapping and pagination handling
     console.log("Terence, here is the user : " + email, "developmentMode:",isDevelopmentMode());
 
     let departmentData = [];
@@ -99,6 +106,8 @@ export class SharePointService {
 
 
   public async getBuildings() {
+    // Fetches building and venue information
+  // Includes venue details like capacity and facilities
     const buildingData = await sp.web.lists
       .getByTitle("Venue")
       .items.select(
@@ -148,6 +157,8 @@ export class SharePointService {
   }
 
   public async checkVenueAvailability(fromDate: Date, toDate: Date): Promise<string[]> {
+  // Checks venue availability for given time period
+  // Handles reservation conflicts
     const reservations = [];
     try {
       // Get reservations with pagination
@@ -265,26 +276,10 @@ export class SharePointService {
 
     return arrayToDropDownValues(participants.map(item => item.Title));
   }
-/*
-  public async getFacilities() {
-    const facilities = await sp.web.lists
-      .getByTitle("Facility")
-      .items.select("Title", "AssetNumber", "Facility", "Quantity", "FacilityOwner/Title", "FacilityOwner/ID", "FacilityOwner/EMail")
-      .expand("FacilityOwner")
-      .get();
-
-    const facilityMap = {};
-    facilities.forEach((item) => {
-      facilityMap[item.Facility] = { 
-        ...item, 
-        "FacilityOwner": item.FacilityOwner.results[0].EMail 
-      };
-    });
-
-    return facilityMap;
-  }
-*/
 public async getFacilities() {
+  // Retrieves facility information
+  // Includes asset numbers and facility owners
+  // Handles null checks for facility owner data
   const facilities = await sp.web.lists
     .getByTitle("Facility")
     .items.select("Title", "AssetNumber", "Facility", "Quantity", "FacilityOwner/Title", "FacilityOwner/ID", "FacilityOwner/EMail")
@@ -320,6 +315,10 @@ public async getFacilities() {
   }
 
   public async createReservation(formData: any, facilityData: any[], files: File[], venueId: string, isFssManaged: boolean) {
+    // Creates new reservations
+    // Handles file attachments
+    // Manages reference numbers
+    // Supports both regular and chunked file uploads
     const participant = JSON.stringify(formData["participant"]);
     const facility = JSON.stringify(facilityData);
     

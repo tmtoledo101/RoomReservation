@@ -1,3 +1,5 @@
+{/*A comprehensive venue search interface that allows users to find available venues based on department, building, 
+  and time criteria in the resView.*/}
 import * as React from "react";
 import {
   TextField,
@@ -22,9 +24,6 @@ import {validationSchema} from "../utils/validation";
 import{ validateDateTime_, validateDateRange } from "../utils/helpers";
 import { ConfirmationDialog } from "./ConfirmationDialog";
 import { ModalPopup } from "./ModalPopup";
-// Validation helper functions
-
-// Validation schema
 
 
 interface IVenueSearchDialogProps {
@@ -54,6 +53,7 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
   initialFromDate = null,
   initialToDate = null,
 }) => {
+  // Component state management
   const [filteredVenueList, setFilteredVenueList] = React.useState(venueList);
   const [unavailableVenues, setUnavailableVenues] = React.useState<string[]>([]);
   const [showResults, setShowResults] = React.useState(false);
@@ -64,6 +64,7 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
   const handleDepartmentChange = (e: any, formik: any): void => {
     const { value } = e.target;
     let newVenue = venueList;
+    // Filter venues based on FSS department access
     if (value && departmentSectorMap[value] !== "FSS") {
       newVenue = venueList.filter((item) => item.exclusiveTo !== "FSS");
     }

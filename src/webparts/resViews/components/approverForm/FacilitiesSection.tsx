@@ -1,3 +1,10 @@
+
+{/*The FacilitiesSection component handles the display and management of facilities and additional information in the approval form section of the 
+  Resource Reservation System. This component is used in:
+ApprovalForm for reviewing facility requests
+ReservationDetails for viewing booking details
+ModificationForm for updating facility requirements*/}
+
 import * as React from "react";
 import { Grid, Paper, TextField } from "@material-ui/core";
 import { DropzoneArea } from "material-ui-dropzone";
@@ -71,7 +78,7 @@ export const FacilitiesSection: React.FC<{
                 helperText={formik.touched.otherRequirment && formik.errors.otherRequirment}
               />
             </Grid>
-
+            
             <Grid item xs={12}>
               <div className={styles.label}>Attachments</div>
               <DropzoneArea

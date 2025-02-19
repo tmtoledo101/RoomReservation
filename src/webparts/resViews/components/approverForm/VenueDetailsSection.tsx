@@ -1,3 +1,7 @@
+
+{/*The VenueDetailsSection component manages venue selection and display in the Resource Reservation System's approval form. 
+  It provides a search interface and displays selected venue details.*/}
+  
 import * as React from "react";
 import { Grid, Paper, TextField, Button, CircularProgress } from "@material-ui/core";
 import SearchIcon from "@material-ui/icons/Search";

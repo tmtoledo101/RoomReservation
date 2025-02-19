@@ -1,3 +1,8 @@
+/*
+This component provides a form for approvers to modify reservation requests. It handles the display of reservation details,
+ * allows approvers to update the reservation status (Approve/Reject), and manages related data such as facilities and venue details.
+ *
+*/
 import * as React from "react";
 import { Formik } from "formik";
 import { 

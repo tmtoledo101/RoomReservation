@@ -1,3 +1,12 @@
+/**
+ * ConfigurationService.ts:
+ *
+ * This file defines the ConfigurationService, a singleton class responsible for managing and providing configuration settings for the application.
+ * It determines the environment (test or production) and provides URLs and other configuration values based on the detected environment.
+ * This ensures that the application can adapt its behavior and settings based on where it is deployed.
+ */
+
+
 import { sp } from "@pnp/sp";
 import "@pnp/sp/webs";
 import "@pnp/sp/lists";
@@ -39,14 +48,6 @@ export class ConfigurationService {
     console.log(`Environment changed from ${previousEnv} to ${this.environment}`);
     this.testEnvironmentConfig();
   }
-/*
-  public toggleEnvironment(): void {
-    const newEnv = this.isTestEnvironment() ? 'prod' : 'test';
-    this.setEnvironment(newEnv);
-    console.log(`Environment toggled to: ${newEnv}`);
-    console.log(`New workbench URL should be: ${this.getWorkbenchUrl()}`);
-  }
-*/
 
   public getWorkbenchUrl(): string {
     return `${this.getBaseUrl()}/sites/ResourceReservationDev/_layouts/15/workbench.aspx`;

@@ -1,7 +1,13 @@
+
+{/**The VenueDetails component displays detailed information about a venue, including its image, capacity layouts, 
+  and available facilities in a structured table format. The component is typically used within:
+ReservationForm
+EventBookingForm
+VenueRequestForm*/}
 import * as React from "react";
 import { Grid } from "@material-ui/core";
 import styles from "../ResReservation.module.scss";
-
+// Interface defining required props for venue information display
 interface IVenueDetailsProps {
   venueImage: string;
   capacityperLayout: string;

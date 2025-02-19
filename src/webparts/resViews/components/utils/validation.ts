@@ -1,3 +1,6 @@
+/*
+The validation.ts file defines Yup validation schemas for two main components in the resView webpart
+*/
 import * as yup from "yup";
 import * as moment from "moment";
 import { validateDateTime,validateDateTime_, validateDateRange } from "./helpers";

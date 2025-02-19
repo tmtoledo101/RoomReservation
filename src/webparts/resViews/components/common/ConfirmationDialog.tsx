@@ -1,3 +1,11 @@
+{/*The ConfirmationDialog component provides a reusable modal dialog for confirming user actions in the Resource Reservation System. 
+  It uses Material-UI components and the custom ModalPopup component for consistent styling.
+  The component is used throughout the application for:
+Reservation confirmation
+Deletion confirmations
+Action approvals
+Modification confirmations*/}
+
 import * as React from "react";
 import { Grid, Button } from "@material-ui/core";
 import { ModalPopup } from "./ModalPopup";
@@ -22,12 +30,14 @@ export const ConfirmationDialog: React.FC<IConfirmationDialogProps> = ({
   cancelLabel = "Cancel"
 }) => {
   return (
+    // Wrapper modal component
     <ModalPopup
       title={title}
       hideCloseIcon={false}
       open={open}
       onClose={onClose}
     >
+      {/* Content container with spacing */}
       <Grid container spacing={2}>
         <Grid item xs={12}>
           <h3>{message}</h3>

@@ -1,3 +1,5 @@
+
+//IresView state
 import { ITableItem } from "./interfaces/IResViews";
 
 export interface IResViewState {

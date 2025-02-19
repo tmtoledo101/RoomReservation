@@ -1,3 +1,11 @@
+{/*This component manages the purpose and participants section of the reservation form, 
+  handling participant type selection and count.
+  This component is used in:
+ReservationForm for new bookings
+ModificationForm for updating reservations
+ApprovalView for reviewing requests
+Key Features*/}
+
 import * as React from "react";
 import { Grid, Paper, TextField, FormGroup, FormControlLabel, Checkbox } from "@material-ui/core";
 import { IDropdownItem } from "../interfaces/IFacility";

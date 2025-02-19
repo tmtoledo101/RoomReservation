@@ -1,3 +1,5 @@
+{/*The Notification component provides a standardized way to display toast-style notifications across the Resource Reservation System 
+  using Material-UI's Snackbar and Alert components.*/}
 import * as React from "react";
 import Snackbar from '@material-ui/core/Snackbar';
 import MuiAlert, { AlertProps } from '@material-ui/lab/Alert';

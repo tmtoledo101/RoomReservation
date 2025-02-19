@@ -1,3 +1,7 @@
+/*
+This component serves as the main view for displaying reservation requests. It manages the state for different views,
+ * handles user interactions such as tab changes, search, and view actions, and renders the appropriate forms and data. 
+*/
 import * as React from "react";
 import { IResViewsProps } from "./IResViewsProps";
 import { IResViewState } from "./IResViewState";

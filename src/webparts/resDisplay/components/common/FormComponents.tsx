@@ -1,3 +1,9 @@
+/**
+ * FormComponents Component:
+ *
+ * This component provides custom form components for use with Formik, including a CustomInput, Dropdown, and CustomDateTimePicker.
+ * These components handle Formik integration, validation, and styling.
+ */
 import * as React from "react";
 import { Field } from "formik";
 import { FormControl, TextField, Select, MenuItem, Box, Chip, Checkbox } from "@material-ui/core";

@@ -1,3 +1,10 @@
+/**
+ * ModalPopup Component:
+ *
+ * This component renders a modal popup dialog, providing a container for displaying content in a modal.
+ * It includes a title and a close button (optional).
+ */
+
 import * as React from "react";
 import { Dialog, DialogTitle, DialogContent, Button } from "@material-ui/core";
 import CloseIcon from "@material-ui/icons/Close";
@@ -11,6 +18,11 @@ interface IModalPopupProps {
   hideCloseIcon?: boolean;
 }
 
+/**
+ * ModalPopup Component
+ * @param {IModalPopupProps} props - The component props
+ * @returns {JSX.Element} - The ModalPopup component
+ */
 export const ModalPopup: React.FC<IModalPopupProps> = ({ 
   children, 
   title, 

@@ -1,3 +1,10 @@
+
+{/*The VenueSelection component manages the venue selection process in the Resource Reservation System, 
+  including search functionality, venue details display, and form state management.This component is used in:
+ReservationForm (main booking form)
+VenueBookingWizard
+EventPlanningForm
+*/}
 import * as React from "react";
 import { Grid, Button, CircularProgress } from "@material-ui/core";
 import SearchIcon from "@material-ui/icons/Search";
@@ -7,7 +14,7 @@ import { CustomInput } from "./FormComponents";
 import { VenueDetails } from "./VenueDetails";
 import { VenueSearchDialog } from "./VenueSearchDialog";
 import styles from "../ResReservation.module.scss";
-
+// Props interface defining required data and handlers
 interface IVenueSelectionProps {
   buildingList: any[];
   venueList: any[];
@@ -31,10 +38,11 @@ export const VenueSelection: React.FC<IVenueSelectionProps> = ({
   capacityperLayout,
   facilitiesAvailable,
 }) => {
+  // Local state for managing search dialog and loading states
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const formik = useFormikContext<any>();
-
+// Set loading state based on requester information
   React.useEffect(() => {
     setIsLoading(!formik.values.requestedBy);
   }, [formik.values.requestedBy]);

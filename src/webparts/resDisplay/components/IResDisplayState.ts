@@ -1,3 +1,8 @@
+/**
+ * IResDisplayState.ts:
+ *
+ * This file defines the interface for the ResDisplay component's state.
+ */
 import { IDropdownItem, IFacilityData, IVenueData } from "./interfaces/IResDisplay";
 
 export interface IResDisplayState {

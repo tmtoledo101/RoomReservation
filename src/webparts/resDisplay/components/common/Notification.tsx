@@ -1,3 +1,9 @@
+/**
+ * Notification Component:
+ *
+ * This component renders a snackbar notification, displaying a message with a specified severity level.
+ */
+
 import * as React from "react";
 import Snackbar from "@material-ui/core/Snackbar";
 import MuiAlert, { AlertProps } from "@material-ui/lab/Alert";

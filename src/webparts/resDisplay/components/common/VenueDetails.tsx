@@ -1,3 +1,9 @@
+/**
+ * VenueDetails Component:
+ *
+ * This component displays details about a venue, including its image, capacity per layout, and facilities available.
+ */
+
 import * as React from "react";
 import { Grid } from "@material-ui/core";
 import styles from "../ResDisplay.module.scss";

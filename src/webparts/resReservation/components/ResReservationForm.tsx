@@ -1,3 +1,6 @@
+{/*The ResReservationForm component serves as the main form handler for the 
+  Resource Reservation System, managing the complete reservation workflow including venue selection, facility booking, and approval routing.*/}
+
 import * as React from "react";
 import { Formik } from "formik";
 import { Grid, Button, Checkbox } from "@material-ui/core";

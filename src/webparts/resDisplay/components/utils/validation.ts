@@ -1,3 +1,10 @@
+/**
+ * validation.ts:
+ *
+ * This file defines the validation schema for the ResDisplay form using Yup.
+ * It specifies the validation rules for each field in the form.
+ */
+
 import * as yup from "yup";
 import * as moment from "moment";
 import { validateDateTime } from "./helpers";

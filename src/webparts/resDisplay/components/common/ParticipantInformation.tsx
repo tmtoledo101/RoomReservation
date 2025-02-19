@@ -1,3 +1,9 @@
+/**
+ * ParticipantInformation Component:
+ *
+ * This component renders participant information fields for a reservation form, including purpose of use, participants,
+ * number of participants, and title description.
+ */
 import * as React from "react";
 import { Grid } from "@material-ui/core";
 import { FormikProps } from "formik";
@@ -14,6 +20,12 @@ interface IParticipantInformationProps {
   isDDMember?: boolean;
   showCSRDField?: boolean;
 }
+
+/**
+ * ParticipantInformation Component
+ * @param {IParticipantInformationProps} props - The component props
+ * @returns {JSX.Element} - The ParticipantInformation component
+ */
 
 export const ParticipantInformation: React.FC<IParticipantInformationProps> = ({
   formik,

@@ -1,3 +1,9 @@
+/**
+ * BasicInformation Component:
+ *
+ * This component renders basic information fields for a reservation form, including requested by, department, building, venue,
+ * layout, principal user, contact person, and contact number.
+ */
 import * as React from "react";
 import { Grid } from "@material-ui/core";
 import { FormikProps } from "formik";
@@ -84,7 +90,7 @@ export const BasicInformation: React.FC<IBasicInformationProps> = ({
               <Dropdown
                 items={layoutList}
                 name="layout"
-                disabled={!isEditing}
+                disabled={!isEditing} // Disable the dropdown if not editing
               />
             </div>
           </Grid>
@@ -94,7 +100,7 @@ export const BasicInformation: React.FC<IBasicInformationProps> = ({
               <Dropdown
                 items={principalList}
                 name="principal"
-                disabled={!isEditing}
+                disabled={!isEditing} // Disable the dropdown if not editing
               />
             </div>
           </Grid>
@@ -114,7 +120,7 @@ export const BasicInformation: React.FC<IBasicInformationProps> = ({
           <div className={styles.label}>Contact No.</div>
           <CustomInput
             name="contactNumber"
-            disabled={!isEditing}
+            disabled={!isEditing} // Disable the input if not editing
           />
         </div>
       </Grid>

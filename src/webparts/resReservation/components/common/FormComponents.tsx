@@ -1,3 +1,6 @@
+{/*This file contains reusable form components that integrate with Formik for 
+  form management and Material-UI for styling in the Resource Reservation System.*/}
+
 import * as React from "react";
 import { Field } from "formik";
 import {
@@ -12,7 +15,7 @@ import {
 import { DateTimePicker, MuiPickersUtilsProvider } from "@material-ui/pickers";
 import DateFnsUtils from "@date-io/date-fns";
 import styles from "../ResReservation.module.scss";
-
+// A basic text input component that provides form field functionality with error handling
 export const CustomInput = (props) => {
   const { name, disabled = false } = props;
   return (
@@ -44,7 +47,7 @@ export const CustomInput = (props) => {
     </Field>
   );
 };
-
+// A flexible dropdown component that handles both single and multiple selections
 export const Dropdown = (props) => {
   const { items, handleChange, name, multiple, disabled } = props;
   
@@ -176,7 +179,7 @@ export const Dropdown = (props) => {
     </Field>
   );
 };
-
+// A datetime picker that enforces consistent date formatting and validation
 export const CustomDateTimePicker = (props) => {
   const { name, handleChange } = props;
   return (
