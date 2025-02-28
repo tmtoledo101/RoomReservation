@@ -19,7 +19,7 @@
         "default": "resDisplay_2025"
       },
       "description": {
-        "default": "display reservation details"
+        "default": "The Display WebPart serves as a comprehensive viewer for reservation details within SharePoint, enabling users to view venue booking information including dates, times, and status. It functions as a full-bleed compatible component that seamlessly integrates into SharePoint modern pages, providing a clean interface for users to access and review reservation information without requiring custom scripting."
       },
       "officeFabricIconFontName": "Page",
       "properties": {
@@ -35,7 +35,7 @@
     "scriptResources": {
       "res-display-web-part": {
         "type": "path",
-        "path": "res-display-web-part_eca69a6400ee7228f94e.js"
+        "path": "res-display-web-part_7242ac4f8d144c97dec1.js"
       },
       "ResDisplayWebPartStrings": {
         "type": "path",
