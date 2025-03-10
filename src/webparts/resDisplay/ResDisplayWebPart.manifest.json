@@ -18,11 +18,11 @@
   "preconfiguredEntries": [{
     "groupId": "5c03119e-3074-46fd-976b-c60198311f70", // Other
     "group": { "default": "Other" },
-    "title": { "default": "resDisplay" },
-    "description": { "default": "display reservation details" },
+    "title": { "default": "resDisplay_2025" },
+    "description": { "default": "The Display WebPart serves as a comprehensive viewer for reservation details within SharePoint, enabling users to view venue booking information including dates, times, and status. It functions as a full-bleed compatible component that seamlessly integrates into SharePoint modern pages, providing a clean interface for users to access and review reservation information without requiring custom scripting." },
     "officeFabricIconFontName": "Page",
     "properties": {
-      "description": "resDisplay"
+      "description": "resDisplay_2025"
     }
   }]
 }

@@ -1,13 +1,23 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
   "solution": {
-    "name": "res-reservation-client-side-solution",
-    "id": "831d38b2-12a3-4d25-91dd-acd5b3d8da0c",
+    "name": "res-reservation-client-side-solution_2025",
+    "id": "097f4ff4-7d6d-431f-adbf-14581da5c7bb",
     "version": "1.0.0.0",
     "includeClientSideAssets": true,
-    "isDomainIsolated": false
+    "isDomainIsolated": false,
+    "webApiPermissionRequests": [
+      {
+        "resource": "Microsoft Graph",
+        "scope": "Mail.Send"
+      },
+      {
+        "resource": "Microsoft Graph",
+        "scope": "User.Read"
+      }
+    ]
   },
   "paths": {
-    "zippedPackage": "solution/res-reservation.sppkg"
+    "zippedPackage": "solution/res-reservation_2025.sppkg"
   }
 }

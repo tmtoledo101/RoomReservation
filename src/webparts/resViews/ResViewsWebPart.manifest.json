@@ -18,11 +18,11 @@
   "preconfiguredEntries": [{
     "groupId": "5c03119e-3074-46fd-976b-c60198311f70", // Other
     "group": { "default": "Other" },
-    "title": { "default": "resViews" },
-    "description": { "default": "it will display all the data stored for reservation" },
+    "title": { "default": "resViews_2025" },
+    "description": { "default": "The Views WebPart provides a consolidated interface for users to search, filter, and view existing reservations across different buildings and venues. It supports advanced filtering capabilities and helps users track the status of their reservation requests through an intuitive tabbed interface." },
     "officeFabricIconFontName": "Page",
     "properties": {
-      "description": "resViews"
+      "description": "resViews_2025"
     }
   }]
 }
