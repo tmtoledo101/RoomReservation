@@ -1,6 +1,6 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/spfx/client-side-web-part-manifest.schema.json",
-  "id": "39348389-c37a-425f-b9b5-3c470a9519a0",
+  "id": "523f8654-63e8-4750-8229-d45526a01508",
   "alias": "ResReservationWebPart",
   "componentType": "WebPart",
 

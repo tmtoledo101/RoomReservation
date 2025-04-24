@@ -9,7 +9,7 @@
 import { configService } from "../../shared/services/ConfigurationService";
 
 export const isDevelopmentMode = (): boolean => {
-  return configService.isDevUser() && !configService.isTestEnvironment();
+  return configService.isDevUser() && configService.isTestEnvironment();
 };
 
 

@@ -6,11 +6,12 @@ import "@pnp/sp/webs";
 import "@pnp/sp/lists";
 import "@pnp/sp/items";
 import "@pnp/sp/sputilities";
+import { IEmailProperties } from "@pnp/sp/sputilities";
 import { Web } from "@pnp/sp/webs";
 import { IDropdownItem, IVenueItem } from "../interfaces/IResReservation";
 import { arrayToDropDownValues, dateFormat, getCount } from "../utils/helpers";
 import * as moment from "moment";
-import { configService } from "../../../shared/services/ConfigurationService";
+import { configService, ConfigurationService } from "../../../shared/services/ConfigurationService";
 import { isDevelopmentMode } from "../../../shared/utils/enivronmentHelper";
 export class SharePointService {
 
@@ -20,7 +21,8 @@ export class SharePointService {
     // Fetches current user details
     // Handles both development and production environments
     const user = await sp.web.currentUser.get();
-
+    console.log("TESTENV", configService.isTestEnvironment() );
+    console.log( "DEVUSER",configService.isDevUser());
     const currentUser = {
       Email: isDevelopmentMode()? user.Title : user.Email,
       Title: user.Title
@@ -31,7 +33,9 @@ export class SharePointService {
   public async getDepartments(email: string) {
   // Retrieves department information for a user
   // Includes sector mapping and pagination handling
-    console.log("Terence, here is the user : " + email, "developmentMode:",isDevelopmentMode());
+  console.log("TESTENV_department", configService.isTestEnvironment() );
+  console.log( "DEVUSER_department",configService.isDevUser());
+    console.log("Terence, here is the user : " + email, "developmentMode:", isDevelopmentMode());
 
     let departmentData = [];
     
@@ -393,6 +397,30 @@ public async getFacilities() {
         });
     }
 
-    return item.data;
+  return item.data;
+}
+
+public async saveEmailData(emailProps: IEmailProperties, url:string): Promise<boolean> {
+  try {
+    // Extract reference number from subject
+    const refNoMatch = emailProps.Subject.match(/(?:Request:|No\.|:)\s*([^.]+)/);
+    const referenceNo = refNoMatch ? refNoMatch[1].trim() : '';
+    console.log("Body", emailProps.Body);
+    // Save to SharePoint list
+    await sp.web.lists.getByTitle("EmailDataForPA").items.add({
+      ReferenceNo: referenceNo,
+      To: emailProps.To.join(';'),
+      CC: emailProps.CC ? emailProps.CC.join(';') : '',
+      SenAsFrom: emailProps.From,
+      Subject: emailProps.Subject,
+      Body: emailProps.Body,
+      RecordUrl: url
+    });
+
+    return true;
+  } catch (error) {
+    console.error("Failed to save email data:", error);
+    return false;
   }
+}
 }

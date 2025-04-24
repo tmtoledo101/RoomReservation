@@ -501,13 +501,13 @@ console.log('Batch Page Items:', batchPageItems);
       console.log('CRSD Users:', crsdUsers);
       console.log('DD Users:', ddUsers);
       // Extract email lists
-      const crsdEmails = crsdUsers.map(item => item.Email);
-      const ddEmails = ddUsers.map(item => item.Email);
-
+      const crsdEmails = crsdUsers.map(item => isDevelopmentMode() ? item.Title : item.Email);
+      const ddEmails = ddUsers.map(item => isDevelopmentMode() ? item.Title : item.Email);
+      console.log('userEmail:', userEmail);
       // Check if user is an approver
       const isApprover =hasGroupMembersAccess()?
       crsdEmails.includes(userEmail) || ddEmails.includes(userEmail):true;
-      
+      console.log('Is Approver:', isApprover);
       let departmentData = [];
       // Get departments with pagination
       let page;

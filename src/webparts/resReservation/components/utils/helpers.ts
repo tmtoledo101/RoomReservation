@@ -1,14 +1,13 @@
-/*This utility file contains helper functions for email handling, date formatting, 
-  and venue availability management in the Resource Reservation System.*/
+
+{/*This utility file contains helper functions for email handling, date formatting, 
+  and venue availability management in the Resource Reservation System.*/}
   
-  import * as moment from "moment";
-  import { sp } from "@pnp/sp";
-  import { IEmailProperties } from "@pnp/sp/sputilities";
-  import "@pnp/sp/sputilities";
-  import { MSGraphClient, HttpClient, AadHttpClient } from "@microsoft/sp-http";
-  
-  // Define the email method type
-  export type EmailMethod = 'graphapi' | 'sharepoint' | 'powerautomate';
+import * as moment from "moment";
+import { sp } from "@pnp/sp";
+import { IEmailProperties } from "@pnp/sp/sputilities";
+import "@pnp/sp/sputilities";
+import { MSGraphClient } from "@microsoft/sp-http";
+import { SharePointService } from "../services/SharePointService";
   
   interface IEmailResult {
     success: boolean;
@@ -45,248 +44,37 @@
     return null;
   };
   
-  /**
-   * Sends an email via Power Automate Flow
-   * @param context The SPFx context
-   * @param emailProps Email properties
-   * @param flowUrl The Power Automate Flow HTTP trigger URL
-   * @returns Result of the operation
-   */
-  const sendEmailViaPowerAutomate = async (context: any, emailProps: IEmailProperties, flowUrl: string): Promise<IEmailResult> => {
-    try {
-      // Validate email properties
-      const validationError = validateEmailProps(emailProps);
-      if (validationError) {
-        return {
-          success: false,
-          error: validationError
-        };
-      }
-  
-      // Format the data for Power Automate
-      const payload = {
-        to: emailProps.To,
-        cc: emailProps.CC || [],
-        subject: emailProps.Subject,
-        body: emailProps.Body,
-        from: emailProps.From || "",
-        additionalHeaders: emailProps.AdditionalHeaders || {},
-        // Add user context information that might be needed for authentication
-        userEmail: (context.pageContext && context.pageContext.user && context.pageContext.user.email) || "",
-        userDisplayName: (context.pageContext && context.pageContext.user && context.pageContext.user.displayName) || "",
-        siteUrl: (context.pageContext && context.pageContext.web && context.pageContext.web.absoluteUrl) || ""
-      };
-  
-      console.log("Sending email via Power Automate flow:", flowUrl);
-      console.log("Payload:", JSON.stringify(payload, null, 2));
-      
-      // Try using the Graph API directly
-      try {
-        console.log("Attempting to send email via Graph API directly");
-        
-        // Get the Graph client
-        const graphClient: MSGraphClient = await context.msGraphClientFactory.getClient();
-        console.log("Graph client created successfully");
-        
-        // Send the email using Graph API
-        await graphClient.api(`/users/${emailProps.From}/sendMail`).post({
-          message: {
-            subject: emailProps.Subject,
-            body: {
-              contentType: "HTML",
-              content: emailProps.Body
-            },
-            toRecipients: emailProps.To.map(email => ({
-              emailAddress: { address: email }
-            })),
-            ...(emailProps.CC && emailProps.CC.length > 0 ? {
-              ccRecipients: emailProps.CC.map(email => ({
-                emailAddress: { address: email }
-              }))
-            } : {})
-          },
-          saveToSentItems: true
-        });
-        
-        console.log("Email sent successfully via Graph API");
-        return { success: true };
-      } catch (graphError) {
-        console.error("Failed to send email via Graph API, falling back to SharePoint:", graphError);
-        
-        // Try using SharePoint utility
-        try {
-          console.log("Attempting to send email via SharePoint utility");
-          await sp.utility.sendEmail(emailProps);
-          console.log("Email sent successfully via SharePoint utility");
-          return { success: true };
-        } catch (spError) {
-          console.error("Failed to send email via SharePoint utility:", spError);
-          
-          // Last resort: try using standard HttpClient with the Power Automate flow
-          try {
-            console.log("Attempting to send email via Power Automate as last resort");
-            const httpClient: HttpClient = context.httpClient;
-            
-            const response = await httpClient.post(
-              flowUrl,
-              HttpClient.configurations.v1,
-              {
-                headers: {
-                  'Accept': 'application/json',
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-              }
-            );
-            
-            console.log("HttpClient response status:", response.status);
-            
-            // Try to parse the response as JSON
-            let responseData;
-            try {
-              responseData = await response.json();
-              console.log("HttpClient response data:", responseData);
-            } catch (e) {
-              // If response is not JSON, get text instead
-              const textResponse = await response.text();
-              console.log("HttpClient response text:", textResponse);
-              responseData = { text: textResponse };
-            }
-            
-            if (response.ok) {
-              return { success: true };
-            } else {
-              console.error("Power Automate error response from HttpClient:", responseData);
-              return {
-                success: false,
-                error: (responseData.error && responseData.error.message) || 
-                      (responseData.message) || 
-                      `Failed to send email via Power Automate with HttpClient (Status: ${response.status})`
-              };
-            }
-          } catch (httpError) {
-            console.error("All email methods failed:", httpError);
-            throw httpError;
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Failed to send email via Power Automate:", error);
+const sendEnhancedEmail = async (context: any, emailProps: IEmailProperties, url:string): Promise<IEmailResult> => {
+  try {
+    // Validate email properties
+    console.log("Processing email data:", emailProps.From);
+    const validationError = validateEmailProps(emailProps);
+    if (validationError) {
       return {
         success: false,
-        error: error.message || "Failed to send email via Power Automate"
+        error: validationError
       };
     }
-  };
-  
-  /**
-   * Enhanced email sending function with multiple methods support
-   * @param context The SPFx context
-   * @param emailProps Email properties 
-   * @param method Email sending method - graphapi, sharepoint, or powerautomate
-   * @param powerAutomateFlowUrl URL of the Power Automate flow (required if method is powerautomate)
-   * @returns Result of the operation
-   */
-  const sendEnhancedEmail = async (
-    context: any, 
-    emailProps: IEmailProperties, 
-    method: EmailMethod = 'powerautomate',
-    powerAutomateFlowUrl?: string
-  ): Promise<IEmailResult> => {
-    try {
-      // Validate email properties
-      console.log(`Sending email using method: ${method}`);
-      console.log("Email properties:", {
-        To: emailProps.To,
-        CC: emailProps.CC,
-        From: emailProps.From,
-        Subject: emailProps.Subject,
-        BodyLength: emailProps.Body ? emailProps.Body.length : 0
-      });
-      
-      const validationError = validateEmailProps(emailProps);
-      if (validationError) {
-        console.error("Email validation error:", validationError);
-        return {
-          success: false,
-          error: validationError
-        };
-      }
-  
-      // Use Power Automate if specified
-      if (method === 'powerautomate') {
-        console.log("PA Flow URL:", powerAutomateFlowUrl);
-        if (!powerAutomateFlowUrl) {
-          console.error("Power Automate Flow URL is missing");
-          return {
-            success: false,
-            error: "Power Automate Flow URL is required when using Power Automate method"
-          };
-        }
-        
-        console.log("Calling sendEmailViaPowerAutomate");
-        const result = await sendEmailViaPowerAutomate(context, emailProps, powerAutomateFlowUrl);
-        console.log("sendEmailViaPowerAutomate result:", result);
-        return result;
-      }
-  
-      // For other methods, use existing code
-      if (method === 'graphapi' && emailProps.From) {
-        try {
-          // Send using Microsoft Graph API
-          console.log("Sending email via Graph API");
-          const graphClient: MSGraphClient = await context.msGraphClientFactory.getClient();
-          await graphClient.api(`/users/${emailProps.From}/sendMail`).post({
-            message: {
-              subject: emailProps.Subject,
-              body: {
-                contentType: "HTML",
-                content: emailProps.Body
-              },
-              toRecipients: emailProps.To.map(email => ({
-                emailAddress: { address: email }
-              })),
-              ...(emailProps.CC && emailProps.CC.length > 0 ? {
-                ccRecipients: emailProps.CC.map(email => ({
-                  emailAddress: { address: email }
-                }))
-              } : {})
-            },
-            saveToSentItems: true
-          });
-          return { success: true };
-        } catch (error) {
-          // If method is explicitly graphapi, don't fall back
-          if (method === 'graphapi') {
-            console.error("Failed to send email via Graph API:", error);
-            return {
-              success: false,
-              error: error.message || "Failed to send email via Graph API"
-            };
-          }
-          
-          // Otherwise, fall back to SharePoint
-          console.warn("Falling back to SharePoint email service");
-          await sp.utility.sendEmail(emailProps);
-          return { 
-            success: true,
-            error: "Used fallback SharePoint email service" 
-          };
-        }
-      } else {
-        // Use SharePoint service
-        console.log("Sending email via SharePoint utility");
-        await sp.utility.sendEmail(emailProps);
-        return { success: true };
-      }
-    } catch (error) {
-      console.error("Failed to send email:", error);
+
+    const spService = new SharePointService();
+    const saved = await spService.saveEmailData(emailProps, url);
+
+    if (saved) {
+      return { success: true };
+    } else {
       return {
         success: false,
-        error: error.message || "Failed to send email"
+        error: "Failed to save email data"
       };
     }
-  };
+  } catch (error) {
+    console.error("Failed to process email:", error);
+    return {
+      success: false,
+      error: error.message || "Failed to process email"
+    };
+  }
+};
   
   export const PENDING = "Pending for Approval";
   export const FSS = "FSS";
@@ -309,46 +97,12 @@
     return newCount.padStart(padlen,'0');
   };
   
-  /**
-   * Sends a reservation email with support for multiple sending methods
-   * @param context The SPFx context
-   * @param to Recipient email addresses
-   * @param cc CC email addresses
-   * @param values Reservation values
-   * @param type Email type (1-4)
-   * @param facilitiesAvailable Available facilities
-   * @param siteUrl SharePoint site URL
-   * @param id Reservation ID
-   * @param method Email sending method (graphapi, sharepoint, powerautomate)
-   * @param powerAutomateFlowUrl URL of the Power Automate flow (required if method is powerautomate)
-   * @returns Result of the operation
-   */
-  export const newResEmail = async (
-    context: any, 
-    to: Array<string>, 
-    cc: Array<string>, 
-    values: any, 
-    type: any, 
-    facilitiesAvailable: any, 
-    siteUrl: string, 
-    id: string,
-    method: EmailMethod = 'powerautomate',
-    powerAutomateFlowUrl?: string
-  ): Promise<IEmailResult> => {
-    console.log("Starting newResEmail with parameters:", {
-      to,
-      cc,
-      type,
-      id,
-      method,
-      powerAutomateFlowUrl
-    });
-    
+  export const newResEmail = async (context: any, to: Array<string>, cc: Array<string>, values: any, type: any, facilitiesAvailable: any, siteUrl: string, referenceNo: string, id:string): Promise<IEmailResult> => {
     const toEmail = [...to];
     const ccEmail = [...cc];
     const emailProps: IEmailProperties = {
       //From : "TDO365ASMEDEV1_SYS@bsp.gov.ph",
-      From: "tmtoledo@s5b36.onmicrosoft.com",
+      //From: "tmtoledo@s5b36.onmicrosoft.com",
       To: toEmail,
       CC: ccEmail,
       Subject: '',
@@ -358,13 +112,14 @@
       }
     };
      
+    console.log("siteUrl", siteUrl);
     if(type === 1) {
-      emailProps.Subject = `New Room Reservation Request: ${id}. Date of Use: ${dateFormat(values.fromDate)} to ${dateFormat(values.toDate)}`;
+      emailProps.Subject = `New Room Reservation Request: ${referenceNo}. Date of Use: ${dateFormat(values.fromDate)} to ${dateFormat(values.toDate)}`;
       emailProps.Body= `<b>Request for Use of Resource Reservation System</b><br/><br/>
       New reservation has been requested in Resource Reservation System<br/>
       Please visit the link below to view the document for your appropriate action.<br/><br/>
       Thank you.<br/><br/>
-      Reference No. ${id}<br/>
+      Reference No. ${referenceNo}<br/>
       Date of Use: ${dateFormat(values.fromDate)} To ${dateFormat(values.toDate)}<br/><br/>
       Venue: ${values.venue}<br/><br/>
       Facilities Available: ${facilitiesAvailable}<br/><br/>
@@ -384,12 +139,12 @@
   
     if(type === 2) {
       const data = facilitiesAvailable.owner.map(item => `${item.Facility} - ${item.Quantity}`).join(' , ');
-      emailProps.Subject = `Facility In-Charge: Approved Request for Reservation. ${id}. Date of Use: ${dateFormat(values.fromDate)} to ${dateFormat(values.toDate)}`;
+      emailProps.Subject = `Facility In-Charge: Approved Request for Reservation. ${referenceNo}. Date of Use: ${dateFormat(values.fromDate)} to ${dateFormat(values.toDate)}`;
       emailProps.Body= `<b>Request for Use of Facility - Resource Reservation System</b><br/><br/>
       Request for reservation has been approved in the Resource Reservation System<br/>
       Please visit the link below to view the document.<br/><br/>
       Thank you.<br/><br/>
-      Reference No. ${id}<br/><br/>
+      Reference No. ${referenceNo}<br/><br/>
       Date of Use: ${dateFormat(values.fromDate)} To ${dateFormat(values.toDate)}<br/><br/>
       Venue: ${values.venue}<br/><br/>
       Facilities Available: <pre>${facilitiesAvailable.facility}</pre><br/>
@@ -410,7 +165,7 @@
     }
   
     if (type === 3) {
-      emailProps.Subject = `Approved Request for Reservation.: ${id}. Date of Use: ${dateFormat(values["fromDate"])} to ${dateFormat(values["toDate"])}`;
+      emailProps.Subject = `Approved Request for Reservation.: ${referenceNo}. Date of Use: ${dateFormat(values["fromDate"])} to ${dateFormat(values["toDate"])}`;
       emailProps.Body = `We are pleased to inform you that your venue reservation request is approved. <br/>
       For further assistance, you may e-mail us at coraoreservations@bsp.gov.ph or call our Events and  
       Visitor Services Pool (EVSP) at local telephone numbers 2559 or 2462.<br/><br/>
@@ -419,23 +174,14 @@
     }
   
     if (type === 4) {
-      emailProps.Subject = `Approved Request for Reservation.: ${id}. Date of Use: ${dateFormat(values["fromDate"])} to ${dateFormat(values["toDate"])}`;
+      emailProps.Subject = `Approved Request for Reservation.: ${referenceNo}. Date of Use: ${dateFormat(values["fromDate"])} to ${dateFormat(values["toDate"])}`;
       emailProps.Body = `We are pleased to inform you that your venue reservation request is approved. <br/>
-      Link: <a href="${siteUrl}/SitePages/DisplayReservation_appge.aspx?pid=${id}">Request url</a>
       `;
     }
-  
-    // Pass the method and flow URL to sendEnhancedEmail
-    // Use the provided powerAutomateFlowUrl parameter if available, otherwise use the default URL
-    const flowUrl = powerAutomateFlowUrl || 'https://prod-46.southeastasia.logic.azure.com:443/workflows/38186fb1e49647ef83b68d08bfc08f6a/triggers/manual/paths/invoke?api-version=2016-06-01';
-    console.log("Using Power Automate flow URL:", flowUrl);
-    console.log("Make sure this flow is configured to use OAuth authentication and has proper permissions");
-    
-    const result = await sendEnhancedEmail(context, emailProps, method, flowUrl);
+    const url = `${siteUrl}/SitePages/DisplayReservation_appge.aspx?pid=${id}`;
+    const result = await sendEnhancedEmail(context, emailProps, url);
     if (!result.success) {
       console.error("Failed to send reservation email:", result.error);
-    } else {
-      console.log("Successfully sent reservation email");
     }
     return result;
   };

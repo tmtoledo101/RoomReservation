@@ -16,7 +16,6 @@ export class ConfigurationService {
   private static instance: ConfigurationService;
   private environment: string = "test"; //test || prd
   private user : string = "dev"; //dev || bsp
-  
   public readonly TEST_URL = "https://s5b36.sharepoint.com";
   public readonly PROD_URL = "https://bspgovph.sharepoint.com";
   

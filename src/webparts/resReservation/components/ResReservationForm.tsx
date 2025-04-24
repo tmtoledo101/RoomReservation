@@ -78,7 +78,7 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
   private async initializeForm(): Promise<void> {
     const currentUser = await this.spService.getCurrentUser();
     console.log("Terence, this the current user:");
-    console.log(currentUser);
+    console.log(currentUser.Email);
     const { departments, departmentSectorMap } = await this.spService.getDepartments(currentUser.Email);
     console.log("Terence, this the departments:", departments);
     console.log("Terence, this the departmentSectorMap:", departmentSectorMap);
@@ -507,7 +507,8 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
           this.state.isFssManaged ? 4 : 1,
           this.state.facilitiesAvailable,
           this.props.siteUrl,
-          result.ReferenceNumber
+          result.ReferenceNumber,
+          result.ID
         );
       } catch (emailError) {
         console.error('Failed to send email notification:', emailError);
