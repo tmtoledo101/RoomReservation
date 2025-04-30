@@ -56,7 +56,7 @@ export class ConfigurationService {
     try {
       const currentUrl = window.location.href;
       console.log("Current URL:", currentUrl);
-      
+      /*
       if (currentUrl.includes('s5b36.sharepoint.com')) {
         this.setEnvironment('test');
       } else if (currentUrl.includes('bspgovph.sharepoint.com')) {
@@ -64,6 +64,7 @@ export class ConfigurationService {
       } else {
         console.log("Could not detect environment from URL, using default:", this.environment);
       }
+        */
     } catch (error) {
       console.error("Error initializing environment:", error);
       console.log("Using default environment:", this.environment);

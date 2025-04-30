@@ -35,7 +35,7 @@
     "scriptResources": {
       "res-views-web-part": {
         "type": "path",
-        "path": "res-views-web-part_4d8d480f5e3b63c889d6.js"
+        "path": "res-views-web-part_a130decf25500948a852.js"
       },
       "@microsoft/sp-loader": {
         "type": "component",

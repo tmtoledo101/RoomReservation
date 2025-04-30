@@ -79,7 +79,7 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
     const currentUser = await this.spService.getCurrentUser();
     console.log("Terence, this the current user:");
     console.log(currentUser.Email);
-    const { departments, departmentSectorMap } = await this.spService.getDepartments(currentUser.Email);
+    const { departments, departmentSectorMap } = await this.spService.getDepartments(currentUser.Title);
     console.log("Terence, this the departments:", departments);
     console.log("Terence, this the departmentSectorMap:", departmentSectorMap);
     const { buildings, venues } = await this.spService.getBuildings();
@@ -178,8 +178,9 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
       // Then update FSS state
       let newVenue = this.venue;
       const { venueList: data } = this.state;
+      console.log("VALUE:", value);
       const isFssManaged = value ? this.state.departmentSectorMap[value] === "FSS" : false;
-      
+      console.log("ResReservationForm - Is FSS managed:", isFssManaged);
       // If department is cleared, reset all venue-related fields
       if (!value) {
         console.log("ResReservationForm - Department cleared, resetting all venue-related fields");
@@ -477,7 +478,7 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
   private handleSave = async (formikProps): Promise<void> => {
     try {
       this.setState({ saveStart: true });
-      
+      console.log("ResReservationForm - isFSSManaged", this.state.isFssManaged);
       const result = await this.spService.createReservation(
         formikProps.values,
         this.state.facilityData,
@@ -487,8 +488,8 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
       );
 
       try {
-        //const toEmails = [this.state.requestorEmail];
-        const toEmails = ['tmtoledo@kpmg.com'];
+        const toEmails = [this.state.requestorEmail];
+        //const toEmails = ['tmtoledo@kpmg.com'];
         const ccEmails = [
           ...(formikProps.values.isCSDR ? this.state.crsdMemberList : []),
           ...(this.state.isFssManaged ? this.state.fssMemberList : []),

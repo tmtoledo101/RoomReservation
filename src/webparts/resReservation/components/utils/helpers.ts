@@ -29,12 +29,14 @@ import { SharePointService } from "../services/SharePointService";
   
     // Basic email format validation for To and CC recipients
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    console.log("To", emailProps.To);
     const invalidTo = emailProps.To.some(email => !emailRegex.test(email));
     if (invalidTo) {
       return "Invalid recipient email address format";
     }
   
     if (emailProps.CC && emailProps.CC.length > 0) {
+      
       const invalidCC = emailProps.CC.some(email => !emailRegex.test(email));
       if (invalidCC) {
         return "Invalid CC email address format";
@@ -99,10 +101,10 @@ const sendEnhancedEmail = async (context: any, emailProps: IEmailProperties, url
   
   export const newResEmail = async (context: any, to: Array<string>, cc: Array<string>, values: any, type: any, facilitiesAvailable: any, siteUrl: string, referenceNo: string, id:string): Promise<IEmailResult> => {
     const toEmail = [...to];
-    const ccEmail = [...cc];
+    const ccEmail = cc.filter(email => email && email.trim() !== '');
     const emailProps: IEmailProperties = {
       //From : "TDO365ASMEDEV1_SYS@bsp.gov.ph",
-      //From: "tmtoledo@s5b36.onmicrosoft.com",
+      From: "tmtoledo@s5b36.onmicrosoft.com",
       To: toEmail,
       CC: ccEmail,
       Subject: '',

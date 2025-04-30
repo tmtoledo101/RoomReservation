@@ -24,7 +24,8 @@ export class SharePointService {
     console.log("TESTENV", configService.isTestEnvironment() );
     console.log( "DEVUSER",configService.isDevUser());
     const currentUser = {
-      Email: isDevelopmentMode()? user.Title : user.Email,
+      //Email: isDevelopmentMode()? user.Title : user.Email,
+      Email: user.Email,
       Title: user.Title
     };
     return currentUser;
@@ -335,6 +336,9 @@ public async getFacilities() {
     const count = itemLength.length ? Number(itemLength[0].referCount) : 0;
     const ReferenceNumber = `RR-${moment().year()}${getCount(moment().month())}-${getCount(count, 4)}`;
 
+    console.log("Todate",  formData["toDate"]);
+    console.log("Fromdate", formData["fromDate"]);
+    console.log("SP isFSSManaged", isFssManaged);
     const item = await sp.web.lists.getByTitle('Request').items.add({
       Title: formData["requestedBy"],
       RequestedBy: formData["requestedBy"],
@@ -351,9 +355,10 @@ public async getFacilities() {
       TitleDescription: formData["titleDesc"],
       FromDate: moment(formData["fromDate"]).toISOString(),
       ToDate: moment(formData["toDate"]).toISOString(),
+      //FromDate: formData["fromDate"],
+      //ToDate: formData["toDate"],
       OtherRequirement: formData["otherRequirment"],
       IsCSDR: formData["IsCSDR"],
-      //IsCSDR: formData["IsCSDR"] || false,
       FacilityData: facility,
       Status: isFssManaged ? "Approved" : "Pending for Approval",
       RequestorEmail: formData["requestorEmail"],
@@ -365,8 +370,8 @@ public async getFacilities() {
     if (files.length > 0) {
       const _itemId = item.data.ID;
       
-      const f = configService.isDevUser() ? "/sites/ResourceReservationDev" : "/sites/ResourceReservation" + "/ReservationDocs/" + item.data.GUID;
-      
+      const f = configService.isDevUser() ? "/sites/ResourceReservationDev" + "/ReservationDocs/" + item.data.GUID : "/sites/ResourceReservation" + "/ReservationDocs/" + item.data.GUID;
+      console.log("this is the folder path", f);
       await sp.web.lists.getByTitle("ReservationDocs").rootFolder.folders.add(item.data.GUID)
         .then(r => {
           Promise.all(files.map((file) => {
@@ -411,7 +416,7 @@ public async saveEmailData(emailProps: IEmailProperties, url:string): Promise<bo
       ReferenceNo: referenceNo,
       To: emailProps.To.join(';'),
       CC: emailProps.CC ? emailProps.CC.join(';') : '',
-      SenAsFrom: emailProps.From,
+      SendAsFrom: emailProps.From,
       Subject: emailProps.Subject,
       Body: emailProps.Body,
       RecordUrl: url
