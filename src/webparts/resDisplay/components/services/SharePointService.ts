@@ -16,7 +16,7 @@ import * as moment from "moment";
 import { IFacilityData } from "../interfaces/IResDisplay";
 import { dateFormat } from "../utils/helpers";
 import { configService } from "../../../shared/services/ConfigurationService";
-
+import { isDevelopmentMode } from "../../../shared/utils/enivronmentHelper";
 export class SharePointService {
   private web: any;
 
@@ -64,19 +64,57 @@ export class SharePointService {
   }
 
   public async getDepartments(email: string) {
-    const deparmentData: any[] = await sp.web.lists
-      .getByTitle("UsersPerDepartment")
-      .items.select(
-        "EmployeeName/EMail",
-        "Department/Department",
-      ).filter(`EmployeeName/EMail eq '${email}'`)
-      .expand(
-        "Department/FieldValuesAsText",
-        "EmployeeName/EMail",
-      )
-      .top(5000)                      // optional if you expect < 5000 results
-      .get();
-      
+    // Retrieves department information for a user
+      // Includes sector mapping and pagination handling
+      console.log("TESTENV_department", configService.isTestEnvironment() );
+      console.log( "DEVUSER_department",configService.isDevUser());
+        console.log("Terence, here is the user : " + email, "developmentMode:", isDevelopmentMode());
+    
+        let deparmentData = [];
+        
+    
+          // Get departments with pagination
+          let page;
+          if (isDevelopmentMode()) {
+            const filterText = isDevelopmentMode() ? `Title eq '${email}'` 
+            : `EmployeeName/Email eq '${email}'`;  // Changed EMail to Email
+            //const selectText =isDevelopmentMode() ? 
+             // "Department/Title" : "Department/Department";
+             const selectText = "Department/Department";
+            const firstExpandText = isDevelopmentMode() ? 
+              "Department": "Department/FieldValuesAsText";
+            const secondExpandText = isDevelopmentMode() ? 
+              "EmployeeName": "EmployeeName/EMail";
+    
+            page = await sp.web.lists
+              .getByTitle("UsersPerDepartment")
+              .items
+              .select("EmployeeName/EMail", selectText)
+              .expand(firstExpandText, secondExpandText)
+              .filter(filterText)
+              .top(5000)  // Process 100 items at a time
+              .getPaged();
+          } else {
+            page = await sp.web.lists
+              .getByTitle("UsersPerDepartment")
+              .items
+              .select("EmployeeName/EMail", "Department/Department")
+              .expand("Department", "EmployeeName")
+              .filter(`EmployeeName/EMail eq '${email}'`)
+              .top(5000)
+              .getPaged();
+          }
+    
+          // Collect all pages
+          while (true) {
+            deparmentData.push(...page.results);
+            
+            if (page.hasNext) {
+              page = await page.getNext();
+            } else {
+              break;
+            }
+          }
 
     const deparmentList: any[] = await sp.web.lists
       .getByTitle("Department")

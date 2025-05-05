@@ -18,7 +18,7 @@ import { ConfirmationDialog } from "./common/ConfirmationDialog";
 import { Notification } from "./common/Notification";
 import { ActionButtons } from "./common/ActionButtons";
 import { APPROVED, DISAPPROVED, CANCELLED } from "./interfaces/IResDisplay";
-
+import { hasGroupMembersAccess } from "../../shared/utils/enivronmentHelper";
 export default class ResDisplay extends React.Component<IResDisplayProps, IResDisplayState> {
   private spService: SharePointService;
   private inputRef: any;
@@ -76,7 +76,8 @@ export default class ResDisplay extends React.Component<IResDisplayProps, IResDi
 
   public async componentDidMount() {
     const queryParams = new URLSearchParams(window.location.search);
-    const id = queryParams.get("pid");
+    //const id = queryParams.get("pid");
+    const id = "5156"; // For testing purpose only, remove this line in production
     await this.getLoggedinUser();
     await this.getItems(id);
     await this.getCRSD();
@@ -277,7 +278,7 @@ export default class ResDisplay extends React.Component<IResDisplayProps, IResDi
   }
 
   private getCRSD = async () => {
-    const { crsdUsers, ddUsers } = await this.spService.getCRSD();
+    const { crsdUsers, ddUsers } = hasGroupMembersAccess() ? await this.spService.getCRSD(): { crsdUsers: [], ddUsers: [] };
     const list = crsdUsers.map(item => item.Email);
     const list2 = ddUsers.map(item => item.Email);
     this.setState({

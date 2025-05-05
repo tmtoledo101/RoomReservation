@@ -15,8 +15,8 @@ export const isDevelopmentMode = (): boolean => {
 
 
 export const hasGroupMembersAccess = (): boolean => {
-  if (!configService.isDevUser()) {
-    return true;
+  if (configService.isDevUser()) {
+    return false;
   }
   
   return configService.isTestEnvironment();

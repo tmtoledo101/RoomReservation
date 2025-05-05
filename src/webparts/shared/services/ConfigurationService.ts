@@ -79,7 +79,7 @@ export class ConfigurationService {
   }
 
   public getBaseUrl(): string {
-    return this.isTestEnvironment() ? this.TEST_URL : this.PROD_URL;
+    return !this.isTestEnvironment() ? this.TEST_URL : this.PROD_URL;
   }
 
   public getAccessControlUrl(): string {

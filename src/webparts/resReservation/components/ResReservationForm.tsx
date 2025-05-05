@@ -88,6 +88,7 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
     const participants = await this.spService.getParticipants();
     const facilityMap = await this.spService.getFacilities();
     const { crsdMembers, ddMembers, fssMembers } = hasGroupMembersAccess() ? await this.spService.getGroupMembers(): { crsdMembers: [], ddMembers: [], fssMembers: [] };
+    //const { crsdMembers, ddMembers, fssMembers } =  { crsdMembers: [], ddMembers: [], fssMembers: [] };
     
     this.venue = venues;
     this.layout = layouts;

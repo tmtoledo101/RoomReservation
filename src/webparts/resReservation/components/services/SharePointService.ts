@@ -15,7 +15,7 @@ import { configService, ConfigurationService } from "../../../shared/services/Co
 import { isDevelopmentMode } from "../../../shared/utils/enivronmentHelper";
 export class SharePointService {
 
-  private web = Web( configService.isTestEnvironment()? configService.getResourceReservationUrl() :configService.getAccessControlUrl()  );
+  private web = Web( !configService.isTestEnvironment()? configService.getResourceReservationUrl() :configService.getAccessControlUrl()  );
   // User authentication and department access
   public async getCurrentUser() {
     // Fetches current user details
@@ -229,7 +229,7 @@ export class SharePointService {
     
     try {
       let principalData;
-      if (configService.isTestEnvironment()) {
+      if (!configService.isTestEnvironment()) {
      
           console.log("SharePointService - Using test environment");
           principalData = await sp.web.lists.getByTitle("Employees")     

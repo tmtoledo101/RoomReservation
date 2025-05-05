@@ -103,8 +103,8 @@ const sendEnhancedEmail = async (context: any, emailProps: IEmailProperties, url
     const toEmail = [...to];
     const ccEmail = cc.filter(email => email && email.trim() !== '');
     const emailProps: IEmailProperties = {
-      //From : "TDO365ASMEDEV1_SYS@bsp.gov.ph",
-      From: "tmtoledo@s5b36.onmicrosoft.com",
+      From : "TDO365ASMEDEV1_SYS@bsp.gov.ph",
+      //From: "tmtoledo@s5b36.onmicrosoft.com",
       To: toEmail,
       CC: ccEmail,
       Subject: '',
