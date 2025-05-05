@@ -1,3 +1,5 @@
+
+// contains the properties in styling the compontents in resDisplay
 @import '~office-ui-fabric-react/dist/sass/References.scss';
 
 .resDisplay {
@@ -73,19 +75,20 @@
     border-collapse: collapse;
     min-height: 100px;
   }
-  td {
-    max-width: 200px;
-    pre {
-      white-space: break-spaces;
-    }
+  
+  table {
+    width: 100%;
+    table-layout: fixed;
   }
-
+  
+  th, td {
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
   tr > td {
     text-align: center;
-  }
-
-  table {
-    width: 75%;
   }
 
   .error {

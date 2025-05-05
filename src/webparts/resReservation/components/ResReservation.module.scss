@@ -11,6 +11,32 @@
   .width {
     max-width: 300px;
   }
+
+  .venueSearch {
+    position: relative;
+    width: 100%;
+    margin: 16px 0;
+
+    .searchContainer {
+      position: relative;
+      width: 100%;
+    }
+
+    .searchResults {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 4px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      background-color: $ms-color-white;
+  }
+
+}
+  
   .previewChip {
     min-width: 160;
     max-width: 210;
@@ -86,10 +112,9 @@
   }
 
   .error {
-    color: red;
+    color: red !important;
   }
  
-
   .label {
     font-weight: $ms-font-weight-semibold;
     font-size: $ms-font-size-m;
