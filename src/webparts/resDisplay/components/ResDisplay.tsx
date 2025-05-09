@@ -76,8 +76,8 @@ export default class ResDisplay extends React.Component<IResDisplayProps, IResDi
 
   public async componentDidMount() {
     const queryParams = new URLSearchParams(window.location.search);
-    //const id = queryParams.get("pid");
-    const id = "5159"; // For testing purpose only, remove this line in production
+    const id = queryParams.get("pid");
+    //const id = "5159"; // For testing purpose only, remove this line in production
     await this.getLoggedinUser();
     await this.getItems(id);
     await this.getCRSD();
