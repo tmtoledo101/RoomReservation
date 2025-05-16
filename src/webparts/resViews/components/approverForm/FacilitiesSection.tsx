@@ -34,7 +34,7 @@ export const FacilitiesSection: React.FC<{
           <Paper variant="outlined" style={{ padding: 16, marginBottom: 16 }}>
             <Grid container spacing={3}>
               <Grid item xs={12}>
-                <h3 style={{ margin: 0 }}>Facilities</h3>
+                <h3 style={{ margin: 0 }}></h3>
               </Grid>
               <Grid item xs={12}>
                 <FacilityList

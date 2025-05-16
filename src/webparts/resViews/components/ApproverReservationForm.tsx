@@ -5,10 +5,10 @@ This component provides a form for approvers to modify reservation requests. It 
 */
 import * as React from "react";
 import { Formik } from "formik";
-import { 
-  Dialog, 
-  DialogTitle, 
-  DialogContent, 
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
   DialogActions,
   Grid,
   Button,
@@ -65,7 +65,8 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [showFacilityDialog, setShowFacilityDialog] = React.useState(false);
   const [showCSRDField, setShowCSRDField] = React.useState(false);
-  const [facilityData, setFacilityData] = React.useState<IFacilityData[]>([]);
+  // Use a state to hold facility data specific to the current reservation
+  const [currentFacilityData, setCurrentFacilityData] = React.useState<IFacilityData[]>([]);
   const [facilityList, setFacilityList] = React.useState<IDropdownItem[]>([]);
   const [quantityList, setQuantityList] = React.useState<IDropdownItem[]>([]);
   const [facilityMap, setFacilityMap] = React.useState<{ [key: string]: IFacilityMapItem }>({});
@@ -86,7 +87,7 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
   const [showConfirmDialog, setShowConfirmDialog] = React.useState(false);
   const [pendingValues, setPendingValues] = React.useState<any>(null);
 
-  const [status, setStatus] = React.useState<string>(selectedReservation? selectedReservation.status : STATUS.PENDING);
+  const [status, setStatus] = React.useState<string>(selectedReservation ? selectedReservation.status : STATUS.PENDING);
 
   React.useEffect(() => {
     const init = async () => {
@@ -96,14 +97,16 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
           const { facilityList: facilities, facilityMap: map } = await SharePointService.getFacilities();
           setFacilityList(facilities);
           setFacilityMap(map);
-          
-          // Load existing facility data if any
+
+          // Load existing facility data for the selected reservation
           const existingFacilityData = await SharePointService.getFacilityData(selectedReservation.ID);
           if (existingFacilityData && existingFacilityData.length > 0) {
-            setFacilityData(existingFacilityData);
+            setCurrentFacilityData(existingFacilityData);
             setShowCSRDField(true);
+          } else {
+            setCurrentFacilityData([]); // Ensure it's empty for new requests or when no data exists
           }
-          
+
           // Then check venue group if no facility data exists
           if (selectedReservation.venue) {
             console.log('Selected venue:', selectedReservation.venue);
@@ -143,7 +146,7 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
     };
 
     init();
-    if(selectedReservation) {
+    if (selectedReservation) {
       setStatus(selectedReservation.status);
     }
   }, [isOpen, selectedReservation]);
@@ -170,20 +173,20 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
 
   const handleConfirmedSubmit = async () => {
     if (!pendingValues) return;
-    
+
     try {
       setIsSubmitting(true);
       setShowConfirmDialog(false);
-      
+
       await SharePointService.updateReservation(
         selectedReservation.ID,
         {
           ...pendingValues,
           status,
-          facilityData: showCSRDField ? facilityData : []
+          facilityData: showCSRDField ? currentFacilityData : []
         }
       );
-      
+
       setNotification({
         show: true,
         message: `Reservation ${status === STATUS.APPROVED ? 'approved' : 'rejected'} successfully`,
@@ -212,28 +215,28 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
   };
 
   const handleFacilitySave = (form: any): void => {
-    const newFacilityData = [...facilityData];
+    const newFacilityData = [...currentFacilityData];
     const facilityItem = {
       facility: form.values.facility,
       quantity: form.values.quantity,
       assetNumber: form.values.assetNumber,
     };
-    
+
     if (form.values.currentRecord >= 0) {
       newFacilityData[form.values.currentRecord] = facilityItem;
     } else {
       newFacilityData.push(facilityItem);
     }
 
-    setFacilityData(newFacilityData);
+    setCurrentFacilityData(newFacilityData);
     setShowFacilityDialog(false);
     form.setFieldValue("currentRecord", -1);
   };
 
   const handleFacilityDelete = (form: any): void => {
-    const newFacilityData = [...facilityData];
+    const newFacilityData = [...currentFacilityData];
     newFacilityData.splice(form.values.currentRecord, 1);
-    setFacilityData(newFacilityData);
+    setCurrentFacilityData(newFacilityData);
     setShowFacilityDialog(false);
     form.setFieldValue("currentRecord", -1);
   };
@@ -264,14 +267,14 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
 
   return (
     <>
-      <ModalPopup 
-        open={isOpen} 
+      <ModalPopup
+        open={isOpen}
         title=""
         onClose={onClose}
         maxWidth="lg"
         fullWidth
-        //disableBackdropClick={isSubmitting}
-        //disableEscapeKeyDown={isSubmitting}
+      //disableBackdropClick={isSubmitting}
+      //disableEscapeKeyDown={isSubmitting}
       >
         <DialogTitle>
           Modify Reservation Request - {selectedReservation.referenceNumber}
@@ -280,7 +283,7 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
           <Formik
             initialValues={initialValues}
             validationSchema={approverValidationSchema}
-            onSubmit={() => {}}
+            onSubmit={() => { }}
           >
             {(formik) => (
               <>
@@ -294,7 +297,7 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
                           const isCRSD = await SharePointService.isVenueCRSD(venue.value);
                           setShowCSRDField(isCRSD);
                           formik.setFieldValue('isVenueCRSD', isCRSD);
-                          
+
                           if (isCRSD) {
                             // Load layouts for the venue
                             const layouts = await SharePointService.getLayouts(venue.value);
@@ -313,31 +316,39 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
                                 );
                               }
                             }
+                          } else {
+                            setLayoutList([]);
+                            setPrincipalList([]);
+                            // Clear facility data when venue is not CRSD
+                            setCurrentFacilityData([]);
                           }
                         } catch (error) {
                           console.error('Error handling venue selection:', error);
                           setShowCSRDField(false);
                           formik.setFieldValue('isVenueCRSD', false);
+                          setCurrentFacilityData([]);
+                          setLayoutList([]);
+                          setPrincipalList([]);
                         }
                       }}
                     />
-                    <CRSDFieldsSection 
+                    <CRSDFieldsSection
                       formik={formik}
                       showCSRDField={showCSRDField}
                       layoutList={layoutList}
                       principalList={principalList}
                     />
                     <DateTimeSection formik={formik} />
-                    <PurposeParticipantsSection 
+                    <PurposeParticipantsSection
                       formik={formik}
                       purposeOfUseList={purposeOfUseList}
                     />
                     <FacilitiesSection
                       showCSRDField={showCSRDField}
-                      facilityData={facilityData}
+                      facilityData={currentFacilityData}
                       onAddClick={() => setShowFacilityDialog(true)}
                       onEditClick={(index) => {
-                        const data = facilityData[index];
+                        const data = currentFacilityData[index];
                         formik.setFieldValue("facility", data.facility);
                         formik.setFieldValue("quantity", data.quantity);
                         formik.setFieldValue("assetNumber", data.assetNumber);
@@ -364,15 +375,15 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
                     </Select>
                   </FormControl>
                   <DialogActions>
-                    <Button 
-                      onClick={onClose} 
+                    <Button
+                      onClick={onClose}
                       color="default"
                       disabled={isSubmitting}
                     >
                       Cancel
                     </Button>
-                    <Button 
-                      color="primary" 
+                    <Button
+                      color="primary"
                       variant="contained"
                       onClick={() => handleSubmit(formik.values)}
                       disabled={isSubmitting}
@@ -409,9 +420,9 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
         </DialogContent>
       </ModalPopup>
 
-      <Snackbar 
-        open={notification.show} 
-        autoHideDuration={6000} 
+      <Snackbar
+        open={notification.show}
+        autoHideDuration={6000}
         onClose={() => setNotification({ ...notification, show: false })}
       >
         <Alert onClose={() => setNotification({ ...notification, show: false })} severity={notification.severity}>

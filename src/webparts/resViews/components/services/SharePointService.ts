@@ -485,88 +485,105 @@ console.log('Batch Page Items:', batchPageItems);
   public static async getCurrentUserGroups(): Promise<{
     isApprover: boolean;
     departments: string[];
-  }> {
+}> {
+    let crsdUsers = [];
+    let ddUsers = [];
+    let departmentData = [];
+
     try {
-      // Get current user
-      const user = await sp.web.currentUser.get();
-      const currentUser = {
-        Email: isDevelopmentMode() ? user.Title : user.Email,
-        Title: user.Title
-      };
-      const userEmail = currentUser.Email;
+        // Get current user
+        const user = await sp.web.currentUser.get();
+        const currentUser = {
+            Email: isDevelopmentMode() ? user.Title : user.Email,
+            Title: user.Title
+        };
+        const userEmail = currentUser.Email;
 
-      // Get users from CRSD and DD groups
-      const crsdUsers = hasGroupMembersAccess()? await sp.web.siteGroups.getByName("CRSD").users():[];
-      const ddUsers = hasGroupMembersAccess()?await sp.web.siteGroups.getByName("DD").users():[];
-      console.log('CRSD Users:', crsdUsers);
-      console.log('DD Users:', ddUsers);
-      // Extract email lists
-      const crsdEmails = crsdUsers.map(item => isDevelopmentMode() ? item.Title : item.Email);
-      const ddEmails = ddUsers.map(item => isDevelopmentMode() ? item.Title : item.Email);
-      console.log('userEmail:', userEmail);
-      // Check if user is an approver
-      const isApprover =hasGroupMembersAccess()?
-      crsdEmails.includes(userEmail) || ddEmails.includes(userEmail):true;
-      console.log('Is Approver:', isApprover);
-      let departmentData = [];
-      // Get departments with pagination
-      let page;
-      if (isDevelopmentMode()) {
-        const filterText = isDevelopmentMode() ? `Title eq '${userEmail}'` 
-        : `EmployeeName/Email eq '${userEmail}'`;  // Changed EMail to Email
-        //const selectText =isDevelopmentMode() ? 
-         // "Department/Title" : "Department/Department";
-         const selectText = "Department/Department";
-        const firstExpandText = isDevelopmentMode() ? 
-          "Department": "Department/FieldValuesAsText";
-        const secondExpandText = isDevelopmentMode() ? 
-          "EmployeeName": "EmployeeName/EMail";
-
-        page = await sp.web.lists
-          .getByTitle("UsersPerDepartment")
-          .items
-          .select("EmployeeName/EMail", selectText)
-          .expand(firstExpandText, secondExpandText)
-          .filter(filterText)
-          .top(5000)  // Process 100 items at a time
-          .getPaged();
-      } else {
-        page = await sp.web.lists
-          .getByTitle("UsersPerDepartment")
-          .items
-          .select("EmployeeName/EMail", "Department/Department")
-          .expand("Department", "EmployeeName")
-          .filter(`EmployeeName/EMail eq '${userEmail}'`)
-          .top(5000)
-          .getPaged();
-      }
-
-      // Collect all pages
-      while (true) {
-        departmentData.push(...page.results);
-        
-        if (page.hasNext) {
-          page = await page.getNext();
-        } else {
-          break;
+        // Get users from groups with error handling
+        try {
+            if (hasGroupMembersAccess()) {
+                crsdUsers = await sp.web.siteGroups.getByName("CRSD").users();
+                console.log('CRSD Users:', crsdUsers);
+            }
+        } catch (error) {
+            console.warn("Unable to fetch CRSD members:", error);
         }
-      }
 
+        try {
+            if (hasGroupMembersAccess()) {
+                ddUsers = await sp.web.siteGroups.getByName("DD").users();
+                console.log('DD Users:', ddUsers);
+            }
+        } catch (error) {
+            console.warn("Unable to fetch DD members:", error);
+        }
 
-      const departments = departmentData.map(item => item.Department.Department);
+        // Extract email lists
+        const crsdEmails = crsdUsers.map(item => isDevelopmentMode() ? item.Title : item.Email);
+        const ddEmails = ddUsers.map(item => isDevelopmentMode() ? item.Title : item.Email);
+        console.log('userEmail:', userEmail);
 
-      return {
-        isApprover,
-        departments
-      };
+        // Check if user is an approver
+        const isApprover = hasGroupMembersAccess() ?
+            crsdEmails.includes(userEmail) || ddEmails.includes(userEmail) : true;
+        console.log('Is Approver:', isApprover);
+
+        // Get departments with pagination
+        try {
+            let page;
+            if (isDevelopmentMode()) {
+                const filterText = `Title eq '${userEmail}'`;
+                const selectText = "Department/Department";
+                const firstExpandText = "Department";
+                const secondExpandText = "EmployeeName";
+
+                page = await sp.web.lists
+                    .getByTitle("UsersPerDepartment")
+                    .items
+                    .select("EmployeeName/EMail", selectText)
+                    .expand(firstExpandText, secondExpandText)
+                    .filter(filterText)
+                    .top(5000)
+                    .getPaged();
+            } else {
+                page = await sp.web.lists
+                    .getByTitle("UsersPerDepartment")
+                    .items
+                    .select("EmployeeName/EMail", "Department/Department")
+                    .expand("Department", "EmployeeName")
+                    .filter(`EmployeeName/EMail eq '${userEmail}'`)
+                    .top(5000)
+                    .getPaged();
+            }
+
+            // Collect all pages
+            while (true) {
+                departmentData.push(...page.results);
+                if (page.hasNext) {
+                    page = await page.getNext();
+                } else {
+                    break;
+                }
+            }
+        } catch (error) {
+            console.warn("Unable to fetch department data:", error);
+        }
+
+        const departments = departmentData.map(item => item.Department.Department);
+
+        return {
+            isApprover,
+            departments
+        };
+
     } catch (error) {
-      console.error('Error in getCurrentUserGroups:', error);
-      return {
-        isApprover: false,
-        departments: []
-      };
+        console.error('Error in getCurrentUserGroups:', error);
+        return {
+            isApprover: false,
+            departments: []
+        };
     }
-  }
+}
 
   public static async getFacilities(): Promise<{
     facilityList: IDropdownItem[];

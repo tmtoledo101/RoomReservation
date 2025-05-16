@@ -28,6 +28,12 @@ export const FacilityList: React.FC<IFacilityListProps> = ({
   return (
     <div className={styles.facilityDetails}>
       <table>
+        <colgroup>
+          {showActions && <col style={{ width: '10%' }} />}
+          <col style={{ width: '30%' }} />
+          <col style={{ width: '30%' }} />
+          <col style={{ width: '30%' }} />
+        </colgroup>
         <thead>
           <tr>
             {showActions && <th>Action</th>}
