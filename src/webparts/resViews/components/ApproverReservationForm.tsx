@@ -208,11 +208,53 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
       setIsSubmitting(false);
     }
   };
+//start
+const isDateTimeAvailable = async (fromDate: string, toDate: string, reservationId: number) => {
+  try {
+    // Call your SharePointService to get existing reservations
+    const existingReservations = await SharePointService.getAllReservations();
 
-  const handleSubmit = async (values: any) => {
-    setPendingValues(values);
-    setShowConfirmDialog(true);
-  };
+    const from = new Date(fromDate);
+    const to = new Date(toDate);
+
+    const conflict = existingReservations.some((reservation: any) => {
+      if (reservation.ID === reservationId) return false; // Skip self if editing
+      const existingFrom = new Date(reservation.fromDate);
+      const existingTo = new Date(reservation.toDate);
+
+      return (from < existingTo && to > existingFrom);
+    });
+
+    return !conflict;
+  } catch (error) {
+    console.error("Error checking date/time availability:", error);
+    return false;
+  }
+};
+
+const handleSubmit = async (values: any) => {
+  const fromDate = values.fromDate;
+  const toDate = values.toDate;
+
+  const isAvailable = await isDateTimeAvailable(fromDate, toDate, selectedReservation.ID);
+
+  if (!isAvailable) {
+    setNotification({
+      show: true,
+      message: "The selected date and time overlap with an existing reservation. Please choose another slot.",
+      severity: "error"
+    });
+    return;
+  }
+
+  setPendingValues(values);
+  setShowConfirmDialog(true);
+};
+
+  // const handleSubmit = async (values: any) => {
+  //   setPendingValues(values);
+  //   setShowConfirmDialog(true);
+  // };
 
   const handleFacilitySave = (form: any): void => {
     const newFacilityData = [...currentFacilityData];

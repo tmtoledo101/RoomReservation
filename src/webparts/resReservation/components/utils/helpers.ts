@@ -117,10 +117,7 @@
       const rrsConfig = await sp.web.lists.getByTitle("RRSConfig").items.filter("Key eq 'RRSEmailFrom'").select("Value").get();
       if (rrsConfig && rrsConfig.length > 0 && rrsConfig[0].Value) {
         emailProps.From = rrsConfig[0].Value;
-      } else {
-        console.error("Error: 'RRSemailFrom' not found or has no value in RRSConfig list.");
-        return { success: false, error: "'RRSemailFrom' configuration missing." };
-      }
+      }  
     } catch (error) {
       console.error("Error fetching RRSConfig for email From address:", error);
       return { success: false, error: "Failed to fetch email configuration." };

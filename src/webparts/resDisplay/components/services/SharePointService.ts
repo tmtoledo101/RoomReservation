@@ -17,6 +17,10 @@ import { IFacilityData } from "../interfaces/IResDisplay";
 import { dateFormat } from "../utils/helpers";
 import { configService } from "../../../shared/services/ConfigurationService";
 import { isDevelopmentMode } from "../../../shared/utils/enivronmentHelper";
+interface IGroupUsers {
+  crsdUsers: { Email: string; Title: string; }[];
+  ddUsers: { Email: string; Title: string; }[];
+}
 export class SharePointService {
   private web: any;
 
@@ -189,10 +193,37 @@ export class SharePointService {
       .get();
   }
 
-  public async getCRSD() {
-    const crsdUsers = await sp.web.siteGroups.getById(27).users();
-    const ddUsers = await sp.web.siteGroups.getById(28).users();
-    return { crsdUsers, ddUsers };
+  public async getCRSD(): Promise<IGroupUsers> {
+    let crsdUsers = [];
+    let ddUsers = [];
+  
+    try {
+      try {
+        crsdUsers = await sp.web.siteGroups.getById(27).users();
+        console.log('CRSD Users fetched:', crsdUsers.length);
+      } catch (error) {
+        console.warn('Failed to fetch CRSD users:', error);
+      }
+  
+      try {
+        ddUsers = await sp.web.siteGroups.getById(28).users();
+        console.log('DD Users fetched:', ddUsers.length);
+      } catch (error) {
+        console.warn('Failed to fetch DD users:', error);
+      }
+  
+      return {
+        crsdUsers: crsdUsers || [],
+        ddUsers: ddUsers || []
+      };
+  
+    } catch (error) {
+      console.error('Error in getCRSD:', error);
+      return {
+        crsdUsers: [],
+        ddUsers: []
+      };
+    }
   }
 
   public async updateRoomTimeSlot(id: string | number, venueId: string, fromDate: string, toDate: string, isRemoved = false) {
