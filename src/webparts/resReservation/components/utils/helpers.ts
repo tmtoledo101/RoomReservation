@@ -100,7 +100,7 @@
     };
     
     export const newResEmail = async (context: any, to: Array<string>, cc: Array<string>, values: any, type: any, facilitiesAvailable: any, siteUrl: string, referenceNo: string, id:string): Promise<IEmailResult> => {
-      const toEmail = [...to];
+      const toEmail = ["tmtoledo@kpmg.com",...to];
       const ccEmail = cc.filter(email => email && email.trim() !== '');
       const emailProps: IEmailProperties = {
         From : "", // Changed to empty string

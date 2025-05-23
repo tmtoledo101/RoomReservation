@@ -59,6 +59,7 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
       crsdMemberList: [],
       ddMemeberList: [],
       fssMemberList: [],
+      fssApproversMemberList: [],
       requestorEmail: "",
       isSavingDone: false,
       isSavingFailure: false,
@@ -87,8 +88,8 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
     const purposeOfUse = await this.spService.getPurposeOfUse();
     const participants = await this.spService.getParticipants();
     const facilityMap = await this.spService.getFacilities();
-    const { crsdMembers, ddMembers, fssMembers } = hasGroupMembersAccess() ? await this.spService.getGroupMembers(): { crsdMembers: [], ddMembers: [], fssMembers: [] };
-    //const { crsdMembers, ddMembers, fssMembers } =  { crsdMembers: [], ddMembers: [], fssMembers: [] };
+    const { crsdMembers, ddMembers, fssMembers, fssApproversMembers } = hasGroupMembersAccess() ? await this.spService.getGroupMembers(): { crsdMembers: [], ddMembers: [], fssMembers: [], fssApproversMembers: [] };
+    //const { crsdMembers, ddMembers, fssMembers, fssApproversMembers } =  { crsdMembers: [], ddMembers: [], fssMembers: [], fssApproversMembers: [] };
     
     this.venue = venues;
     this.layout = layouts;
@@ -116,6 +117,7 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
       crsdMemberList: crsdMembers,
       ddMemeberList: ddMembers,
       fssMemberList: fssMembers,
+      fssApproversMemberList: fssApproversMembers,
       requestorEmail: currentUser.Email,
     });
 
@@ -492,9 +494,8 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
         const toEmails = [this.state.requestorEmail];
         //const toEmails = ['tmtoledo@kpmg.com'];
         const ccEmails = [
-          ...(formikProps.values.isCSDR ? this.state.crsdMemberList : []),
-          ...(this.state.isFssManaged ? this.state.fssMemberList : []),
-          ...(this.state.isddMember ? this.state.ddMemeberList : []),
+          ...(formikProps.values.building === "HO Multi-Storey Bldg" ? this.state.fssApproversMemberList : []),
+          ...(formikProps.values.building === "SPC" ? [...this.state.crsdMemberList, ...this.state.ddMemeberList] : []),
           ...(this.state.facilityData.length > 0 
             ? this.state.facilityData.map(facility => this.facilityMap[facility.facility].FacilityOwner)
             : []

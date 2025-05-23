@@ -208,7 +208,7 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
                             Array.isArray(selectedReservation.participant) && 
                             !(selectedReservation.participant.indexOf('BSP-QC Personnel') > -1 && 
                               selectedReservation.participant.length === 1);
-          
+          console.log("isDDMember", isDDMember);
           const approverEmails = isDDMember ? ddMembers : crsdMembers;
           
           // Get site URL

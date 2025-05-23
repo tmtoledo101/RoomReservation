@@ -59,6 +59,7 @@ export interface IFacilityData {
     ddMemeberList: string[];
     isddMember: boolean;
     fssMemberList: string[];
+    fssApproversMemberList: string[];
   }
   
   export interface IResReservationFormValues {
@@ -91,4 +92,3 @@ export interface IFacilityData {
     Quantity: number;
     FacilityOwner: string;
   }
-  

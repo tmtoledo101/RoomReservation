@@ -306,44 +306,54 @@ export class SharePointService {
     }
 
 
-    public async getGroupMembers() {
-        let crsdUsers = [];
-        let ddUsers = [];
-        let fssUsers = [];
-    
-        try {
-            try {
-                crsdUsers = await sp.web.siteGroups.getByName("CRSD").users();
-            } catch (error) {
-                console.warn("Unable to fetch CRSD members:", error);
-            }
-    
-            try {
-                ddUsers = await sp.web.siteGroups.getByName("DD").users();
-            } catch (error) {
-                console.warn("Unable to fetch DD members:", error);
-            }
-    
-            try {
-                fssUsers = await sp.web.siteGroups.getByName("FSS").users();
-            } catch (error) {
-                console.warn("Unable to fetch FSS members:", error);
-            }
-    
-            return {
-                crsdMembers: crsdUsers.map(item => item.Email),
-                ddMembers: ddUsers.map(item => item.Email),
-                fssMembers: fssUsers.map(item => item.Email)
-            };
-        } catch (error) {
-            console.error("Error in getGroupMembers:", error);
-            return {
-                crsdMembers: [],
-                ddMembers: [],
-                fssMembers: []
-            };
-        }
-    }
+    public async getGroupMembers() {
+        let crsdUsers = [];
+        let ddUsers = [];
+        let fssUsers = [];
+        let fssApproversUsers = [];
+    
+        try {
+            try {
+                crsdUsers = await sp.web.siteGroups.getByName("CRSD").users();
+            } catch (error) {
+                console.warn("Unable to fetch CRSD members:", error);
+            }
+    
+            try {
+                ddUsers = await sp.web.siteGroups.getByName("DD").users();
+            } catch (error) {
+                console.warn("Unable to fetch DD members:", error);
+            }
+    
+            try {
+                fssUsers = await sp.web.siteGroups.getByName("FSS").users();
+            } catch (error) {
+                console.warn("Unable to fetch FSS members:", error);
+            }
+            
+            try {
+                fssApproversUsers = await sp.web.siteGroups.getByName("FSS Approvers").users();
+                console.log("FSS Approvers Users:", fssApproversUsers);
+            } catch (error) {
+                console.warn("Unable to fetch FSS Approvers members:", error);
+            }
+    
+            return {
+                crsdMembers: crsdUsers.map(item => item.Email),
+                ddMembers: ddUsers.map(item => item.Email),
+                fssMembers: fssUsers.map(item => item.Email),
+                fssApproversMembers: fssApproversUsers.map(item => item.Email)
+            };
+        } catch (error) {
+            console.error("Error in getGroupMembers:", error);
+            return {
+                crsdMembers: [],
+                ddMembers: [],
+                fssMembers: [],
+                fssApproversMembers: []
+            };
+        }
+    }
 
     public async createReservation(formData: any, facilityData: any[], files: File[], venueId: string, isFssManaged: boolean) {
         // Creates new reservations
