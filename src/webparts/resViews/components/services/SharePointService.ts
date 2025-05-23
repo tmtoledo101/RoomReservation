@@ -1,5 +1,3 @@
-{/*The SharePointService class manages all SharePoint data operations for the resView webpart, handling CRUD operations, 
-  data formatting, and complex queries.*/}
 import { sp } from "@pnp/sp";
 import "@pnp/sp/webs";
 import "@pnp/sp/lists";
@@ -9,6 +7,7 @@ import "@pnp/sp/attachments";
 import { Web } from "@pnp/sp/webs";
 import { ITableItem, STATUS } from "../interfaces/IResViews";
 import { IFacilityMapItem, IDropdownItem, IFacilityData } from "../interfaces/IFacility";
+import { IEmailProperties } from "@pnp/sp/sputilities";
 import { dateConverter } from "../utils/helpers";
 import { configService } from "../../../shared/services/ConfigurationService";
 import { isDevelopmentMode, hasGroupMembersAccess } from "../../../shared/utils/enivronmentHelper";
@@ -18,9 +17,29 @@ export interface IPaginatedResult<T> {
   totalCount: number;
   hasNextPage: boolean;
 }
-
 export class SharePointService {
   private web = Web( configService.getAccessControlUrl() );
+  
+  public async saveEmailData(emailProps: IEmailProperties, url: string): Promise<boolean> {
+    try {
+      // Save email data to a SharePoint list for tracking
+    const refNoMatch = emailProps.Subject.match(/(?:Request:|No\.|:)\s*([^.]+)/);
+    const referenceNo = refNoMatch ? refNoMatch[1].trim() : '';
+     await sp.web.lists.getByTitle("EmailDataForPA").items.add({
+        ReferenceNo: referenceNo,
+        To: emailProps.To.join(';'),
+        CC: emailProps.CC ? emailProps.CC.join(';') : '',
+        SendAsFrom: emailProps.From,
+        Subject: emailProps.Subject,
+        Body: emailProps.Body,
+        RecordUrl: url,
+        });
+      return true;
+    } catch (error) {
+      console.error("Error saving email data:", error);
+      return false;
+    }
+  }
   
   private static formatRequestItems(items: any[]): ITableItem[] {
     return items.map((item: any) => ({
@@ -44,9 +63,50 @@ export class SharePointService {
       otherRequirment: item.OtherRequirement || ""
     }));
   }
-
- 
-
+ //start
+  public static async getAllReservations(): Promise<any[]> {
+   try {
+     const allReservations: any[] = [];
+     let page = await sp.web.lists
+       .getByTitle("Request")
+       .items.select(
+         "Id",
+         "FromDate",
+         "ToDate",
+         "Venue",
+         "Building",
+         "ReferenceNumber",
+         "PurposeOfUse",
+         "NoParticipant",
+         "RequestedBy",
+         "Department",
+         "ContactNumber",
+         "Status",
+         "Layout",
+         "ContactPerson",
+         "PrincipalUser",
+         "TitleDescription",
+         "Participant",
+         "OtherRequirement"
+       )
+       .filter(`Status ne 'Cancelled' and Status ne 'Rejected'`)
+       .top(500)
+       .getPaged();
+     while (true) {
+       allReservations.push(...page.results);
+       if (page.hasNext) {
+         page = await page.getNext();
+       } else {
+         break;
+       }
+     }
+     return allReservations;
+   } catch (error) {
+     console.error("Error fetching all reservations:", error);
+     return [];
+   }
+}
+//
   public static async checkVenueAvailability(fromDate: Date, toDate: Date): Promise<string[]> {
       const reservations = [];
         try {
@@ -63,7 +123,7 @@ export class SharePointService {
               Status ne 'Cancelled' and Status ne 'Rejected' and
               ((FromDate lt '${moment(toDate).toISOString()}' and ToDate gt '${moment(fromDate).toISOString()}'))
             `)
-            .top(1000)  // Smaller batch size for better performance
+            .top(1000)    // Smaller batch size for better performance
             .getPaged();
     
           // Collect all pages
@@ -85,7 +145,6 @@ export class SharePointService {
           return [];
         }
       }
-
   public static async getPaginatedRequestItems(
     from: string,
     to: string,
@@ -96,7 +155,6 @@ export class SharePointService {
     try {
       const skipToken = pageNumber * pageSize;
       const dateRange = `FromDate ge datetime'${dateConverter(from, 1)}' and ToDate le datetime'${dateConverter(to, 2)}'`;
-
 
       // Process departments in batches
       const BATCH_SIZE = 5; // Process 5 departments at a time
@@ -133,7 +191,6 @@ export class SharePointService {
             .filter(filterQuery)
             .orderBy("Id", false)
             .getPaged();
-
           while (page) {
             batchResults.push(...page.results);
             if (page.hasNext) {
@@ -146,12 +203,9 @@ export class SharePointService {
           console.error(`Error processing batch for departments ${batchDepts.join(', ')}:`, error);
         }
       }
-
       // Sort all items by ID in descending order
       batchResults.sort((a, b) => b.Id - a.Id);
-
       const batchCount = batchResults.length;
-
       // Apply pagination to the combined results
       const batchPageItems = batchResults.slice(skipToken, skipToken + pageSize);
 console.log('Batch Page Items:', batchPageItems);
@@ -169,7 +223,6 @@ console.log('Batch Page Items:', batchPageItems);
       };
     }
   }
-
   public static async getBuildings(): Promise<{
     buildings: IDropdownItem[];
     venues: any[];
@@ -189,10 +242,8 @@ console.log('Batch Page Items:', batchPageItems);
           "VenueId"
         )
         .get();
-
       const buildObj = {};
       const venues: any[] = [];
-
       buildingData.forEach((item) => {
         const ImageObj = JSON.parse(item.Image) || { serverRelativeUrl: '' };
         if (item.Building) {
@@ -213,7 +264,6 @@ console.log('Batch Page Items:', batchPageItems);
           });
         }
       });
-
       return {
         buildings: Object.keys(buildObj).map((item, index) => ({
           id: index.toString(),
@@ -229,7 +279,6 @@ console.log('Batch Page Items:', batchPageItems);
       };
     }
   }
-
   private static async getDepartmentsBatch(departmentNames: string[]): Promise<any[]> {
     const BATCH_SIZE = 10; // Process 10 departments at a time
     const allResults = [];
@@ -243,9 +292,8 @@ console.log('Batch Page Items:', batchPageItems);
           .getByTitle("Department")
           .items.select("Title", "Sector")
           .filter(filterQuery)
-          .top(100)  // Smaller batch size for better performance
+          .top(100)    // Smaller batch size for better performance
           .getPaged();
-
         // Collect all pages
         while (true) {
           allResults.push(...page.results);
@@ -263,7 +311,6 @@ console.log('Batch Page Items:', batchPageItems);
     
     return allResults;
   }
-
   public static async getDepartments(currentUserTitle: string): Promise<{
     departmentList: IDropdownItem[];
     departmentSectorMap: { [key: string]: string };
@@ -276,9 +323,8 @@ console.log('Batch Page Items:', batchPageItems);
         .items.select("Department/Department")
         .filter(`Title eq '${currentUserTitle}'`)
         .expand("Department/FieldValuesAsText")
-        .top(100)  // Smaller batch size for better performance
+        .top(100)    // Smaller batch size for better performance
         .getPaged();
-
       while (true) {
         userDepartments.push(...page.results);
         
@@ -288,7 +334,6 @@ console.log('Batch Page Items:', batchPageItems);
           break;
         }
       }
-
       if (userDepartments.length === 0) {
         console.error('User department not found');
         return {
@@ -296,19 +341,15 @@ console.log('Batch Page Items:', batchPageItems);
           departmentSectorMap: {}
         };
       }
-
       // Get unique department names
       const departmentNames = [...new Set(
         userDepartments.map(item => item.Department.Department)
       )];
-
       // Get departments in batches
       const departments = await this.getDepartmentsBatch(departmentNames);
-
       // Process results
       const departmentList: IDropdownItem[] = [];
       const departmentSectorMap: { [key: string]: string } = {};
-
       departments.forEach(dept => {
         if (dept.Title && !departmentList.some(item => item.id === dept.Title)) {
           departmentList.push({
@@ -318,7 +359,6 @@ console.log('Batch Page Items:', batchPageItems);
           departmentSectorMap[dept.Title] = dept.Sector;
         }
       });
-
       return {
         departmentList,
         departmentSectorMap
@@ -331,7 +371,6 @@ console.log('Batch Page Items:', batchPageItems);
       };
     }
   }
-
   private static async getRequestItemsBatch(dateRange: string, departments: string[]): Promise<any[]> {
     try {
       const BATCH_SIZE = 5; // Process 5 departments at a time
@@ -371,9 +410,8 @@ console.log('Batch Page Items:', batchPageItems);
             )
             .filter(filterQuery)
             .orderBy("Id", false)
-            .top(100)  // Smaller batch size for better performance
+            .top(100)    // Smaller batch size for better performance
             .getPaged();
-
           // Collect all pages for current batch
           while (true) {
             console.log(`  For Iteration ${i} Got ${page.results.length} results for departments ${batchDepts.join(', ')}`);
@@ -396,14 +434,13 @@ console.log('Batch Page Items:', batchPageItems);
       return [];
     }
   }
-
   public static async getRequestItems(from: string, to: string, department: string[]): Promise<{
     referenceNumberList: ITableItem[];
     pastRequestList: ITableItem[];
     approvalRequest: ITableItem[];
   }> {
-    const dateRange = `FromDate ge datetime'${dateConverter(from, 1)}' and ToDate le datetime'${dateConverter(to, 2)}'`;
-    
+    // Modified dateRange to filter based on FromDate
+    const dateRange = `FromDate ge datetime'${dateConverter(from, 1)}' and FromDate le datetime'${dateConverter(to, 2)}'`;
     // If no departments specified, get all items
     const RequestItem: any[] = department.length
       ? await this.getRequestItemsBatch(dateRange, department)
@@ -432,12 +469,10 @@ console.log('Batch Page Items:', batchPageItems);
           .filter(dateRange)
           .orderBy("Id", false)
           .get();
-    
     console.log('Request items:', RequestItem);
     const itemArray1: ITableItem[] = [];
     const itemArray2: ITableItem[] = [];
     const itemArray3: ITableItem[] = [];
-
     RequestItem.forEach((item) => {
       const tempObj: ITableItem = {
         building: item.Building,
@@ -459,9 +494,7 @@ console.log('Batch Page Items:', batchPageItems);
         participant: item.Participant ? JSON.parse(item.Participant) : [],
         otherRequirment: item.OtherRequirement || ""
       };
-
       itemArray1.push(tempObj);
-      
       if (
         item.Status === STATUS.APPROVED ||
         item.Status === STATUS.DISAPPROVED ||
@@ -469,19 +502,16 @@ console.log('Batch Page Items:', batchPageItems);
       ) {
         itemArray2.push(tempObj);
       }
-      
       if (item.Status === STATUS.PENDING) {
         itemArray3.push(tempObj);
       }
     });
-
     return {
       referenceNumberList: itemArray1,
       pastRequestList: itemArray2,
       approvalRequest: itemArray3,
     };
   }
-
   public static async getCurrentUserGroups(): Promise<{
     isApprover: boolean;
     departments: string[];
@@ -489,7 +519,6 @@ console.log('Batch Page Items:', batchPageItems);
     let crsdUsers = [];
     let ddUsers = [];
     let departmentData = [];
-
     try {
         // Get current user
         const user = await sp.web.currentUser.get();
@@ -498,36 +527,31 @@ console.log('Batch Page Items:', batchPageItems);
             Title: user.Title
         };
         const userEmail = currentUser.Email;
-
         // Get users from groups with error handling
         try {
             if (hasGroupMembersAccess()) {
-                crsdUsers = await sp.web.siteGroups.getByName("CRSD").users();
-                console.log('CRSD Users:', crsdUsers);
+              crsdUsers = await sp.web.siteGroups.getByName("CRSD").users();
+              console.log('CRSD Users:', crsdUsers);
             }
         } catch (error) {
             console.warn("Unable to fetch CRSD members:", error);
         }
-
         try {
             if (hasGroupMembersAccess()) {
-                ddUsers = await sp.web.siteGroups.getByName("DD").users();
-                console.log('DD Users:', ddUsers);
+              ddUsers = await sp.web.siteGroups.getByName("DD").users();
+              console.log('DD Users:', ddUsers);
             }
         } catch (error) {
             console.warn("Unable to fetch DD members:", error);
         }
-
         // Extract email lists
         const crsdEmails = crsdUsers.map(item => isDevelopmentMode() ? item.Title : item.Email);
         const ddEmails = ddUsers.map(item => isDevelopmentMode() ? item.Title : item.Email);
         console.log('userEmail:', userEmail);
-
         // Check if user is an approver
         const isApprover = hasGroupMembersAccess() ?
             crsdEmails.includes(userEmail) || ddEmails.includes(userEmail) : true;
         console.log('Is Approver:', isApprover);
-
         // Get departments with pagination
         try {
             let page;
@@ -536,7 +560,6 @@ console.log('Batch Page Items:', batchPageItems);
                 const selectText = "Department/Department";
                 const firstExpandText = "Department";
                 const secondExpandText = "EmployeeName";
-
                 page = await sp.web.lists
                     .getByTitle("UsersPerDepartment")
                     .items
@@ -555,7 +578,6 @@ console.log('Batch Page Items:', batchPageItems);
                     .top(5000)
                     .getPaged();
             }
-
             // Collect all pages
             while (true) {
                 departmentData.push(...page.results);
@@ -568,14 +590,11 @@ console.log('Batch Page Items:', batchPageItems);
         } catch (error) {
             console.warn("Unable to fetch department data:", error);
         }
-
         const departments = departmentData.map(item => item.Department.Department);
-
         return {
             isApprover,
             departments
         };
-
     } catch (error) {
         console.error('Error in getCurrentUserGroups:', error);
         return {
@@ -584,7 +603,6 @@ console.log('Batch Page Items:', batchPageItems);
         };
     }
 }
-
   public static async getFacilities(): Promise<{
     facilityList: IDropdownItem[];
     facilityMap: { [key: string]: IFacilityMapItem };
@@ -593,10 +611,8 @@ console.log('Batch Page Items:', batchPageItems);
       .getByTitle("Facility")
       .items.select("*")
       .get();
-
     const facilityMap: { [key: string]: IFacilityMapItem } = {};
     const facilityList: IDropdownItem[] = [];
-
     facilities.forEach(facility => {
       facilityMap[facility.Title] = {
         Title: facility.Title,
@@ -605,19 +621,16 @@ console.log('Batch Page Items:', batchPageItems);
         Quantity: facility.Quantity,
         FacilityOwner: facility.FacilityOwner
       };
-
       facilityList.push({
         id: facility.Title,
         value: facility.Title
       });
     });
-
     return {
       facilityList,
       facilityMap
     };
   }
-
   public static async isVenueCRSD(venue: string): Promise<boolean> {
     try {
       const venueItem = await sp.web.lists
@@ -631,7 +644,6 @@ console.log('Batch Page Items:', batchPageItems);
       return false;
     }
   }
-
   public static async updateReservation(id: number, data: any): Promise<void> {
     try {
       const updateData = {
@@ -653,14 +665,12 @@ console.log('Batch Page Items:', batchPageItems);
         Participant: JSON.stringify(data.participant || []),
         OtherRequirement: data.otherRequirment || ""
       };
-
       await sp.web.lists.getByTitle("Request").items.getById(id).update(updateData);
     } catch (error) {
       console.error('Error updating reservation:', error);
       throw new Error('Failed to update reservation');
     }
   }
-
   public static async getFacilityData(reservationId: number): Promise<IFacilityData[]> {
     try {
       const item = await sp.web.lists
@@ -668,7 +678,6 @@ console.log('Batch Page Items:', batchPageItems);
         .items.getById(reservationId)
         .select("FacilityData")
         .get();
-
       if (item.FacilityData) {
         try {
           return JSON.parse(item.FacilityData);
@@ -683,7 +692,6 @@ console.log('Batch Page Items:', batchPageItems);
       return [];
     }
   }
-
   public static async getLayouts(venue: string): Promise<IDropdownItem[]> {
     try {
       const layoutData = await sp.web.lists
@@ -692,7 +700,6 @@ console.log('Batch Page Items:', batchPageItems);
         .filter(`Venue/Venue eq '${venue}'`)
         .expand("Venue/FieldValuesAsText")
         .get();
-
       return layoutData.map(item => ({
         id: item.Layout,
         value: item.Layout
@@ -702,33 +709,29 @@ console.log('Batch Page Items:', batchPageItems);
       return [];
     }
   }
-
   public async getPrincipalUsers(dept: string) {
-
     console.log("SharePointService - Getting principal users for department:", dept);
     console.log("SharePointService - Is test environment:", configService.isTestEnvironment());
     
     try {
       let principalData;
-      if (configService.isTestEnvironment()) {
-     
-          console.log("SharePointService - Using test environment");
-          principalData = await sp.web.lists.getByTitle("Employees")     
-            .items.select("Name", "Dept")
-            .filter(`Dept eq '${dept}'`)
-            .top(5000)
-            .get();    
+      if (!configService.isTestEnvironment()) {
+    
+        console.log("SharePointService - Using test environment");
+        principalData = await sp.web.lists.getByTitle("Employees")      
+          .items.select("Name", "Dept")
+          .filter(`Dept eq '${dept}'`)
+          .top(5000)
+          .get();      
       } else {
         console.log("SharePointService - Using production environment");
-        principalData = await this.web.lists.getByTitle("Employees")     
+        principalData = await this.web.lists.getByTitle("Employees")      
           .items.select("Name", "Dept")
           .filter(`Dept eq '${dept}'`)
           .top(5000)
           .get();
       }
-
       console.log("SharePointService - Principal data:", principalData);
-
       const princialMap = {};
       principalData.forEach((item) => {
         if (!princialMap[item.Dept]) {
@@ -736,7 +739,6 @@ console.log('Batch Page Items:', batchPageItems);
         }
         princialMap[item.Dept].push(item.Name);
       });
-
       console.log("SharePointService - Principal map:", princialMap);
       return princialMap;
     } catch (error) {
@@ -744,14 +746,12 @@ console.log('Batch Page Items:', batchPageItems);
       return {};
     }
   }
-
   public static async getPurposeOfUse(): Promise<IDropdownItem[]> {
     try {
       const purposeData = await sp.web.lists
         .getByTitle("PurposeOfUse")
         .items.select("Title")
         .get();
-
       return purposeData.map(item => ({
         id: item.Title,
         value: item.Title
@@ -759,6 +759,52 @@ console.log('Batch Page Items:', batchPageItems);
     } catch (error) {
       console.error('Error getting purpose of use:', error);
       return [];
+    }
+  }
+
+  public static async getApproverEmails(): Promise<{ crsdMembers: string[], ddMembers: string[] }> {
+    try {
+      let crsdMembers: string[] = [];
+      let ddMembers: string[] = [];
+
+      try {
+        const crsdUsers = await sp.web.siteGroups.getByName("CRSD").users();
+        crsdMembers = crsdUsers.map(user => user.Email);
+      } catch (error) {
+        console.error("Error getting CRSD members:", error);
+      }
+
+      try {
+        const ddUsers = await sp.web.siteGroups.getByName("DD").users();
+        ddMembers = ddUsers.map(user => user.Email);
+      } catch (error) {
+        console.error("Error getting DD members:", error);
+      }
+
+      return { crsdMembers, ddMembers };
+    } catch (error) {
+      console.error("Error getting approver emails:", error);
+      return { crsdMembers: [], ddMembers: [] };
+    }
+  }
+
+  public static async getRequestorEmail(requestedBy: string): Promise<string> {
+    try {
+      const users = await sp.web.lists
+        .getByTitle("UsersPerDepartment")
+        .items.select("EmployeeName/EMail", "Title")
+        .expand("EmployeeName")
+        .filter(`Title eq '${requestedBy}'`)
+        .get();
+
+      if (users.length > 0 && users[0].EmployeeName) {
+        return users[0].EmployeeName.EMail;
+      }
+      
+      return "";
+    } catch (error) {
+      console.error("Error getting requestor email:", error);
+      return "";
     }
   }
 }

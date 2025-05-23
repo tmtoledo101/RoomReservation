@@ -71,7 +71,8 @@ export default class ResViewsWebPart extends BaseClientSideWebPart<IResViewsWebP
       ResViews,
       {
         description: this.properties.description,
-        siteUrl: this.context.pageContext.web.absoluteUrl
+        siteUrl: this.context.pageContext.web.absoluteUrl,
+        context: this.context
       }
     );
 

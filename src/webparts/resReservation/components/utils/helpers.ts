@@ -117,7 +117,7 @@
       const rrsConfig = await sp.web.lists.getByTitle("RRSConfig").items.filter("Key eq 'RRSEmailFrom'").select("Value").get();
       if (rrsConfig && rrsConfig.length > 0 && rrsConfig[0].Value) {
         emailProps.From = rrsConfig[0].Value;
-      } 
+      }  
     } catch (error) {
       console.error("Error fetching RRSConfig for email From address:", error);
       return { success: false, error: "Failed to fetch email configuration." };
@@ -144,7 +144,6 @@
         Purpose of Use:${values.purposeOfUse}<br/>
         Title Description: ${values.titleDesc}<br/>
         No. of Participants: ${values.numberOfParticipant}<br/><br/>
-        Link: <a href="${siteUrl}/SitePages/DisplayReservation_appge.aspx?pid=${id}">Request url</a>
         `;
       }
     
@@ -170,9 +169,7 @@
         Participants: ${values.participant.join(' , ')}<br/>
         Purpose of Use:${values.purposeOfUse}<br/>
         Title Description: ${values.titleDesc}<br/>
-        No. of Participants: ${values.numberOfParticipant}<br/><br/>
-        Link: <a href="${siteUrl}/SitePages/DisplayReservation_appge.aspx?pid=${id}">Request url</a>
-        `;
+        No. of Participants: ${values.numberOfParticipant}<br/><br/>`;
       }
     
       if (type === 3) {

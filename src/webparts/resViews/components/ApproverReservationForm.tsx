@@ -23,6 +23,11 @@ import { Alert } from "@material-ui/lab";
 import { ITableItem, STATUS } from "./interfaces/IResViews";
 import { SharePointService } from "./services/SharePointService";
 import { approverValidationSchema } from "./utils/approverValidation";
+import { newResEmail } from "./utils/helpers";
+import { sp } from "@pnp/sp";
+import "@pnp/sp/webs";
+import "@pnp/sp/lists";
+import "@pnp/sp/items";
 import { FacilityDialog } from "./common/FacilityDialog";
 import { IFacilityData, IDropdownItem, IFacilityMapItem } from "./interfaces/IFacility";
 import { ConfirmationDialog } from "./common/ConfirmationDialog";
@@ -40,6 +45,7 @@ interface IApproverReservationFormProps {
   selectedReservation: ITableItem | null;
   onClose: () => void;
   onUpdateSuccess: () => void;
+  context: any;
 }
 
 const formatDateTime12Hour = (dateString: string | undefined) => {
@@ -61,6 +67,7 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
   selectedReservation,
   onClose,
   onUpdateSuccess,
+  context
 }) => {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [showFacilityDialog, setShowFacilityDialog] = React.useState(false);
@@ -187,9 +194,46 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
         }
       );
 
+      // Send email notification if status is Approved, Disapproved, or Cancelled
+      if (status === STATUS.APPROVED || status === STATUS.DISAPPROVED || status === STATUS.CANCELLED) {
+        try {
+          // Get requestor email
+          const requestorEmail = await SharePointService.getRequestorEmail(selectedReservation.requestedBy);
+          
+          // Get CRSD/DD member emails
+          const { crsdMembers, ddMembers } = await SharePointService.getApproverEmails();
+          
+          // Determine which group to send to based on participant type
+          const isDDMember = selectedReservation.participant && 
+                            Array.isArray(selectedReservation.participant) && 
+                            !(selectedReservation.participant.indexOf('BSP-QC Personnel') > -1 && 
+                              selectedReservation.participant.length === 1);
+          
+          const approverEmails = isDDMember ? ddMembers : crsdMembers;
+          
+          // Get site URL
+          const siteUrl = window.location.origin + "/sites/ResourceReservation";
+          
+          // Send email notification
+          await newResEmail(
+            context,
+            [requestorEmail], 
+            approverEmails, 
+            pendingValues, 
+            status, 
+            siteUrl, 
+            selectedReservation.ID,
+            selectedReservation.referenceNumber
+          );
+        } catch (emailError) {
+          console.error("Error sending email notification:", emailError);
+          // Continue with the process even if email sending fails
+        }
+      }
+
       setNotification({
         show: true,
-        message: `Reservation ${status === STATUS.APPROVED ? 'approved' : 'rejected'} successfully`,
+        message: `Reservation ${status === STATUS.APPROVED ? 'approved' : status === STATUS.DISAPPROVED ? 'disapproved' : 'cancelled'} successfully`,
         severity: "success"
       });
 
@@ -208,11 +252,53 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
       setIsSubmitting(false);
     }
   };
+//start
+const isDateTimeAvailable = async (fromDate: string, toDate: string, reservationId: number) => {
+  try {
+    // Call your SharePointService to get existing reservations
+    const existingReservations = await SharePointService.getAllReservations();
 
-  const handleSubmit = async (values: any) => {
-    setPendingValues(values);
-    setShowConfirmDialog(true);
-  };
+    const from = new Date(fromDate);
+    const to = new Date(toDate);
+
+    const conflict = existingReservations.some((reservation: any) => {
+      if (reservation.ID === reservationId) return false; // Skip self if editing
+      const existingFrom = new Date(reservation.fromDate);
+      const existingTo = new Date(reservation.toDate);
+
+      return (from < existingTo && to > existingFrom);
+    });
+
+    return !conflict;
+  } catch (error) {
+    console.error("Error checking date/time availability:", error);
+    return false;
+  }
+};
+
+const handleSubmit = async (values: any) => {
+  const fromDate = values.fromDate;
+  const toDate = values.toDate;
+
+  const isAvailable = await isDateTimeAvailable(fromDate, toDate, selectedReservation.ID);
+
+  if (!isAvailable) {
+    setNotification({
+      show: true,
+      message: "The selected date and time overlap with an existing reservation. Please choose another slot.",
+      severity: "error"
+    });
+    return;
+  }
+
+  setPendingValues(values);
+  setShowConfirmDialog(true);
+};
+
+  // const handleSubmit = async (values: any) => {
+  //   setPendingValues(values);
+  //   setShowConfirmDialog(true);
+  // };
 
   const handleFacilitySave = (form: any): void => {
     const newFacilityData = [...currentFacilityData];

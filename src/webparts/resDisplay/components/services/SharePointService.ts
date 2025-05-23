@@ -21,7 +21,6 @@ interface IGroupUsers {
   crsdUsers: { Email: string; Title: string; }[];
   ddUsers: { Email: string; Title: string; }[];
 }
-
 export class SharePointService {
   private web: any;
 

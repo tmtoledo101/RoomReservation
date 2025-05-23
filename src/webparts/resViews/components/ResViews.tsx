@@ -141,6 +141,7 @@ export default class ResViews extends React.Component<IResViewsProps, IResViewSt
           selectedReservation={selectedReservation}
           onClose={this.handleModalClose}
           onUpdateSuccess={this.handleUpdateSuccess}
+          context={this.props.context}
         />
       </>
     );

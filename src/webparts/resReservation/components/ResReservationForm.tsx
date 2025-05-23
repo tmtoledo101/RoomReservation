@@ -530,7 +530,7 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
       this.setState({
         isSavingFailure: true,
         saveStart: false,
-        failureMessage: "Error creating reservation. Please contact admin.",
+        failureMessage: "The venue is no longer available for the selected dates and times. ",
       });
     }
   }
