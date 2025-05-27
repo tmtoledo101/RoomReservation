@@ -25,7 +25,12 @@ export default class ResViews extends React.Component<IResViewsProps, IResViewSt
       isModalOpen: false,
       selectedReservation: null,
       fromDate: null,
-      toDate: null
+      toDate: null,
+      approverGroups: {
+        isCRSD: false,
+        isDD: false,
+        isFSSApprover: false
+      }
     };
   }
 
@@ -94,31 +99,57 @@ export default class ResViews extends React.Component<IResViewsProps, IResViewSt
   }
 
   public async componentDidMount(): Promise<void> {
-    const { isApprover, departments } = await SharePointService.getCurrentUserGroups();
+    const { isApprover, departments, approverGroups } = await SharePointService.getCurrentUserGroups();
     //Terence commented out this
     if (isApprover) {
-
       console.log("Complete MenuTabs");
       this.setState({
         menuTabs: ["By Reference No", "Past Request", "For Approval"],
+        approverGroups
       });
     }
     this.setState({ department: departments });
   }
 
   private async getItems(from: string, to: string): Promise<void> {
-    const { department } = this.state;
+    const { department, approverGroups } = this.state;
     
     const {
       referenceNumberList,
       pastRequestList,
-      approvalRequest,
+      approvalRequest: allApprovalRequests,
     } = await SharePointService.getRequestItems(from, to, department);
+
+    // Filter approval requests based on user's security group
+    let filteredApprovalRequests = [...allApprovalRequests];
+    console.log("All Approval Requests:", allApprovalRequests);
+    console.log("Approver Groups:", approverGroups);
+    console.log("appgroups.isFSSApprover:", approverGroups.isFSSApprover);
+    console.log("appgroups.isCRSD:", approverGroups.isCRSD);
+    // User can see both HO and SPC records if they're in both groups
+    if (approverGroups.isFSSApprover && (approverGroups.isCRSD || approverGroups.isDD)) {
+      filteredApprovalRequests = allApprovalRequests.filter(
+        item => item.building === "HO Multi-Storey Bldg" || item.building === "SPC"
+      );
+      console.log("Filtered for FSS AND CRSD/DD:", filteredApprovalRequests);
+    } else if (approverGroups.isFSSApprover) {
+      // FSS Approvers only
+      filteredApprovalRequests = allApprovalRequests.filter(
+        item => item.building === "HO Multi-Storey Bldg"
+      );
+      console.log("Filtered for FSS Approvers only:", filteredApprovalRequests);
+    } else if (approverGroups.isCRSD || approverGroups.isDD) {
+      // CRSD or DD only
+      filteredApprovalRequests = allApprovalRequests.filter(
+        item => item.building === "SPC"
+      );
+      console.log("Filtered for CRSD/DD only:", filteredApprovalRequests);
+    }
 
     this.setState({
       referenceNumberList,
       pastRequestList,
-      approvalRequest,
+      approvalRequest: filteredApprovalRequests,
     });
   }
 
@@ -142,6 +173,7 @@ export default class ResViews extends React.Component<IResViewsProps, IResViewSt
           onClose={this.handleModalClose}
           onUpdateSuccess={this.handleUpdateSuccess}
           context={this.props.context}
+          siteUrl={this.props.siteUrl}
         />
       </>
     );

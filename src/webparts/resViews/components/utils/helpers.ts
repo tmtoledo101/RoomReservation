@@ -131,6 +131,7 @@ export const newResEmail = async (context: any, to: Array<string>, cc: Array<str
 
   try {
       const rrsConfig = await sp.web.lists.getByTitle("RRSConfig").items.filter("Key eq 'RRSEmailFrom'").select("Value").get();
+      console.log("RRSConfig for email From address:", rrsConfig);
       if (rrsConfig && rrsConfig.length > 0 && rrsConfig[0].Value) {
         emailProps.From = rrsConfig[0].Value;
       }  

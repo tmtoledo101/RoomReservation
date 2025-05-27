@@ -14,4 +14,9 @@ export interface IResViewState {
   selectedReservation: ITableItem | null;
   fromDate: string | null;
   toDate: string | null;
+  approverGroups: {
+    isCRSD: boolean;
+    isDD: boolean;
+    isFSSApprover: boolean;
+  };
 }

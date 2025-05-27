@@ -46,6 +46,7 @@ interface IApproverReservationFormProps {
   onClose: () => void;
   onUpdateSuccess: () => void;
   context: any;
+  siteUrl: string;
 }
 
 const formatDateTime12Hour = (dateString: string | undefined) => {
@@ -67,7 +68,8 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
   selectedReservation,
   onClose,
   onUpdateSuccess,
-  context
+  context,
+  siteUrl
 }) => {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [showFacilityDialog, setShowFacilityDialog] = React.useState(false);
@@ -200,19 +202,29 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
           // Get requestor email
           const requestorEmail = await SharePointService.getRequestorEmail(selectedReservation.requestedBy);
           
-          // Get CRSD/DD member emails
-          const { crsdMembers, ddMembers } = await SharePointService.getApproverEmails();
+          // Get approver emails
+          const { crsdMembers, ddMembers, fssApproversMembers } = await SharePointService.getApproverEmails();
           
-          // Determine which group to send to based on participant type
-          const isDDMember = selectedReservation.participant && 
-                            Array.isArray(selectedReservation.participant) && 
-                            !(selectedReservation.participant.indexOf('BSP-QC Personnel') > -1 && 
-                              selectedReservation.participant.length === 1);
-          console.log("isDDMember", isDDMember);
-          const approverEmails = isDDMember ? ddMembers : crsdMembers;
+          // Determine which group to send to based on building
+          let approverEmails = [];
+          
+          if (pendingValues.building === "HO Multi-Storey Bldg") {
+            approverEmails = fssApproversMembers;
+          } else if (pendingValues.building === "SPC") {
+            // For SPC building, combine both CRSD and DD members
+            approverEmails = [...crsdMembers, ...ddMembers];
+          } else {
+            // For other buildings, use the same logic as before
+            const isDDMember = selectedReservation.participant && 
+                              Array.isArray(selectedReservation.participant) && 
+                              !(selectedReservation.participant.indexOf('BSP-QC Personnel') > -1 && 
+                                selectedReservation.participant.length === 1);
+            console.log("isDDMember", isDDMember);
+            approverEmails = isDDMember ? ddMembers : crsdMembers;
+          }
           
           // Get site URL
-          const siteUrl = window.location.origin + "/sites/ResourceReservation";
+          const fullSiteUrl = siteUrl;
           
           // Send email notification
           await newResEmail(
@@ -221,7 +233,7 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
             approverEmails, 
             pendingValues, 
             status, 
-            siteUrl, 
+            fullSiteUrl, 
             selectedReservation.ID,
             selectedReservation.referenceNumber
           );

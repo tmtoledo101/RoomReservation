@@ -23,17 +23,32 @@ export class SharePointService {
   public async saveEmailData(emailProps: IEmailProperties, url: string): Promise<boolean> {
     try {
       // Save email data to a SharePoint list for tracking
-    const refNoMatch = emailProps.Subject.match(/(?:Request:|No\.|:)\s*([^.]+)/);
-    const referenceNo = refNoMatch ? refNoMatch[1].trim() : '';
-     await sp.web.lists.getByTitle("EmailDataForPA").items.add({
-        ReferenceNo: referenceNo,
-        To: emailProps.To.join(';'),
-        CC: emailProps.CC ? emailProps.CC.join(';') : '',
-        SendAsFrom: emailProps.From,
-        Subject: emailProps.Subject,
-        Body: emailProps.Body,
+      const refNoMatch = emailProps.Subject.match(/(?:Request:|No\.|:)\s*([^.]+)/);
+      const referenceNo = refNoMatch ? refNoMatch[1].trim() : '';
+      console.log("Reference No:", referenceNo);
+      
+     
+      // Join email addresses and truncate if necessary
+      const toEmails = emailProps.To ? [...new Set(emailProps.To)].join(';') : '';
+      const ccEmails = emailProps.CC ? [...new Set(emailProps.CC)].join(';') : '';
+      const fromEmail = emailProps.From ? emailProps.From : '';
+      const bodyEmail = emailProps.Body ? emailProps.Body : '';
+      const subjectEmail = emailProps.Subject ? emailProps.Subject : '';
+      console.log("To Emails:", toEmails);
+      console.log("CC Emails:", ccEmails);
+      console.log("From Email:", fromEmail);
+      console.log("Email Subject:", emailProps.Subject);
+      console.log("Email Body:", emailProps.Body);
+      console.log("Record URL:", url);
+      await sp.web.lists.getByTitle("EmailDataForPA").items.add({
+        ReferenceNo: referenceNo.substring,
+        To: toEmails,
+        CC: ccEmails,
+        SendAsFrom: fromEmail,
+        Subject: subjectEmail,
+        Body: bodyEmail,
         RecordUrl: url,
-        });
+      });
       return true;
     } catch (error) {
       console.error("Error saving email data:", error);
@@ -515,9 +530,15 @@ console.log('Batch Page Items:', batchPageItems);
   public static async getCurrentUserGroups(): Promise<{
     isApprover: boolean;
     departments: string[];
+    approverGroups: {
+      isCRSD: boolean;
+      isDD: boolean;
+      isFSSApprover: boolean;
+    };
 }> {
     let crsdUsers = [];
     let ddUsers = [];
+    let fssApprovers = [];
     let departmentData = [];
     try {
         // Get current user
@@ -544,13 +565,28 @@ console.log('Batch Page Items:', batchPageItems);
         } catch (error) {
             console.warn("Unable to fetch DD members:", error);
         }
+        try {
+            if (hasGroupMembersAccess()) {
+              fssApprovers = await sp.web.siteGroups.getByName("FSS Approvers").users();
+              console.log('FSS Approvers Users:', fssApprovers);
+            }
+        } catch (error) {
+            console.warn("Unable to fetch FSS Approvers members:", error);
+        }
         // Extract email lists
         const crsdEmails = crsdUsers.map(item => isDevelopmentMode() ? item.Title : item.Email);
         const ddEmails = ddUsers.map(item => isDevelopmentMode() ? item.Title : item.Email);
+        const fssApproverEmails = fssApprovers.map(item => isDevelopmentMode() ? item.Title : item.Email);
         console.log('userEmail:', userEmail);
-        // Check if user is an approver
+        
+        // Check which groups the user belongs to
+        const isCRSD = hasGroupMembersAccess() ? crsdEmails.includes(userEmail) : false;
+        const isDD = hasGroupMembersAccess() ? ddEmails.includes(userEmail) : false;
+        const isFSSApprover = hasGroupMembersAccess() ? fssApproverEmails.includes(userEmail) : false;
+        
+        // Check if user is an approver (in any of the groups)
         const isApprover = hasGroupMembersAccess() ?
-            crsdEmails.includes(userEmail) || ddEmails.includes(userEmail) : true;
+            isCRSD || isDD || isFSSApprover : true;
         console.log('Is Approver:', isApprover);
         // Get departments with pagination
         try {
@@ -593,13 +629,23 @@ console.log('Batch Page Items:', batchPageItems);
         const departments = departmentData.map(item => item.Department.Department);
         return {
             isApprover,
-            departments
+            departments,
+            approverGroups: {
+                isCRSD,
+                isDD,
+                isFSSApprover
+            }
         };
     } catch (error) {
         console.error('Error in getCurrentUserGroups:', error);
         return {
             isApprover: false,
-            departments: []
+            departments: [],
+            approverGroups: {
+                isCRSD: false,
+                isDD: false,
+                isFSSApprover: false
+            }
         };
     }
 }
@@ -762,10 +808,11 @@ console.log('Batch Page Items:', batchPageItems);
     }
   }
 
-  public static async getApproverEmails(): Promise<{ crsdMembers: string[], ddMembers: string[] }> {
+  public static async getApproverEmails(): Promise<{ crsdMembers: string[], ddMembers: string[], fssApproversMembers: string[] }> {
     try {
       let crsdMembers: string[] = [];
       let ddMembers: string[] = [];
+      let fssApproversMembers: string[] = [];
 
       try {
         const crsdUsers = await sp.web.siteGroups.getByName("CRSD").users();
@@ -781,14 +828,21 @@ console.log('Batch Page Items:', batchPageItems);
         console.error("Error getting DD members:", error);
       }
 
-      return { crsdMembers, ddMembers };
+      try {
+        const fssApproversUsers = await sp.web.siteGroups.getByName("FSS Approvers").users();
+        fssApproversMembers = fssApproversUsers.map(user => user.Email);
+      } catch (error) {
+        console.error("Error getting FSS Approvers members:", error);
+      }
+
+      return { crsdMembers, ddMembers, fssApproversMembers };
     } catch (error) {
       console.error("Error getting approver emails:", error);
-      return { crsdMembers: [], ddMembers: [] };
+      return { crsdMembers: [], ddMembers: [], fssApproversMembers: [] };
     }
   }
 
-  public static async getRequestorEmail(requestedBy: string): Promise<string> {
+ public static async getRequestorEmail(requestedBy: string): Promise<string> {
     try {
       const users = await sp.web.lists
         .getByTitle("UsersPerDepartment")
