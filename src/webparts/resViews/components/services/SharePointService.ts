@@ -75,7 +75,8 @@ export class SharePointService {
       principal: item.PrincipalUser || "",
       titleDesc: item.TitleDescription || "",
       participant: item.Participant ? JSON.parse(item.Participant) : [],
-      otherRequirment: item.OtherRequirement || ""
+      otherRequirment: item.OtherRequirement || "",
+      guid: item.GUID || ""
     }));
   }
  //start
@@ -201,7 +202,8 @@ export class SharePointService {
               "PrincipalUser",
               "TitleDescription",
               "Participant",
-              "OtherRequirement"
+              "OtherRequirement",
+              "GUID"
             )
             .filter(filterQuery)
             .orderBy("Id", false)
@@ -421,7 +423,8 @@ console.log('Batch Page Items:', batchPageItems);
               "PrincipalUser",
               "TitleDescription",
               "Participant",
-              "OtherRequirement"
+              "OtherRequirement",
+              "GUID"
             )
             .filter(filterQuery)
             .orderBy("Id", false)
@@ -479,7 +482,8 @@ console.log('Batch Page Items:', batchPageItems);
             "PrincipalUser",
             "TitleDescription",
             "Participant",
-            "OtherRequirement"
+            "OtherRequirement",
+            "GUID"
           )
           .filter(dateRange)
           .orderBy("Id", false)
@@ -507,7 +511,8 @@ console.log('Batch Page Items:', batchPageItems);
         principal: item.PrincipalUser || "",
         titleDesc: item.TitleDescription || "",
         participant: item.Participant ? JSON.parse(item.Participant) : [],
-        otherRequirment: item.OtherRequirement || ""
+        otherRequirment: item.OtherRequirement || "",
+        guid: item.GUID || ""
       };
       itemArray1.push(tempObj);
       if (
@@ -527,6 +532,48 @@ console.log('Batch Page Items:', batchPageItems);
       approvalRequest: itemArray3,
     };
   }
+
+  public static async getRequestById(id: string): Promise<any> {
+    try {
+      console.log('Getting request by ID:', id);
+      const item = await sp.web.lists
+        .getByTitle("Request")
+        .items.getById(parseInt(id))
+        .select(
+          "Id",
+          "Building",
+          "Venue",
+          "FromDate",
+          "ToDate",
+          "ReferenceNumber",
+          "PurposeOfUse",
+          "NoParticipant",
+          "RequestedBy",
+          "Department",
+          "ContactNumber",
+          "Status",
+          "Layout",
+          "ContactPerson",
+          "PrincipalUser",
+          "TitleDescription",
+          "Participant",
+          "OtherRequirement",
+          "IsCSDR",
+          "FacilityData",
+          "GUID",
+          "RequestorEmail",
+          "Created"
+        )
+        .get();
+      console.log('Retrieved request item:', item);
+      console.log('GUID from request:', item.GUID);
+      return item;
+    } catch (error) {
+      console.error('Error getting request by ID:', error);
+      throw error;
+    }
+  }
+
   public static async getCurrentUserGroups(): Promise<{
     isApprover: boolean;
     departments: string[];
@@ -808,7 +855,7 @@ console.log('Batch Page Items:', batchPageItems);
     }
   }
 
-  public static async getApproverEmails(): Promise<{ crsdMembers: string[], ddMembers: string[], fssApproversMembers: string[] }> {
+   public static async getApproverEmails(): Promise<{ crsdMembers: string[], ddMembers: string[], fssApproversMembers: string[] }> {
     try {
       let crsdMembers: string[] = [];
       let ddMembers: string[] = [];
@@ -859,6 +906,52 @@ console.log('Batch Page Items:', batchPageItems);
     } catch (error) {
       console.error("Error getting requestor email:", error);
       return "";
+    }
+  }
+
+  public static async getFiles(guid: string, siteRelativeUrl?: string): Promise<any[]> {
+    try {
+      console.log('SharePointService.getFiles called with GUID:', guid);
+      console.log('Site Relative URL:', siteRelativeUrl);
+      
+      if (!guid) {
+        console.warn('GUID is empty or undefined');
+        return [];
+      }
+      
+      const serverRelativeUrl = "/sites/ResourceReservationDev" + "/ReservationDocs/" + guid;
+      console.log('Attempting to get files from folder:', serverRelativeUrl);
+      
+      try {
+        // First check if the folder exists
+        const folderExists = await sp.web.getFolderByServerRelativeUrl(serverRelativeUrl).get()
+          .then(() => true)
+          .catch(() => false);
+        
+        console.log('Folder exists:', folderExists);
+        
+        if (!folderExists) {
+          console.warn('Folder does not exist');
+          return [];
+        }
+        
+        // If folder exists, get the files
+        const files = await sp.web.getFolderByServerRelativeUrl(serverRelativeUrl)
+          .files
+          .select("*")
+          .top(5000)
+          .expand('ListItemAllFields')
+          .get();
+        
+        console.log('Files retrieved:', files);
+        return files;
+      } catch (folderError) {
+        console.error('Error checking folder or getting files:', folderError);
+        return [];
+      }
+    } catch (error) {
+      console.error("Error in getFiles method:", error);
+      return [];
     }
   }
 }

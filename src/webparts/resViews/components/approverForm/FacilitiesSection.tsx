@@ -9,6 +9,7 @@ import * as React from "react";
 import { Grid, Paper, TextField } from "@material-ui/core";
 import { DropzoneArea } from "material-ui-dropzone";
 import { FacilityList } from "../common/FacilityList";
+import { FileList } from "../common/FileList";
 import { IFacilityData } from "../interfaces/IFacility";
 import styles from "../ResViews.module.scss";
 
@@ -18,6 +19,8 @@ export const FacilitiesSection: React.FC<{
   onAddClick: () => void;
   onEditClick: (index: number) => void;
   onFilesChange?: (files: File[]) => void;
+  existingFiles?: string[];
+  onFileClick?: (file: string) => void;
   formik: any;
 }> = ({ 
   showCSRDField, 
@@ -25,6 +28,8 @@ export const FacilitiesSection: React.FC<{
   onAddClick, 
   onEditClick,
   onFilesChange,
+  existingFiles = [],
+  onFileClick,
   formik 
 }) => {
   return (
@@ -81,20 +86,47 @@ export const FacilitiesSection: React.FC<{
             
             <Grid item xs={12}>
               <div className={styles.label}>Attachments</div>
-              <DropzoneArea
-                showPreviews={true}
-                showPreviewsInDropzone={false}
-                useChipsForPreview
-                dropzoneClass={styles.dropZone}
-                previewGridProps={{
-                  container: { spacing: 1, direction: "row" },
-                }}
-                previewChipProps={{
-                  classes: { root: styles.previewChip },
-                }}
-                previewText="Selected files"
-                onChange={onFilesChange}
-              />
+              {existingFiles && existingFiles.length > 0 ? (
+                <>
+                  <div className={styles.label}>Selected files</div>
+                  <FileList 
+                    files={existingFiles} 
+                    onFileClick={onFileClick}
+                    isEditing={false}
+                  />
+                  <div style={{ marginTop: '16px' }}>
+                    <DropzoneArea
+                      showPreviews={true}
+                      showPreviewsInDropzone={false}
+                      useChipsForPreview
+                      dropzoneClass={styles.dropZone}
+                      previewGridProps={{
+                        container: { spacing: 1, direction: "row" },
+                      }}
+                      previewChipProps={{
+                        classes: { root: styles.previewChip },
+                      }}
+                      previewText="Add more files"
+                      onChange={onFilesChange}
+                    />
+                  </div>
+                </>
+              ) : (
+                <DropzoneArea
+                  showPreviews={true}
+                  showPreviewsInDropzone={false}
+                  useChipsForPreview
+                  dropzoneClass={styles.dropZone}
+                  previewGridProps={{
+                    container: { spacing: 1, direction: "row" },
+                  }}
+                  previewChipProps={{
+                    classes: { root: styles.previewChip },
+                  }}
+                  previewText="Selected files"
+                  onChange={onFilesChange}
+                />
+              )}
             </Grid>
           </Grid>
         </Paper>

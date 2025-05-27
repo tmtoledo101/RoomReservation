@@ -53,6 +53,9 @@ export default class ResViews extends React.Component<IResViewsProps, IResViewSt
 
   protected handleView = (event: any, rowData: ITableItem | ITableItem[]): void => {
     if (!Array.isArray(rowData)) {
+      console.log('View clicked for reservation:', rowData);
+      console.log('Reservation GUID:', rowData.guid);
+      
       if (this.state.tabValue === 2) {
         // For approval tab, show modal
         this.setState({

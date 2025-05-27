@@ -22,6 +22,7 @@ export interface ITableItem {
   titleDesc?: string;  // Maps to TitleDescription in SharePoint
   participant?: string[];
   otherRequirment?: string;  // Maps to OtherRequirement in SharePoint
+  guid?: string;  // GUID for file attachments
 }
 
 export interface IFormValues {

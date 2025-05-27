@@ -17,7 +17,8 @@ import {
   FormControl,
   InputLabel,
   Select,
-  MenuItem
+  MenuItem,
+  Paper
 } from "@material-ui/core";
 import { Alert } from "@material-ui/lab";
 import { ITableItem, STATUS } from "./interfaces/IResViews";
@@ -31,6 +32,7 @@ import "@pnp/sp/items";
 import { FacilityDialog } from "./common/FacilityDialog";
 import { IFacilityData, IDropdownItem, IFacilityMapItem } from "./interfaces/IFacility";
 import { ConfirmationDialog } from "./common/ConfirmationDialog";
+import { FileList } from "./common/FileList";
 // Import new components
 import { BasicInformationSection } from "./approverForm/BasicInformationSection";
 import { VenueDetailsSection } from "./approverForm/VenueDetailsSection";
@@ -83,6 +85,8 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
   const [principalList, setPrincipalList] = React.useState<IDropdownItem[]>([]);
   const [purposeOfUseList, setPurposeOfUseList] = React.useState<IDropdownItem[]>([]);
   const [files, setFiles] = React.useState<File[]>([]);
+  const [existingFiles, setExistingFiles] = React.useState<string[]>([]);
+  const [siteRelativeUrl, setSiteRelativeUrl] = React.useState<string>("/sites/ResourceReservation");
   const [notification, setNotification] = React.useState<{
     show: boolean;
     message: string;
@@ -114,6 +118,33 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
             setShowCSRDField(true);
           } else {
             setCurrentFacilityData([]); // Ensure it's empty for new requests or when no data exists
+          }
+          
+          // Load existing files if available
+          console.log('Selected reservation:', selectedReservation);
+          console.log('Selected reservation GUID:', selectedReservation.guid);
+          
+          if (selectedReservation.guid) {
+            try {
+              console.log('Attempting to get files for GUID:', selectedReservation.guid);
+              const docs = await SharePointService.getFiles(selectedReservation.guid, siteUrl);
+              console.log('Retrieved files:', docs);
+              
+              if (docs && docs.length > 0) {
+                const fileNames = docs.map(file => file.Name);
+                console.log('File names:', fileNames);
+                setExistingFiles(fileNames);
+              } else {
+                console.log('No files found for this reservation');
+                setExistingFiles([]);
+              }
+            } catch (error) {
+              console.error('Error loading files:', error);
+              setExistingFiles([]);
+            }
+          } else {
+            console.log('No GUID available for this reservation');
+            setExistingFiles([]);
           }
 
           // Then check venue group if no facility data exists
@@ -359,6 +390,13 @@ const handleSubmit = async (values: any) => {
     setFiles(newFiles);
   };
 
+  const handleFileClick = (file: string): void => {
+    if (selectedReservation.guid) {
+      const fileUrl = `${siteUrl}/ReservationDocs/${selectedReservation.guid}/${file}`;
+      window.open(fileUrl, '_blank');
+    }
+  };
+
   const handleStatusChange = (event: React.ChangeEvent<{ value: any }>) => {
     setStatus(event.target.value as string);
   };
@@ -454,6 +492,8 @@ const handleSubmit = async (values: any) => {
                         setShowFacilityDialog(true);
                       }}
                       onFilesChange={handleFilesChange}
+                      existingFiles={existingFiles}
+                      onFileClick={handleFileClick}
                       formik={formik}
                     />
                   </Grid>
