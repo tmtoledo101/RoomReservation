@@ -88,43 +88,35 @@ export const FacilitiesSection: React.FC<{
               <div className={styles.label}>Attachments</div>
               {existingFiles && existingFiles.length > 0 ? (
                 <>
-                  <div className={styles.label}>Selected files</div>
-                  <FileList 
-                    files={existingFiles} 
-                    onFileClick={onFileClick}
-                    isEditing={false}
+                  <DropzoneArea
+                    showPreviews={true}
+                    showFileNames={true}
+                    showPreviewsInDropzone={false}
+                    useChipsForPreview={true}
+                    dropzoneClass={styles.dropZone}
+                    onChange={onFilesChange}
+                    dropzoneText="Attach general document here"
+                    previewText="Selected files"
                   />
                   <div style={{ marginTop: '16px' }}>
-                    <DropzoneArea
-                      showPreviews={true}
-                      showPreviewsInDropzone={false}
-                      useChipsForPreview
-                      dropzoneClass={styles.dropZone}
-                      previewGridProps={{
-                        container: { spacing: 1, direction: "row" },
-                      }}
-                      previewChipProps={{
-                        classes: { root: styles.previewChip },
-                      }}
-                      previewText="Add more files"
-                      onChange={onFilesChange}
+                    <div className={styles.label}>Uploaded Files</div>
+                    <FileList 
+                      files={existingFiles} 
+                      onFileClick={onFileClick}
+                      isEditing={false}
                     />
                   </div>
                 </>
               ) : (
                 <DropzoneArea
                   showPreviews={true}
+                  showFileNames={true}
                   showPreviewsInDropzone={false}
-                  useChipsForPreview
+                  useChipsForPreview={true}
                   dropzoneClass={styles.dropZone}
-                  previewGridProps={{
-                    container: { spacing: 1, direction: "row" },
-                  }}
-                  previewChipProps={{
-                    classes: { root: styles.previewChip },
-                  }}
-                  previewText="Selected files"
                   onChange={onFilesChange}
+                  dropzoneText="Attach general document here"
+                  previewText="Selected files"
                 />
               )}
             </Grid>

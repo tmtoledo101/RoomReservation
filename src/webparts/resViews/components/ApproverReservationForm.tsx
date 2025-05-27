@@ -218,6 +218,7 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
       setIsSubmitting(true);
       setShowConfirmDialog(false);
 
+      // First update the reservation data
       await SharePointService.updateReservation(
         selectedReservation.ID,
         {
@@ -226,6 +227,53 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
           facilityData: showCSRDField ? currentFacilityData : []
         }
       );
+
+      // Then upload files if there are any
+      if (files.length > 0 && selectedReservation.guid) {
+        try {
+          console.log('Uploading files for GUID:', selectedReservation.guid);
+          
+          // First, ensure the folder exists by adding it to the ReservationDocs list
+          try {
+            // Just add the GUID as the folder name, not the full path
+            await sp.web.lists.getByTitle("ReservationDocs").rootFolder.folders.add(selectedReservation.guid);
+            console.log(`Folder created or already exists for GUID: ${selectedReservation.guid}`);
+          } catch (folderError) {
+            console.log(`Folder might already exist or error creating folder: ${folderError}`);
+            // Continue even if there's an error (folder might already exist)
+          }
+          
+          // Use the same hardcoded path as in SharePointService.getFiles method
+          const folderPath = "/sites/ResourceReservationDev/ReservationDocs/" + selectedReservation.guid;
+          console.log(`Full folder path: ${folderPath}`);
+          
+          // Upload each file
+          for (const file of files) {
+            try {
+              console.log(`Attempting to upload file: ${file.name} to ${folderPath}`);
+              if (file.size <= 10485760) {
+                // Regular file upload for files <= 10MB
+                const result = await sp.web.getFolderByServerRelativeUrl(folderPath).files.add(file.name, file, true);
+                console.log(`File ${file.name} uploaded successfully:`, result);
+              } else {
+                // Chunked upload for larger files
+                const result = await sp.web.getFolderByServerRelativeUrl(folderPath).files.addChunked(file.name, file, data => {
+                  console.log(`Upload progress: ${Math.round((data.blockNumber / data.totalBlocks) * 100)}%`);
+                }, true);
+                console.log(`Large file ${file.name} uploaded successfully:`, result);
+              }
+            } catch (fileError) {
+              console.error(`Error uploading file ${file.name}:`, fileError);
+              console.error(fileError);
+            }
+          }
+          
+          console.log('All files uploaded successfully');
+        } catch (uploadError) {
+          console.error('Error during file upload:', uploadError);
+          // Continue with the process even if file upload fails
+        }
+      }
 
       // Send email notification if status is Approved, Disapproved, or Cancelled
       if (status === STATUS.APPROVED || status === STATUS.DISAPPROVED || status === STATUS.CANCELLED) {
@@ -393,7 +441,12 @@ const handleSubmit = async (values: any) => {
   const handleFileClick = (file: string): void => {
     if (selectedReservation.guid) {
       const fileUrl = `${siteUrl}/ReservationDocs/${selectedReservation.guid}/${file}`;
-      window.open(fileUrl, '_blank');
+      const link = document.createElement('a');
+      link.href = fileUrl;
+      link.download = file;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   };
 
