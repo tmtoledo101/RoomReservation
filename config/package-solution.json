@@ -3,7 +3,7 @@
   "solution": {
     "name": "res-reservation-client-side-solution_2025",
     "id": "097f4ff4-7d6d-431f-adbf-14581da5c7bb",
-    "version": "2.0.0.4",
+    "version": "2.0.0.6",
     "includeClientSideAssets": true,
     "isDomainIsolated": false,
     "webApiPermissionRequests": [

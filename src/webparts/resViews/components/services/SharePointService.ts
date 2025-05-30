@@ -122,6 +122,78 @@ export class SharePointService {
      return [];
    }
 }
+
+  public static async checkDateTimeAvailability(fromDate: string, toDate: string, reservationId: number, venue: string): Promise<boolean> {
+    try {
+      console.log(`Checking availability for dates: ${fromDate} to ${toDate}, venue: ${venue}, excluding reservation ID: ${reservationId}`);
+      
+      // First, get the current reservation to check if dates are unchanged
+      const currentReservation = await sp.web.lists
+        .getByTitle("Request")
+        .items.getById(reservationId)
+        .select("FromDate", "ToDate", "Venue")
+        .get();
+      
+      console.log("Current reservation dates:", currentReservation.FromDate, "to", currentReservation.ToDate);
+      console.log("Current reservation venue:", currentReservation.Venue);
+      
+      // If the dates haven't changed and venue hasn't changed, no need to check for conflicts
+      const currentFromDate = new Date(currentReservation.FromDate).toISOString();
+      const currentToDate = new Date(currentReservation.ToDate).toISOString();
+      const newFromDate = new Date(fromDate).toISOString();
+      const newToDate = new Date(toDate).toISOString();
+      const venueChanged = currentReservation.Venue !== venue;
+      
+      if (currentFromDate === newFromDate && currentToDate === newToDate && !venueChanged) {
+        console.log("Dates and venue unchanged, no need to check for conflicts");
+        return true; // Dates and venue unchanged, so no conflict
+      }
+      
+      // If dates or venue have changed, check for conflicts
+      console.log("Dates or venue changed, checking for conflicts");
+      const from = new Date(fromDate);
+      const to = new Date(toDate);
+      
+      // Format dates for SharePoint filtering
+      const fromISO = from.toISOString();
+      const toISO = to.toISOString();
+      
+      // Only fetch reservations that might conflict with the given date range AND have the same venue
+      let page = await sp.web.lists
+        .getByTitle("Request")
+        .items.select(
+          "Id",
+          "FromDate",
+          "ToDate",
+          "Venue"
+        )
+        .filter(`
+          Status ne 'Cancelled' and Status ne 'Rejected' and Status ne 'Disapproved' and
+          Id ne ${reservationId} and
+          Venue eq '${venue}' and
+          ((FromDate lt '${toISO}' and ToDate gt '${fromISO}'))
+        `)
+        .top(10) // We only need to know if there's at least one conflict
+        .getPaged();
+      
+      console.log(`Found ${page.results.length} potentially conflicting reservations for venue ${venue}`);
+      
+      if (page.results.length > 0) {
+        console.log("Conflicting reservations:", page.results.map(r => ({
+          id: r.Id,
+          from: r.FromDate,
+          to: r.ToDate,
+          venue: r.Venue
+        })));
+      }
+      
+      // If we have any results, there's a conflict
+      return page.results.length === 0;
+    } catch (error) {
+      console.error("Error checking date/time availability:", error);
+      return false;
+    }
+  }
 //
   public static async checkVenueAvailability(fromDate: Date, toDate: Date): Promise<string[]> {
       const reservations = [];
@@ -458,7 +530,7 @@ console.log('Batch Page Items:', batchPageItems);
     approvalRequest: ITableItem[];
   }> {
     // Modified dateRange to filter based on FromDate
-    const dateRange = `FromDate ge datetime'${dateConverter(from, 1)}' and FromDate le datetime'${dateConverter(to, 2)}'`;
+    const dateRange = `ToDate ge datetime'${dateConverter(from, 1)}' and FromDate le datetime'${dateConverter(to, 2)}'`;
     // If no departments specified, get all items
     const RequestItem: any[] = department.length
       ? await this.getRequestItemsBatch(dateRange, department)

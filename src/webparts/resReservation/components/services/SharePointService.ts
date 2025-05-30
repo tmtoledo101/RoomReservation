@@ -529,8 +529,8 @@ export class SharePointService {
             // Save to SharePoint list
             await sp.web.lists.getByTitle("EmailDataForPA").items.add({
                 ReferenceNo: referenceNo,
-                To: emailProps.To ? [...new Set(emailProps.To)] : [],
-                CC: emailProps.CC ? [...new Set(emailProps.CC)] : [],
+                To: emailProps.To  ? [...new Set(emailProps.To)].join(';') : '',
+                CC:  emailProps.CC ? [...new Set(emailProps.CC)].join(';') : '',
                 SendAsFrom: emailProps.From,
                 Subject: emailProps.Subject,
                 Body: emailProps.Body,
@@ -544,4 +544,5 @@ export class SharePointService {
         }
     }
 }
-//TestComment
+//TestComment[...new Set(emailProps.To)].join(';') : '';
+   

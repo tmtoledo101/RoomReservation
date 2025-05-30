@@ -344,23 +344,10 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
     }
   };
 //start
-const isDateTimeAvailable = async (fromDate: string, toDate: string, reservationId: number) => {
+const isDateTimeAvailable = async (fromDate: string, toDate: string, reservationId: number, venue: string) => {
   try {
-    // Call your SharePointService to get existing reservations
-    const existingReservations = await SharePointService.getAllReservations();
-
-    const from = new Date(fromDate);
-    const to = new Date(toDate);
-
-    const conflict = existingReservations.some((reservation: any) => {
-      if (reservation.ID === reservationId) return false; // Skip self if editing
-      const existingFrom = new Date(reservation.fromDate);
-      const existingTo = new Date(reservation.toDate);
-
-      return (from < existingTo && to > existingFrom);
-    });
-
-    return !conflict;
+    // Use the optimized method that only fetches potentially conflicting reservations
+    return await SharePointService.checkDateTimeAvailability(fromDate, toDate, reservationId, venue);
   } catch (error) {
     console.error("Error checking date/time availability:", error);
     return false;
@@ -370,16 +357,37 @@ const isDateTimeAvailable = async (fromDate: string, toDate: string, reservation
 const handleSubmit = async (values: any) => {
   const fromDate = values.fromDate;
   const toDate = values.toDate;
-
-  const isAvailable = await isDateTimeAvailable(fromDate, toDate, selectedReservation.ID);
-
-  if (!isAvailable) {
-    setNotification({
-      show: true,
-      message: "The selected date and time overlap with an existing reservation. Please choose another slot.",
-      severity: "error"
-    });
-    return;
+  
+  // Check if dates have changed from the original reservation
+  const originalFromDate = formatDateTime12Hour(selectedReservation.fromDate);
+  const originalToDate = formatDateTime12Hour(selectedReservation.toDate);
+  const datesChanged = fromDate !== originalFromDate || toDate !== originalToDate;
+  
+  console.log("Original dates:", originalFromDate, originalToDate);
+  console.log("New dates:", fromDate, toDate);
+  console.log("Dates changed:", datesChanged);
+  
+  // Check if dates or venue have changed from the original reservation
+  const originalVenue = selectedReservation.venue;
+  const venue = values.venue;
+  const venueChanged = venue !== originalVenue;
+  
+  console.log("Original venue:", originalVenue);
+  console.log("New venue:", venue);
+  console.log("Venue changed:", venueChanged);
+  
+  // Only check availability if dates or venue have changed
+  if (datesChanged || venueChanged) {
+    const isAvailable = await isDateTimeAvailable(fromDate, toDate, selectedReservation.ID, venue);
+    
+    if (!isAvailable) {
+      setNotification({
+        show: true,
+        message: `The selected date and time overlap with an existing reservation for venue "${venue}". Please choose another slot or venue.`,
+        severity: "error"
+      });
+      return;
+    }
   }
 
   setPendingValues(values);

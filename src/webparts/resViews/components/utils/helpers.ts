@@ -116,7 +116,7 @@ export const dateFormat = (date: any): string => {
 };
 
 export const newResEmail = async (context: any, to: Array<string>, cc: Array<string>, values: any, type: string, siteUrl: string, id: number, refNo:string): Promise<IEmailResult> => {
-  let toEmail = ['tmtoledo@kpmg.com',...to];
+  let toEmail = [...to];
   let ccEmail = [...cc];
   let emailProps: IEmailProperties = {
     From: "",
