@@ -30,7 +30,8 @@ export default class ResViews extends React.Component<IResViewsProps, IResViewSt
         isCRSD: false,
         isDD: false,
         isFSSApprover: false
-      }
+      },
+      isApprover: false
     };
   }
 
@@ -56,20 +57,29 @@ export default class ResViews extends React.Component<IResViewsProps, IResViewSt
       console.log('View clicked for reservation:', rowData);
       console.log('Reservation GUID:', rowData.guid);
       
-      if (this.state.tabValue === 2) {
-        // For approval tab, show modal
+      if (this.state.isApprover) {
+        // If user is an approver, show modal for all tabs
         this.setState({
           isModalOpen: true,
           selectedReservation: rowData
         });
       } else {
-        // Other tabs, redirect to display page
-        window.open(
-          this.props.siteUrl +
-            "/SitePages/DisplayReservation_appge.aspx?pid=" +
-            rowData.ID,
-          "_blank"
-        );
+        // If not an approver, use original behavior
+        if (this.state.tabValue === 2) {
+          // For approval tab, show modal
+          this.setState({
+            isModalOpen: true,
+            selectedReservation: rowData
+          });
+        } else {
+          // Other tabs, redirect to display page
+          window.open(
+            this.props.siteUrl +
+              "/SitePages/DisplayReservation_appge.aspx?pid=" +
+              rowData.ID,
+            "_blank"
+          );
+        }
       }
     }
   }
@@ -108,8 +118,11 @@ export default class ResViews extends React.Component<IResViewsProps, IResViewSt
       console.log("Complete MenuTabs");
       this.setState({
         menuTabs: ["By Reference No", "Past Request", "For Approval"],
-        approverGroups
+        approverGroups,
+        isApprover
       });
+    } else {
+      this.setState({ isApprover: false });
     }
     this.setState({ department: departments });
   }

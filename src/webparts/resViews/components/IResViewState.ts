@@ -19,4 +19,5 @@ export interface IResViewState {
     isDD: boolean;
     isFSSApprover: boolean;
   };
+  isApprover: boolean;
 }

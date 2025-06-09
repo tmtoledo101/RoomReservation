@@ -84,12 +84,37 @@
     width: 50%;
     height: 250px;
   }
-
+  /*
   .facilityDetails {
     padding: 0 20px;
     margin-top: 20px;
   }
+*/
 
+.facilityDetails {
+  table {
+    width: 75%;
+    border-collapse: collapse;
+
+    th {
+      div {
+        text-align: center;
+        font-weight: bold;
+        
+        &:first-child {
+          margin-bottom: 4px;
+        }
+      }
+    }
+
+    td {
+      pre {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+      }
+    }
+  }
+}
   table,
   th,
   td {

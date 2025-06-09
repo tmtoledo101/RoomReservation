@@ -98,6 +98,7 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
   });
 
   const [showConfirmDialog, setShowConfirmDialog] = React.useState(false);
+  const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = React.useState(false);
   const [pendingValues, setPendingValues] = React.useState<any>(null);
 
   const [status, setStatus] = React.useState<string>(selectedReservation ? selectedReservation.status : STATUS.PENDING);
@@ -462,6 +463,36 @@ const handleSubmit = async (values: any) => {
     setStatus(event.target.value as string);
   };
 
+  const handleDelete = async () => {
+    try {
+      setIsSubmitting(true);
+      setShowDeleteConfirmDialog(false);
+      
+      // Delete the reservation
+      await SharePointService.deleteReservation(selectedReservation.ID);
+      
+      setNotification({
+        show: true,
+        message: "Reservation deleted successfully",
+        severity: "success"
+      });
+
+      setTimeout(() => {
+        onUpdateSuccess();
+        onClose();
+      }, 1500);
+    } catch (error) {
+      console.error('Error deleting reservation:', error);
+      setNotification({
+        show: true,
+        message: "Failed to delete reservation. Please try again.",
+        severity: "error"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <>
       <ModalPopup
@@ -575,6 +606,14 @@ const handleSubmit = async (values: any) => {
                   </FormControl>
                   <DialogActions>
                     <Button
+                      onClick={() => setShowDeleteConfirmDialog(true)}
+                      color="secondary"
+                      disabled={isSubmitting}
+                      style={{ marginRight: 'auto' }}
+                    >
+                      Delete
+                    </Button>
+                    <Button
                       onClick={onClose}
                       color="default"
                       disabled={isSubmitting}
@@ -598,6 +637,15 @@ const handleSubmit = async (values: any) => {
                     onConfirm={handleConfirmedSubmit}
                     onClose={() => setShowConfirmDialog(false)}
                     confirmLabel="Update"
+                  />
+
+                  <ConfirmationDialog
+                    open={showDeleteConfirmDialog}
+                    title="Confirm Delete"
+                    message="Are you sure you want to delete this reservation? This action cannot be undone."
+                    onConfirm={handleDelete}
+                    onClose={() => setShowDeleteConfirmDialog(false)}
+                    confirmLabel="Delete"
                   />
                 </form>
 

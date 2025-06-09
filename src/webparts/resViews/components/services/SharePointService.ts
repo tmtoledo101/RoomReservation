@@ -836,6 +836,15 @@ console.log('Batch Page Items:', batchPageItems);
       throw new Error('Failed to update reservation');
     }
   }
+
+  public static async deleteReservation(id: number): Promise<void> {
+    try {
+      await sp.web.lists.getByTitle("Request").items.getById(id).delete();
+    } catch (error) {
+      console.error('Error deleting reservation:', error);
+      throw new Error('Failed to delete reservation');
+    }
+  }
   public static async getFacilityData(reservationId: number): Promise<IFacilityData[]> {
     try {
       const item = await sp.web.lists

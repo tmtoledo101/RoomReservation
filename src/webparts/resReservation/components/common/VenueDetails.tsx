@@ -36,7 +36,7 @@ export const VenueDetails: React.FC<IVenueDetailsProps> = ({
                   <div>(NO. OF PAX)</div>
                 </th>
                 <th>
-                  <div>FACLITIES AVAILABLE </div>
+                  <div>FACILITIES AVAILABLE </div>
                   <div>IN THE VENUE </div>
                 </th>
               </tr>

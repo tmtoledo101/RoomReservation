@@ -985,7 +985,7 @@ public participantHandler = (e) => {
                                 <div>(NO. OF PAX)</div>
                               </th>
                               <th>
-                                <div>FACLITIES AVAILABLE </div>
+                                <div>FACILITIES AVAILABLE </div>
                                 <div>IN THE VENUE </div>
                               </th>
                             </thead>
@@ -1258,7 +1258,7 @@ public participantHandler = (e) => {
                                     <div>(NO. OF PAX)</div>
                                   </th>
                                   <th>
-                                    <div>FACLITIES AVAILABLE </div>
+                                    <div>FACILITIES AVAILABLE </div>
                                     <div>IN THE VENUE </div>
                                   </th>
                                 </thead>
