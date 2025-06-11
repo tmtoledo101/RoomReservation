@@ -142,22 +142,32 @@ export const newResEmail = async (context: any, to: Array<string>, cc: Array<str
 
   if (type === STATUS.APPROVED) {
     emailProps.Subject = `Approved Request for Reservation.: ${refNo}. Date of Use: ${dateFormat(values["fromDate"])} to ${dateFormat(values["toDate"])}`;
-    emailProps.Body = `We are pleased to inform you that your venue reservation request is approved. <br/>
-    For further assistance, you may e-mail us at coraoreservations@bsp.gov.ph or call our Events and  
-    Visitor Services Pool (EVSP) at local telephone numbers 2559 or 2462.<br/><br/>`;
+    emailProps.Body = `We are pleased to inform you that your venue reservation request is approved. 
+    Should you have any query or clarification, kindly email us at fosd-fpad@bsp.gov.ph or call local numbers 2578/2392..<br/><br/>`;
   }
   if (type === STATUS.DISAPPROVED) {
     emailProps.Subject = `Disapproved Request for Reservation.: ${refNo}. Date of Use: ${dateFormat(values["fromDate"])} to ${dateFormat(values["toDate"])}`;
-    emailProps.Body = `We regret to inform you that your venue reservation request is disapproved. 
-    For further clarifications, you may e-mail us at coraoreservations@bsp.gov.ph or call our
-     Events and Visitor Services Pool (EVSP) at local telephone numbers 2559 or 2462.<br/><br/>`;
+    emailProps.Body =`We regret to inform you that your venue reservation request is disapproved. 
+    Should you have any query or clarification, kindly email us at fosd-fpad@bsp.gov.ph or call local numbers 2578/2392.`;
   }
   if (type === STATUS.CANCELLED) {
     emailProps.Subject = `Cancelled Request for Reservation.: ${refNo}. Date of Use: ${dateFormat(values["fromDate"])} to ${dateFormat(values["toDate"])}`;
     emailProps.Body = `We are pleased to inform you that your venue reservation request is cancelled. 
-    For further clarifications, you may e-mail us at fosd-fpad@bsp.gov.ph or call local numbers 2578/2392.<br/><br/>`;
+    Should you have any query or clarification, kindly email us at fosd-fpad@bsp.gov.ph or call local numbers 2578/2392.`;
   }
 
   const url = `${siteUrl}/SitePages/DisplayReservation_appge.aspx?pid=${id}`;
   return await sendEnhancedEmail(context, emailProps, url);
 };
+
+export const cleanSiteUrl = (url: string): string => {
+  try {
+    // Method 1: Using URL object
+    const urlObj = new URL(url);
+    return urlObj.pathname;
+  } catch {
+    // Method 2: Fallback to string manipulation
+    return url.replace(/^https?:\/\/[^\/]+/, '');
+    }
+};
+            

@@ -355,7 +355,7 @@ export class SharePointService {
         }
     }
 
-    public async createReservation(formData: any, facilityData: any[], files: File[], venueId: string, isFssManaged: boolean) {
+    public async createReservation(formData: any, facilityData: any[], files: File[], venueId: string, isFssManaged: boolean, siteURL: string) {
         // Creates new reservations
         // Handles file attachments
         // Manages reference numbers
@@ -474,9 +474,19 @@ export class SharePointService {
 
             if (files.length > 0) {
                 const _itemId = createdItem.ID;
-
-                const f = configService.isDevUser() ? "/sites/ResourceReservationDev" + "/ReservationDocs/" + createdItem.GUID : "/sites/ResourceReservation" + "/ReservationDocs/" + createdItem.GUID;
-                console.log("this is the folder path", f);
+                //const f = configService.isDevUser() ? "/sites/ResourceReservationDev" + "/ReservationDocs/" + createdItem.GUID : "/sites/ResourceReservation" + "/ReservationDocs/" + createdItem.GUID;
+                const cleanSiteUrl = (url: string): string => {
+                    try {
+                        // Method 1: Using URL object
+                        const urlObj = new URL(url);
+                        return urlObj.pathname;
+                    } catch {
+                        // Method 2: Fallback to string manipulation
+                        return url.replace(/^https?:\/\/[^\/]+/, '');
+                    }
+                };
+                const f = cleanSiteUrl(siteURL) + "/ReservationDocs/" + createdItem.GUID;
+                console.log("this is the folder path", f);
                 await sp.web.lists.getByTitle("ReservationDocs").rootFolder.folders.add(createdItem.GUID)
                     .then(r => {
                         Promise.all(files.map((file) => {

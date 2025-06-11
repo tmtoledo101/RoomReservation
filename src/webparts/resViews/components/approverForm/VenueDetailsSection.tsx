@@ -41,7 +41,13 @@ export const VenueDetailsSection: React.FC<IVenueDetailsSectionProps> = ({
         // Load departments and sector map with requestedBy value
         const { departmentList: departments, departmentSectorMap: sectorMap } = 
           await SharePointService.getDepartments(formik.values.requestedBy);
-        setDepartmentList(departments);
+
+        // Sort departments alphabetically by value
+        const sortedDepartments = [...departments].sort((a, b) => 
+        a.value.localeCompare(b.value)
+        );
+
+        setDepartmentList(sortedDepartments);
         setDepartmentSectorMap(sectorMap);
 
       } catch (error) {

@@ -487,7 +487,8 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
         this.state.facilityData,
         this.state.files,
         this.state.venueId,
-        this.state.isFssManaged
+        this.state.isFssManaged,
+        this.props.siteUrl
       );
 
       try {

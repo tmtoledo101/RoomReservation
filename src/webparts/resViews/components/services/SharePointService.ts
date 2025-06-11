@@ -1000,7 +1000,8 @@ console.log('Batch Page Items:', batchPageItems);
         return [];
       }
       
-      const serverRelativeUrl = "/sites/ResourceReservationDev" + "/ReservationDocs/" + guid;
+      //const serverRelativeUrl = "/sites/ResourceReservationDev" + "/ReservationDocs/" + guid;
+      const serverRelativeUrl = siteRelativeUrl + "/ReservationDocs/" + guid;
       console.log('Attempting to get files from folder:', serverRelativeUrl);
       
       try {

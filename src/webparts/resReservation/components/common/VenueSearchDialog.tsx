@@ -277,11 +277,13 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
                         }}
                         >
                         <option value="">Select Department</option>
-                        {departmentList.map((dept) => (
-                        <option key={dept.id} value={dept.value}>
-                        {dept.value}
-                        </option>
-                        ))}
+                        {departmentList
+                          .sort((a, b) => a.value.localeCompare(b.value))
+                          .map((dept) => (
+                            <option key={dept.id} value={dept.value}>
+                              {dept.value}
+                            </option>
+                          ))}
                       </TextField>
                   </div>
                 </Grid>

@@ -24,7 +24,7 @@ import { Alert } from "@material-ui/lab";
 import { ITableItem, STATUS } from "./interfaces/IResViews";
 import { SharePointService } from "./services/SharePointService";
 import { approverValidationSchema } from "./utils/approverValidation";
-import { newResEmail } from "./utils/helpers";
+import { newResEmail,cleanSiteUrl} from "./utils/helpers";
 import { sp } from "@pnp/sp";
 import "@pnp/sp/webs";
 import "@pnp/sp/lists";
@@ -128,7 +128,7 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
           if (selectedReservation.guid) {
             try {
               console.log('Attempting to get files for GUID:', selectedReservation.guid);
-              const docs = await SharePointService.getFiles(selectedReservation.guid, siteUrl);
+              const docs = await SharePointService.getFiles(selectedReservation.guid, cleanSiteUrl(siteUrl));
               console.log('Retrieved files:', docs);
               
               if (docs && docs.length > 0) {
@@ -245,7 +245,8 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
           }
           
           // Use the same hardcoded path as in SharePointService.getFiles method
-          const folderPath = "/sites/ResourceReservationDev/ReservationDocs/" + selectedReservation.guid;
+          //const folderPath = "/sites/ResourceReservationDev/ReservationDocs/" + selectedReservation.guid;
+          const folderPath = cleanSiteUrl(siteUrl) + "/ReservationDocs/" + selectedReservation.guid;
           console.log(`Full folder path: ${folderPath}`);
           
           // Upload each file

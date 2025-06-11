@@ -174,16 +174,15 @@
     
       if (type === 3) {
         emailProps.Subject = `Approved Request for Reservation.: ${referenceNo}. Date of Use: ${dateFormat(values["fromDate"])} to ${dateFormat(values["toDate"])}`;
-        emailProps.Body = `We are pleased to inform you that your venue reservation request is approved. <br/>
-        For further assistance, you may e-mail us at coraoreservations@bsp.gov.ph or call our Events and  
-        Visitor Services Pool (EVSP) at local telephone numbers 2559 or 2462.<br/><br/>
-        Link: <a href="${siteUrl}/SitePages/DisplayReservation_appge.aspx?pid=${id}">Request url</a>
+        emailProps.Body = `We are pleased to inform you that your venue reservation request is approved. 
+        Should you have any query or clarification, kindly email us at fosd-fpad@bsp.gov.ph or call local numbers 2578/2392. <br/>
         `;
       }
     
       if (type === 4) {
         emailProps.Subject = `Approved Request for Reservation.: ${referenceNo}. Date of Use: ${dateFormat(values["fromDate"])} to ${dateFormat(values["toDate"])}`;
-        emailProps.Body = `We are pleased to inform you that your venue reservation request is approved. <br/>
+        emailProps.Body = `We are pleased to inform you that your venue reservation request is approved. 
+        Should you have any query or clarification, kindly email us at fosd-fpad@bsp.gov.ph or call local numbers 2578/2392. <br/>
         `;
       }
       const url = `${siteUrl}/SitePages/DisplayReservation_appge.aspx?pid=${id}`;
