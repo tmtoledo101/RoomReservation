@@ -104,6 +104,13 @@ export const ApproverReservationForm: React.FC<IApproverReservationFormProps> = 
   const [status, setStatus] = React.useState<string>(selectedReservation ? selectedReservation.status : STATUS.PENDING);
 
   React.useEffect(() => {
+    // Reset notification state when opening a new request
+    setNotification({
+      show: false,
+      message: "",
+      severity: "success"
+    });
+    
     const init = async () => {
       if (isOpen && selectedReservation) {
         try {
