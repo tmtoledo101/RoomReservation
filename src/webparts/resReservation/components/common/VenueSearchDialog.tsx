@@ -26,7 +26,8 @@ import { validationSchema } from "../utils/validation";
 import { SharePointService } from "../services/SharePointService";
 import { ConfirmationDialog } from "./ConfirmationDialog";
 import styles from "../ResReservation.module.scss";
-
+import { Notification } from "./Notification";
+import CircularProgress from "@material-ui/core/CircularProgress";
 interface IVenueSearchDialogProps {
   open: boolean;
   onClose: () => void;
@@ -62,6 +63,8 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
   const [confirmationOpen, setConfirmationOpen] = React.useState(false);
   const [selectedVenue, setSelectedVenue] = React.useState<any>(null);
   const [selectedFormikValues, setSelectedFormikValues] = React.useState<any>(null);
+  const [loading, setLoading] = React.useState(false); // <-- Add this
+  const [notificationOpen, setNotificationOpen] = React.useState(false);
   const spService = new SharePointService();
 
   // Update selected building when initialBuilding changes
@@ -118,15 +121,18 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
     const { fromDate, toDate } = formik.values;
     if (fromDate && toDate && !formik.errors.fromDate && !formik.errors.toDate) {
       try {
+        setLoading(true);
         const unavailableVenueList = await spService.checkVenueAvailability(fromDate, toDate);
         setUnavailableVenues(unavailableVenueList);
         setShowResults(true);
       } catch (error) {
         console.error('Error checking venue availability:', error);
+        setNotificationOpen(true);
+      } finally {
+        setLoading(false);
       }
     }
   };
-
   const handleVenueClick = async (venue: any, formikValues: any): Promise<void> => {
     try {
       console.log("VenueSearchDialog - Venue clicked with values:", {
@@ -162,7 +168,7 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
       });
     } catch (error) {
       console.error("VenueSearchDialog - Error in handleVenueClick:", error);
-    }
+    } 
   };
   const handleCloseDialog = (): void => {
     setUnavailableVenues([]);
@@ -353,9 +359,16 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
                     Search Available Venues
                   </Button>
                 </Grid>
-
+                      {/* Loading Spinner */}
+                {loading && (
+                  <Grid item xs={12} style={{ textAlign: "center", margin: "20px 0" }}>
+                    <CircularProgress />
+                    <div>Checking venue availability...</div>
+                  </Grid>
+                )}
                 {/* Venues List Section */}
-                {showResults && (
+                
+                {!loading && showResults && (
                   <Grid item xs={12}>
                     <Typography variant="subtitle1" style={{ marginBottom: "15px", fontWeight: 500 }}>
                       {filteredVenues.length} venues available
@@ -398,6 +411,13 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
         message={`Do you want to book this venue: ${selectedVenue && selectedVenue.value ? selectedVenue.value : ''} ${selectedFormikValues ? `for the period from ${moment(selectedFormikValues.fromDate).format('LLL')} to ${moment(selectedFormikValues.toDate).format('LLL')}` : ''}?`}
         confirmLabel="Book Venue"
         cancelLabel="Cancel"
+      />
+
+      <Notification
+        open={notificationOpen}
+        message="Exception encountered in venue search query. Please contact the admin"
+        severity="error"
+        onClose={() => setNotificationOpen(false)}
       />
 
     </>

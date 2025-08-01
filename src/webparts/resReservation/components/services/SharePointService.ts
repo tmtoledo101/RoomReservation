@@ -10,6 +10,7 @@ import { arrayToDropDownValues, dateFormat, getCount } from "../utils/helpers";
 import * as moment from "moment";
 import { configService, ConfigurationService } from "../../../shared/services/ConfigurationService";
 import { isDevelopmentMode } from "../../../shared/utils/enivronmentHelper";
+
 export class SharePointService {
 
     private web = Web(!configService.isTestEnvironment() ? configService.getResourceReservationUrl() : configService.getAccessControlUrl());
@@ -164,6 +165,7 @@ public async checkVenueAvailability(fromDate: Date, toDate: Date, venue?: string
     const reservations = [];
     try {
         // Fetch all relevant reservations (without filter to avoid threshold issues)
+        let a = 1/0;
         let page = await sp.web.lists
             .getByTitle("Request")
             .items.select(
@@ -172,7 +174,7 @@ public async checkVenueAvailability(fromDate: Date, toDate: Date, venue?: string
                 "ToDate",
                 "Status"
             )
-            .top(1000) // Fetch as many as possible per page
+            .top(6000) // Fetch as many as possible per page
             .getPaged();
 
         // Collect all pages
@@ -202,7 +204,7 @@ public async checkVenueAvailability(fromDate: Date, toDate: Date, venue?: string
 
     } catch (error) {
         console.error("Error checking venue availability:", error);
-        return [];
+        throw new Error("Exception encountered in venue search query. Please contact the admin");
     }
 }
 
