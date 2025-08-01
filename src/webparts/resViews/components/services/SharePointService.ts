@@ -472,7 +472,8 @@ console.log('Batch Page Items:', batchPageItems);
         
         // Create filter query for current batch
         const filterQuery = `${dateRange} and (${batchDepts.map(dept => `Department eq '${dept}'`).join(' or ')})`;
-        
+
+        console.log('Filter Query:', filterQuery);
         try {
           // Execute query for current batch with pagination
           let page = await sp.web.lists

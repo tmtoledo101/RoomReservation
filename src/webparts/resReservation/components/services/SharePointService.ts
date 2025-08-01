@@ -160,46 +160,51 @@ export class SharePointService {
         };
     }
 
-    public async checkVenueAvailability(fromDate: Date, toDate: Date): Promise<string[]> {
-        // Checks venue availability for given time period
-        // Handles reservation conflicts
-        const reservations = [];
-        try {
-            // Get reservations with pagination
-            let page = await sp.web.lists
-                .getByTitle("Request")
-                .items.select(
-                    "Venue",
-                    "FromDate",
-                    "ToDate",
-                    "Status"
-                )
-                .filter(`
-            Status ne 'Cancelled' and Status ne 'Rejected' and
-            ((FromDate lt '${moment(toDate).toISOString()}' and ToDate gt '${moment(fromDate).toISOString()}'))
-          `)
-                .top(1000)   // Smaller batch size for better performance
-                .getPaged();
+public async checkVenueAvailability(fromDate: Date, toDate: Date, venue?: string): Promise<string[]> {
+    const reservations = [];
+    try {
+        // Fetch all relevant reservations (without filter to avoid threshold issues)
+        let page = await sp.web.lists
+            .getByTitle("Request")
+            .items.select(
+                "Venue",
+                "FromDate",
+                "ToDate",
+                "Status"
+            )
+            .top(1000) // Fetch as many as possible per page
+            .getPaged();
 
-            // Collect all pages
-            while (true) {
-                reservations.push(...page.results);
+        // Collect all pages
+        while (true) {
+            console.log("Processing page with results:", page.results.length);
+            console.log("Page has next:", page.hasNext);
+            console.log("results:", page.results);
+            reservations.push(...page.results);
+            if (page.hasNext) {
+                page = await page.getNext();
+            } else {
+                break;
+            }
+        }
 
-                if (page.hasNext) {
-                    page = await page.getNext();
-                } else {
-                    break;
-                }
-            }
+        // Filter in-memory: not Cancelled/Rejected, overlapping dates, and (if provided) matching venue
+        const filtered = reservations.filter(res =>
+            res.Status !== 'Cancelled' &&
+            res.Status !== 'Rejected' &&
+            new Date(res.FromDate) < toDate &&
+            new Date(res.ToDate) > fromDate &&
+            (!venue || (res.Venue && res.Venue === venue))
+        );
 
-            // Return list of venue names that are already booked
-            return reservations.map(res => res.Venue);
+        // Return list of venue names that are already booked
+        return filtered.map(res => res.Venue);
 
-        } catch (error) {
-            console.error("Error checking venue availability:", error);
-            return [];
-        }
-    }
+    } catch (error) {
+        console.error("Error checking venue availability:", error);
+        return [];
+    }
+}
 
     public async getLayouts() {
         const layoutData = await sp.web.lists
@@ -387,15 +392,7 @@ export class SharePointService {
             while (retryCount < maxRetries) {
                 console.log(`Attempt ${retryCount + 1} to create reservation for venue: ${venue}, building: ${building}, from: ${fromDate}, to: ${toDate}`);
                 // 1. Check for existing overlapping reservations
-                const existingReservations = await sp.web.lists
-                    .getByTitle("Request")
-                    .items.filter(`
-              Status ne 'Cancelled' and Status ne 'Rejected' and
-              Venue eq '${venue}' and
-              ((FromDate lt '${toDate}' and ToDate gt '${fromDate}'))
-            `)
-                    .select("Id")
-                    .get();
+                const existingReservations = await this.checkVenueAvailability(formData["fromDate"], formData["toDate"], venue);
                 console.log(`Existing reservations for venue "${venue}":`, existingReservations);
 
                 if (existingReservations.length > 0) {
@@ -555,4 +552,3 @@ export class SharePointService {
     }
 }
 //TestComment[...new Set(emailProps.To)].join(';') : '';
-   
