@@ -20,4 +20,9 @@ export interface IResViewState {
     isFSSApprover: boolean;
   };
   isApprover: boolean;
+  notification: {
+    show: boolean;
+    message: string;
+    severity: "success" | "error";
+  };
 }

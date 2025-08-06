@@ -3,13 +3,14 @@ This component serves as the main view for displaying reservation requests. It m
  * handles user interactions such as tab changes, search, and view actions, and renders the appropriate forms and data. 
 */
 import * as React from "react";
+import { Snackbar } from "@material-ui/core";
+import { Alert } from "@material-ui/lab";
 import { IResViewsProps } from "./IResViewsProps";
 import { IResViewState } from "./IResViewState";
 import { SharePointService } from "./services/SharePointService";
 import { ResViewForm } from "./ResViewForm";
 import { ApproverReservationForm } from "./ApproverReservationForm";
 import { ITableItem } from "./interfaces/IResViews";
-
 export default class ResViews extends React.Component<IResViewsProps, IResViewState> {
   constructor(props: IResViewsProps) {
     super(props);
@@ -31,7 +32,12 @@ export default class ResViews extends React.Component<IResViewsProps, IResViewSt
         isDD: false,
         isFSSApprover: false
       },
-      isApprover: false
+      isApprover: false,
+      notification: {
+        show: false,
+        message: "",
+        severity: "success"
+      }
     };
   }
 
@@ -111,6 +117,15 @@ export default class ResViews extends React.Component<IResViewsProps, IResViewSt
     window.open(this.props.siteUrl + "/SitePages/Home.aspx", "_self");
   }
 
+  protected handleNotificationClose = (): void => {
+    this.setState({
+      notification: {
+        ...this.state.notification,
+        show: false
+      }
+    });
+  }
+
   public async componentDidMount(): Promise<void> {
     const { isApprover, departments, approverGroups } = await SharePointService.getCurrentUserGroups();
     //Terence commented out this
@@ -128,49 +143,60 @@ export default class ResViews extends React.Component<IResViewsProps, IResViewSt
   }
 
   private async getItems(from: string, to: string): Promise<void> {
-    const { department, approverGroups } = this.state;
-    
-    const {
-      referenceNumberList,
-      pastRequestList,
-      approvalRequest: allApprovalRequests,
-    } = await SharePointService.getRequestItems(from, to, department);
+    try {
+      const { department, approverGroups } = this.state;
+      
+      const {
+        referenceNumberList,
+        pastRequestList,
+        approvalRequest: allApprovalRequests,
+      } = await SharePointService.getRequestItems(from, to, department);
 
-    // Filter approval requests based on user's security group
-    let filteredApprovalRequests = [...allApprovalRequests];
-    console.log("All Approval Requests:", allApprovalRequests);
-    console.log("Approver Groups:", approverGroups);
-    console.log("appgroups.isFSSApprover:", approverGroups.isFSSApprover);
-    console.log("appgroups.isCRSD:", approverGroups.isCRSD);
-    // User can see both HO and SPC records if they're in both groups
-    if (approverGroups.isFSSApprover && (approverGroups.isCRSD || approverGroups.isDD)) {
-      filteredApprovalRequests = allApprovalRequests.filter(
-        item => item.building === "HO Multi-Storey Bldg" || item.building === "SPC"
-      );
-      console.log("Filtered for FSS AND CRSD/DD:", filteredApprovalRequests);
-    } else if (approverGroups.isFSSApprover) {
-      // FSS Approvers only
-      filteredApprovalRequests = allApprovalRequests.filter(
-        item => item.building === "HO Multi-Storey Bldg"
-      );
-      console.log("Filtered for FSS Approvers only:", filteredApprovalRequests);
-    } else if (approverGroups.isCRSD || approverGroups.isDD) {
-      // CRSD or DD only
-      filteredApprovalRequests = allApprovalRequests.filter(
-        item => item.building === "SPC"
-      );
-      console.log("Filtered for CRSD/DD only:", filteredApprovalRequests);
+      // Filter approval requests based on user's security group
+      let filteredApprovalRequests = [...allApprovalRequests];
+      console.log("All Approval Requests:", allApprovalRequests);
+      console.log("Approver Groups:", approverGroups);
+      console.log("appgroups.isFSSApprover:", approverGroups.isFSSApprover);
+      console.log("appgroups.isCRSD:", approverGroups.isCRSD);
+      // User can see both HO and SPC records if they're in both groups
+      if (approverGroups.isFSSApprover && (approverGroups.isCRSD || approverGroups.isDD)) {
+        filteredApprovalRequests = allApprovalRequests.filter(
+          item => item.building === "HO Multi-Storey Bldg" || item.building === "SPC"
+        );
+        console.log("Filtered for FSS AND CRSD/DD:", filteredApprovalRequests);
+      } else if (approverGroups.isFSSApprover) {
+        // FSS Approvers only
+        filteredApprovalRequests = allApprovalRequests.filter(
+          item => item.building === "HO Multi-Storey Bldg"
+        );
+        console.log("Filtered for FSS Approvers only:", filteredApprovalRequests);
+      } else if (approverGroups.isCRSD || approverGroups.isDD) {
+        // CRSD or DD only
+        filteredApprovalRequests = allApprovalRequests.filter(
+          item => item.building === "SPC"
+        );
+        console.log("Filtered for CRSD/DD only:", filteredApprovalRequests);
+      }
+
+      this.setState({
+        referenceNumberList,
+        pastRequestList,
+        approvalRequest: filteredApprovalRequests,
+      });
+      
+    } catch (error) {
+      console.error("Exception encountered in search query:", error);
+      this.setState({
+        notification: {
+          show: true,
+          message: "Exception encountered in search query. Please contact the admin",
+          severity: "error"
+        }
+      });
     }
-
-    this.setState({
-      referenceNumberList,
-      pastRequestList,
-      approvalRequest: filteredApprovalRequests,
-    });
   }
-
   public render(): React.ReactElement<IResViewsProps> {
-    const { menuTabs, tabValue, isModalOpen, selectedReservation } = this.state;
+    const { menuTabs, tabValue, isModalOpen, selectedReservation, notification } = this.state;
 
     return (
       <>
@@ -191,6 +217,15 @@ export default class ResViews extends React.Component<IResViewsProps, IResViewSt
           context={this.props.context}
           siteUrl={this.props.siteUrl}
         />
+        <Snackbar
+          open={notification.show}
+          autoHideDuration={6000}
+          onClose={this.handleNotificationClose}
+        >
+          <Alert onClose={this.handleNotificationClose} severity={notification.severity}>
+            {notification.message}
+          </Alert>
+        </Snackbar>
       </>
     );
   }

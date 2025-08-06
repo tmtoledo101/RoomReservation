@@ -174,7 +174,7 @@ public async checkVenueAvailability(fromDate: Date, toDate: Date, venue?: string
                 "ToDate",
                 "Status"
             )
-            .top(6000) // Fetch as many as possible per page
+            .top(5000) // Fetch as many as possible per page
             .getPaged();
 
         // Collect all pages
@@ -198,7 +198,7 @@ public async checkVenueAvailability(fromDate: Date, toDate: Date, venue?: string
             new Date(res.ToDate) > fromDate &&
             (!venue || (res.Venue && res.Venue === venue))
         );
-
+        console.log("Filtered reservations:", filtered);
         // Return list of venue names that are already booked
         return filtered.map(res => res.Venue);
 

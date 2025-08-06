@@ -290,6 +290,7 @@ export class SharePointService {
           }
         } catch (error) {
           console.error(`Error processing batch for departments ${batchDepts.join(', ')}:`, error);
+          throw new Error("Exception encountered in search query. Please contact the admin");
         }
       }
       // Sort all items by ID in descending order
@@ -305,11 +306,7 @@ console.log('Batch Page Items:', batchPageItems);
       };
     } catch (error) {
       console.error('Error fetching paginated request items:', error);
-      return {
-        items: [],
-        totalCount: 0,
-        hasNextPage: false
-      };
+      throw new Error("Exception encountered in search query. Please contact the admin");
     }
   }
   public static async getBuildings(): Promise<{
@@ -460,107 +457,77 @@ console.log('Batch Page Items:', batchPageItems);
       };
     }
   }
-  private static async getRequestItemsBatch(dateRange: string, departments: string[]): Promise<any[]> {
-    try {
-      const BATCH_SIZE = 5; // Process 5 departments at a time
-      const allResults = [];
-      
-      // Process departments in batches
-      for (let i = 0; i < departments.length; i += BATCH_SIZE) {
-        const batchDepts = departments.slice(i, i + BATCH_SIZE);
-        console.log('Processing departments:', batchDepts);
-        
-        // Create filter query for current batch
-        const filterQuery = `${dateRange} and (${batchDepts.map(dept => `Department eq '${dept}'`).join(' or ')})`;
+  private static async getRequestItemsBatch(dateFrom: string, dateTo: string, departments: string[]): Promise<any[]> {
+  try {
+    const allResults: any[] = [];
+    const fromDate = new Date(dateFrom);
+    const toDate = new Date(dateTo);
 
-        console.log('Filter Query:', filterQuery);
-        try {
-          // Execute query for current batch with pagination
-          let page = await sp.web.lists
-            .getByTitle("Request")
-            .items.select(
-              "Id",
-              "Building",
-              "Venue",
-              "FromDate",
-              "ToDate",
-              "ReferenceNumber",
-              "PurposeOfUse",
-              "NoParticipant",
-              "RequestedBy",
-              "Department",
-              "ContactNumber",
-              "Status",
-              "Layout",
-              "ContactPerson",
-              "PrincipalUser",
-              "TitleDescription",
-              "Participant",
-              "OtherRequirement",
-              "GUID"
-            )
-            .filter(filterQuery)
-            .orderBy("Id", false)
-            .top(100)    // Smaller batch size for better performance
-            .getPaged();
-          // Collect all pages for current batch
-          while (true) {
-            console.log(`  For Iteration ${i} Got ${page.results.length} results for departments ${batchDepts.join(', ')}`);
-            allResults.push(...page.results);
-            
-            if (page.hasNext) {
-              page = await page.getNext();
-            } else {
-              break;
-            }
-          }
-        } catch (error) {
-          console.error(`Error processing batch for departments ${batchDepts.join(', ')}:`, error);
-        }
+    // Fetch all items (optionally with a date filter to reduce result size)
+    let page = await sp.web.lists
+      .getByTitle("Request")
+      .items.select(
+        "Id",
+        "Building",
+        "Venue",
+        "FromDate",
+        "ToDate",
+        "ReferenceNumber",
+        "PurposeOfUse",
+        "NoParticipant",
+        "RequestedBy",
+        "Department",
+        "ContactNumber",
+        "Status",
+        "Layout",
+        "ContactPerson",
+        "PrincipalUser",
+        "TitleDescription",
+        "Participant",
+        "OtherRequirement",
+        "GUID"
+      )
+      // Optionally, you can add a date filter here if your list is very large:
+      // .filter(`FromDate ge datetime'${dateFrom}' and ToDate le datetime'${dateTo}'`)
+      .orderBy("Id", false)
+      .top(6000)
+      .getPaged();
+
+    // Collect all pages
+    while (true) {
+      allResults.push(...page.results);
+      if (page.hasNext) {
+        page = await page.getNext();
+      } else {
+        break;
       }
-      
-      return allResults;
-    } catch (error) {
-      console.error('Error in getRequestItemsBatch:', error);
-      return [];
     }
+
+    // In-memory filter by department and date range
+    const filteredResults = allResults.filter(item =>
+      departments.includes(item.Department) &&
+      new Date(item.FromDate) >= fromDate &&
+      new Date(item.ToDate) <= toDate
+    );
+
+    return filteredResults;
+  } catch (error) {
+    console.error('Error in getRequestItemsBatch:', error);
+    throw new Error("Exception encountered in search query. Please contact the admin");
+    return [];
   }
+}
   public static async getRequestItems(from: string, to: string, department: string[]): Promise<{
     referenceNumberList: ITableItem[];
     pastRequestList: ITableItem[];
     approvalRequest: ITableItem[];
   }> {
     // Modified dateRange to filter based on FromDate
-    const dateRange = `ToDate ge datetime'${dateConverter(from, 1)}' and FromDate le datetime'${dateConverter(to, 2)}'`;
+    //const dateRange = `ToDate ge datetime'${dateConverter(from, 1)}' and FromDate le datetime'${dateConverter(to, 2)}'`;
     // If no departments specified, get all items
     const RequestItem: any[] = department.length
-      ? await this.getRequestItemsBatch(dateRange, department)
-      : await sp.web.lists
-          .getByTitle("Request")
-          .items.select(
-            "Id",
-            "Building",
-            "Venue",
-            "FromDate",
-            "ToDate",
-            "ReferenceNumber",
-            "PurposeOfUse",
-            "NoParticipant",
-            "RequestedBy",
-            "Department",
-            "ContactNumber",
-            "Status",
-            "Layout",
-            "ContactPerson",
-            "PrincipalUser",
-            "TitleDescription",
-            "Participant",
-            "OtherRequirement",
-            "GUID"
-          )
-          .filter(dateRange)
-          .orderBy("Id", false)
-          .get();
+      ? await this.getRequestItemsBatch(from, to, department)
+      : [];
     console.log('Request items:', RequestItem);
     const itemArray1: ITableItem[] = [];
     const itemArray2: ITableItem[] = [];
