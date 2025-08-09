@@ -81,46 +81,53 @@ export class SharePointService {
   }
  //start
   public static async getAllReservations(): Promise<any[]> {
-   try {
-     const allReservations: any[] = [];
-     let page = await sp.web.lists
-       .getByTitle("Request")
-       .items.select(
-         "Id",
-         "FromDate",
-         "ToDate",
-         "Venue",
-         "Building",
-         "ReferenceNumber",
-         "PurposeOfUse",
-         "NoParticipant",
-         "RequestedBy",
-         "Department",
-         "ContactNumber",
-         "Status",
-         "Layout",
-         "ContactPerson",
-         "PrincipalUser",
-         "TitleDescription",
-         "Participant",
-         "OtherRequirement"
-       )
-       .filter(`Status ne 'Cancelled' and Status ne 'Rejected'`)
-       .top(500)
-       .getPaged();
-     while (true) {
-       allReservations.push(...page.results);
-       if (page.hasNext) {
-         page = await page.getNext();
-       } else {
-         break;
-       }
-     }
-     return allReservations;
-   } catch (error) {
-     console.error("Error fetching all reservations:", error);
-     return [];
-   }
+    try {
+    const allReservations: any[] = [];
+    let page = await sp.web.lists
+      .getByTitle("Request")
+      .items.select(
+        "Id",
+        "FromDate",
+        "ToDate",
+        "Venue",
+        "Building",
+        "ReferenceNumber",
+        "PurposeOfUse",
+        "NoParticipant",
+        "RequestedBy",
+        "Department",
+        "ContactNumber",
+        "Status",
+        "Layout",
+        "ContactPerson",
+        "PrincipalUser",
+        "TitleDescription",
+        "Participant",
+        "OtherRequirement"
+      )
+      // .filter(`Status ne 'Cancelled' and Status ne 'Rejected'`) // <-- Remove this line
+      .top(500)
+      .getPaged();
+
+    while (true) {
+      allReservations.push(...page.results);
+      if (page.hasNext) {
+        page = await page.getNext();
+      } else {
+        break;
+      }
+    }
+
+    // In-memory filter: exclude Cancelled and Rejected
+    const filteredReservations = allReservations.filter(item =>
+      item.Status !== 'Cancelled' && item.Status !== 'Rejected'
+    );
+
+    return filteredReservations;
+  } catch (error) {
+    console.error("Error fetching all reservations:", error);
+    return [];
+  }
 }
 
   public static async checkDateTimeAvailability(fromDate: string, toDate: string, reservationId: number, venue: string): Promise<boolean> {
@@ -159,6 +166,7 @@ export class SharePointService {
       const toISO = to.toISOString();
       
       // Only fetch reservations that might conflict with the given date range AND have the same venue
+
       let page = await sp.web.lists
         .getByTitle("Request")
         .items.select(
@@ -167,148 +175,168 @@ export class SharePointService {
           "ToDate",
           "Venue"
         )
-        .filter(`
-          Status ne 'Cancelled' and Status ne 'Rejected' and Status ne 'Disapproved' and
-          Id ne ${reservationId} and
-          Venue eq '${venue}' and
-          ((FromDate lt '${toISO}' and ToDate gt '${fromISO}'))
-        `)
-        .top(10) // We only need to know if there's at least one conflict
+        .top(5000) // Fetch as many as possible per page
         .getPaged();
-      
-      console.log(`Found ${page.results.length} potentially conflicting reservations for venue ${venue}`);
-      
-      if (page.results.length > 0) {
-        console.log("Conflicting reservations:", page.results.map(r => ({
+
+      const allResults: any[] = [];
+      while (true) {
+        allResults.push(...page.results);
+        if (page.hasNext) {
+          page = await page.getNext();
+        } else {
+          break;
+        }
+      }
+
+      // In-memory filter for conflicts
+      const conflicts = allResults.filter(item =>
+        item.Status !== 'Cancelled' &&
+        item.Status !== 'Rejected' &&
+        item.Status !== 'Disapproved' &&
+        item.Id !== reservationId &&
+        item.Venue === venue &&
+        new Date(item.FromDate) < new Date(toISO) &&
+        new Date(item.ToDate) > new Date(fromISO)
+      );
+
+      console.log(`Found ${conflicts.length} potentially conflicting reservations for venue ${venue}`);
+
+      if (conflicts.length > 0) {
+        console.log("Conflicting reservations:", conflicts.map(r => ({
           id: r.Id,
           from: r.FromDate,
           to: r.ToDate,
           venue: r.Venue
         })));
       }
-      
+
       // If we have any results, there's a conflict
-      return page.results.length === 0;
-    } catch (error) {
-      console.error("Error checking date/time availability:", error);
-      return false;
-    }
-  }
-//
+      return conflicts.length === 0;
+          } catch (error) {
+            console.error("Error checking date/time availability:", error);
+            return false;
+          }
+        }
+      //
   public static async checkVenueAvailability(fromDate: Date, toDate: Date): Promise<string[]> {
       const reservations = [];
-        try {
-          // Get reservations with pagination
-          let page = await sp.web.lists
-            .getByTitle("Request")
-            .items.select(
-              "Venue",
-              "FromDate",
-              "ToDate",
-              "Status"
-            )
-            .filter(`
-              Status ne 'Cancelled' and Status ne 'Rejected' and
-              ((FromDate lt '${moment(toDate).toISOString()}' and ToDate gt '${moment(fromDate).toISOString()}'))
-            `)
-            .top(1000)    // Smaller batch size for better performance
-            .getPaged();
-    
-          // Collect all pages
-          while (true) {
-            reservations.push(...page.results);
-            
-            if (page.hasNext) {
-              page = await page.getNext();
-            } else {
-              break;
-            }
-          }
-    
-          // Return list of venue names that are already booked
-          return reservations.map(res => res.Venue);
-          
-        } catch (error) {
-          console.error("Error checking venue availability:", error);
-          return [];
-        }
-      }
-  public static async getPaginatedRequestItems(
-    from: string,
-    to: string,
-    department: string[],
-    pageSize: number = 100,
-    pageNumber: number = 0
-  ): Promise<IPaginatedResult<ITableItem>> {
-    try {
-      const skipToken = pageNumber * pageSize;
-      const dateRange = `FromDate ge datetime'${dateConverter(from, 1)}' and ToDate le datetime'${dateConverter(to, 2)}'`;
+      try {
+      // Get reservations with pagination (no filter in query)
+      let page = await sp.web.lists
+        .getByTitle("Request")
+        .items.select(
+          "Venue",
+          "FromDate",
+          "ToDate",
+          "Status"
+        )
+        .top(6000)    // Smaller batch size for better performance
+        .getPaged();
 
-      // Process departments in batches
-      const BATCH_SIZE = 5; // Process 5 departments at a time
-      const batchResults: any[] = [];
-      
-      // Process each batch of departments
-      for (let i = 0; i < department.length; i += BATCH_SIZE) {
-        const batchDepts = department.slice(i, i + BATCH_SIZE);
-        const filterQuery = `${dateRange} and (${batchDepts.map(dept => `Department eq '${dept}'`).join(' or ')})`;
-        console.log('Processing departments:', batchDepts);
-        try {
-          let page = await sp.web.lists
-            .getByTitle("Request")
-            .items.select(
-              "Id",
-              "Building",
-              "Venue",
-              "FromDate",
-              "ToDate",
-              "ReferenceNumber",
-              "PurposeOfUse",
-              "NoParticipant",
-              "RequestedBy",
-              "Department",
-              "ContactNumber",
-              "Status",
-              "Layout",
-              "ContactPerson",
-              "PrincipalUser",
-              "TitleDescription",
-              "Participant",
-              "OtherRequirement",
-              "GUID"
-            )
-            .filter(filterQuery)
-            .orderBy("Id", false)
-            .getPaged();
-          while (page) {
-            batchResults.push(...page.results);
-            if (page.hasNext) {
-              page = await page.getNext();
-            } else {
-              break;
-            }
-          }
-        } catch (error) {
-          console.error(`Error processing batch for departments ${batchDepts.join(', ')}:`, error);
-          throw new Error("Exception encountered in search query. Please contact the admin");
+      // Collect all pages
+      while (true) {
+        reservations.push(...page.results);
+        if (page.hasNext) {
+          page = await page.getNext();
+        } else {
+          break;
         }
       }
-      // Sort all items by ID in descending order
-      batchResults.sort((a, b) => b.Id - a.Id);
-      const batchCount = batchResults.length;
-      // Apply pagination to the combined results
-      const batchPageItems = batchResults.slice(skipToken, skipToken + pageSize);
-console.log('Batch Page Items:', batchPageItems);
-      return {
-        items: this.formatRequestItems(batchPageItems),
-        totalCount: batchCount,
-        hasNextPage: batchCount > (skipToken + pageSize)
-      };
-    } catch (error) {
-      console.error('Error fetching paginated request items:', error);
-      throw new Error("Exception encountered in search query. Please contact the admin");
+
+      // In-memory filter for venue availability
+      const filtered = reservations.filter(res =>
+        res.Status !== 'Cancelled' &&
+        res.Status !== 'Rejected' &&
+        new Date(res.FromDate) < toDate &&
+        new Date(res.ToDate) > fromDate
+      );
+
+      // Return list of venue names that are already booked
+      return filtered.map(res => res.Venue);
+
+  } catch (error) {
+    console.error("Error checking venue availability:", error);
+     throw new Error();
+    return [];
+} 
+}
+
+ public static async getPaginatedRequestItems(
+  from: string,
+  to: string,
+  department: string[],
+  pageSize: number = 100,
+  pageNumber: number = 0
+): Promise<IPaginatedResult<ITableItem>> {
+  try {
+    const skipToken = pageNumber * pageSize;
+    const fromDateObj = new Date(from);
+    const toDateObj = new Date(to);
+
+    // Fetch all items (no filter in query)
+    let page = await sp.web.lists
+      .getByTitle("Request")
+      .items.select(
+        "Id",
+        "Building",
+        "Venue",
+        "FromDate",
+        "ToDate",
+        "ReferenceNumber",
+        "PurposeOfUse",
+        "NoParticipant",
+        "RequestedBy",
+        "Department",
+        "ContactNumber",
+        "Status",
+        "Layout",
+        "ContactPerson",
+        "PrincipalUser",
+        "TitleDescription",
+        "Participant",
+        "OtherRequirement",
+        "GUID"
+      )
+      .orderBy("Id", false)
+      .getPaged();
+
+    const allResults: any[] = [];
+    while (page) {
+      allResults.push(...page.results);
+      if (page.hasNext) {
+        page = await page.getNext();
+      } else {
+        break;
+      }
     }
+
+    // In-memory filter by department and date range
+    const filteredResults = allResults.filter(item =>
+      department.includes(item.Department) &&
+      new Date(item.FromDate) >= fromDateObj &&
+      new Date(item.ToDate) <= toDateObj
+    );
+
+    // Sort by ID descending
+    filteredResults.sort((a, b) => b.Id - a.Id);
+
+    // Paginate
+    const batchCount = filteredResults.length;
+    const batchPageItems = filteredResults.slice(skipToken, skipToken + pageSize);
+
+    console.log('Batch Page Items:', batchPageItems);
+
+    return {
+      items: this.formatRequestItems(batchPageItems),
+      totalCount: batchCount,
+      hasNextPage: batchCount > (skipToken + pageSize)
+    };
+  } catch (error) {
+    console.error('Error fetching paginated request items:', error);
+    throw new Error("Exception encountered in search query. Please contact the admin");
   }
+}
+
   public static async getBuildings(): Promise<{
     buildings: IDropdownItem[];
     venues: any[];
@@ -400,64 +428,66 @@ console.log('Batch Page Items:', batchPageItems);
   public static async getDepartments(currentUserTitle: string): Promise<{
     departmentList: IDropdownItem[];
     departmentSectorMap: { [key: string]: string };
-  }> {
+  }> {   
     try {
-      // Get user's departments with pagination
-      const userDepartments = [];
-      let page = await sp.web.lists
-        .getByTitle("UsersPerDepartment")
-        .items.select("Department/Department")
-        .filter(`Title eq '${currentUserTitle}'`)
-        .expand("Department/FieldValuesAsText")
-        .top(100)    // Smaller batch size for better performance
-        .getPaged();
-      while (true) {
-        userDepartments.push(...page.results);
-        
-        if (page.hasNext) {
-          page = await page.getNext();
-        } else {
-          break;
-        }
+    // Get user's departments with pagination (no filter in query)
+    const userDepartments = [];
+    let page = await sp.web.lists
+      .getByTitle("UsersPerDepartment")
+      .items.select("Department/Department")
+      .expand("Department/FieldValuesAsText")
+      .top(5000)    // Smaller batch size for better performance
+      .getPaged();
+    while (true) {
+      userDepartments.push(...page.results);
+      if (page.hasNext) {
+        page = await page.getNext();
+      } else {
+        break;
       }
-      if (userDepartments.length === 0) {
-        console.error('User department not found');
-        return {
-          departmentList: [],
-          departmentSectorMap: {}
-        };
-      }
-      // Get unique department names
-      const departmentNames = [...new Set(
-        userDepartments.map(item => item.Department.Department)
-      )];
-      // Get departments in batches
-      const departments = await this.getDepartmentsBatch(departmentNames);
-      // Process results
-      const departmentList: IDropdownItem[] = [];
-      const departmentSectorMap: { [key: string]: string } = {};
-      departments.forEach(dept => {
-        if (dept.Title && !departmentList.some(item => item.id === dept.Title)) {
-          departmentList.push({
-            id: dept.Title,
-            value: dept.Title
-          });
-          departmentSectorMap[dept.Title] = dept.Sector;
-        }
-      });
-      return {
-        departmentList,
-        departmentSectorMap
-      };
-    } catch (error) {
-      console.error('Error getting departments:', error);
+    }
+    // In-memory filter by user title
+    const filteredUserDepartments = userDepartments.filter(item =>
+      item.Title === currentUserTitle
+    );
+    if (filteredUserDepartments.length === 0) {
+      console.error('User department not found');
       return {
         departmentList: [],
         departmentSectorMap: {}
       };
     }
+    // Get unique department names
+    const departmentNames = [...new Set(
+      filteredUserDepartments.map(item => item.Department.Department)
+    )];
+    // Get departments in batches
+    const departments = await this.getDepartmentsBatch(departmentNames);
+    // Process results
+    const departmentList: IDropdownItem[] = [];
+    const departmentSectorMap: { [key: string]: string } = {};
+    departments.forEach(dept => {
+      if (dept.Title && !departmentList.some(item => item.id === dept.Title)) {
+        departmentList.push({
+          id: dept.Title,
+          value: dept.Title
+        });
+        departmentSectorMap[dept.Title] = dept.Sector;
+      }
+    });
+    return {
+      departmentList,
+      departmentSectorMap
+    };
+  } catch (error) {
+    console.error('Error getting departments:', error);
+    return {
+      departmentList: [],
+      departmentSectorMap: {}
+    };
   }
-  private static async getRequestItemsBatch(dateFrom: string, dateTo: string, departments: string[]): Promise<any[]> {
+}
+private static async getRequestItemsBatch(dateFrom: Date, dateTo: Date, departments: string[]): Promise<any[]> {
   try {
     const allResults: any[] = [];
     const fromDate = new Date(dateFrom);
@@ -487,10 +517,8 @@ console.log('Batch Page Items:', batchPageItems);
         "OtherRequirement",
         "GUID"
       )
-      // Optionally, you can add a date filter here if your list is very large:
-      // .filter(`FromDate ge datetime'${dateFrom}' and ToDate le datetime'${dateTo}'`)
       .orderBy("Id", false)
-      .top(6000)
+      .top(5000)
       .getPaged();
 
     // Collect all pages
@@ -503,21 +531,35 @@ console.log('Batch Page Items:', batchPageItems);
       }
     }
 
-    // In-memory filter by department and date range
-    const filteredResults = allResults.filter(item =>
-      departments.includes(item.Department) &&
-      new Date(item.FromDate) >= fromDate &&
-      new Date(item.ToDate) <= toDate
-    );
+    console.log('fromDate:', fromDate);
+    console.log('toDate:', toDate);
+    console.log('All results', allResults.length, 'items:', allResults);
+
+    // In-memory filter by department and date range (UTC-safe)
+   function toDateOnlyString(date: Date): string {
+  // Returns 'YYYY-MM-DD'
+  return date.toISOString().split('T')[0];
+}
+
+const filteredResults = allResults.filter(item => {
+  const itemFromDate = toDateOnlyString(new Date(item.FromDate));
+  const itemToDate = toDateOnlyString(new Date(item.ToDate));
+  const searchFromDate = toDateOnlyString(fromDate);
+  const searchToDate = toDateOnlyString(toDate);
+  return (
+    departments.includes(item.Department) &&
+    itemToDate >= searchFromDate &&
+    itemFromDate <= searchToDate
+  );
+});
 
     return filteredResults;
   } catch (error) {
     console.error('Error in getRequestItemsBatch:', error);
     throw new Error("Exception encountered in search query. Please contact the admin");
-    return [];
   }
 }
-  public static async getRequestItems(from: string, to: string, department: string[]): Promise<{
+  public static async getRequestItems(from: Date, to: Date, department: string[]): Promise<{
     referenceNumberList: ITableItem[];
     pastRequestList: ITableItem[];
     approvalRequest: ITableItem[];
@@ -631,7 +673,7 @@ console.log('Batch Page Items:', batchPageItems);
         // Get current user
         const user = await sp.web.currentUser.get();
         const currentUser = {
-            Email: isDevelopmentMode() ? user.Title : user.Email,
+            Email:  user.Email,
             Title: user.Title
         };
         const userEmail = currentUser.Email;
@@ -661,59 +703,54 @@ console.log('Batch Page Items:', batchPageItems);
             console.warn("Unable to fetch FSS Approvers members:", error);
         }
         // Extract email lists
-        const crsdEmails = crsdUsers.map(item => isDevelopmentMode() ? item.Title : item.Email);
-        const ddEmails = ddUsers.map(item => isDevelopmentMode() ? item.Title : item.Email);
-        const fssApproverEmails = fssApprovers.map(item => isDevelopmentMode() ? item.Title : item.Email);
+        const crsdEmails = crsdUsers.map(item => item.Email);
+        const ddEmails = ddUsers.map(item =>  item.Email);
+        const fssApproverEmails = fssApprovers.map(item =>  item.Email);
         console.log('userEmail:', userEmail);
         
         // Check which groups the user belongs to
-        const isCRSD = hasGroupMembersAccess() ? crsdEmails.includes(userEmail) : false;
-        const isDD = hasGroupMembersAccess() ? ddEmails.includes(userEmail) : false;
-        const isFSSApprover = hasGroupMembersAccess() ? fssApproverEmails.includes(userEmail) : false;
+        const isCRSD = crsdEmails.includes(userEmail);
+        const isDD = ddEmails.includes(userEmail);
+        const isFSSApprover = fssApproverEmails.includes(userEmail);
         
         // Check if user is an approver (in any of the groups)
-        const isApprover = hasGroupMembersAccess() ?
-            isCRSD || isDD || isFSSApprover : true;
+        const isApprover =
+            isCRSD || isDD || isFSSApprover;
         console.log('Is Approver:', isApprover);
         // Get departments with pagination
-        try {
-            let page;
-            if (isDevelopmentMode()) {
-                const filterText = `Title eq '${userEmail}'`;
-                const selectText = "Department/Department";
-                const firstExpandText = "Department";
-                const secondExpandText = "EmployeeName";
-                page = await sp.web.lists
-                    .getByTitle("UsersPerDepartment")
-                    .items
-                    .select("EmployeeName/EMail", selectText)
-                    .expand(firstExpandText, secondExpandText)
-                    .filter(filterText)
-                    .top(5000)
-                    .getPaged();
-            } else {
-                page = await sp.web.lists
-                    .getByTitle("UsersPerDepartment")
-                    .items
-                    .select("EmployeeName/EMail", "Department/Department")
-                    .expand("Department", "EmployeeName")
-                    .filter(`EmployeeName/EMail eq '${userEmail}'`)
-                    .top(5000)
-                    .getPaged();
-            }
+      let filteredDepartments: any[] = [];
+      try {
+            // Get user's departments with pagination (no filter in query)
+            let page = await sp.web.lists
+                .getByTitle("UsersPerDepartment")
+                .items
+                .select("EmployeeName/EMail", "Department/Department")
+                .expand("Department", "EmployeeName")
+                .top(5000)
+                .getPaged();
+
             // Collect all pages
+            const allDepartmentData: any[] = [];
             while (true) {
-                departmentData.push(...page.results);
+                allDepartmentData.push(...page.results);
                 if (page.hasNext) {
                     page = await page.getNext();
                 } else {
                     break;
                 }
             }
+           
+            // In-memory filter by user email
+            filteredDepartments = allDepartmentData.filter(item =>
+                item.EmployeeName && item.EmployeeName.EMail === userEmail
+            );
+
+
+
         } catch (error) {
             console.warn("Unable to fetch department data:", error);
         }
-        const departments = departmentData.map(item => item.Department.Department);
+        const departments = filteredDepartments.map(item => item.Department.Department);
         return {
             isApprover,
             departments,

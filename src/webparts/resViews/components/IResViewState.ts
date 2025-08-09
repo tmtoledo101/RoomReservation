@@ -12,8 +12,8 @@ export interface IResViewState {
   department: string[];
   isModalOpen: boolean;
   selectedReservation: ITableItem | null;
-  fromDate: string | null;
-  toDate: string | null;
+  fromDate: Date | null;
+  toDate: Date | null;
   approverGroups: {
     isCRSD: boolean;
     isDD: boolean;

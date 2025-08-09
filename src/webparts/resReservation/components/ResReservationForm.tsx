@@ -69,6 +69,7 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
       venueId: "",
       selectedID: 0,
       isddMember: false,
+      isDepartmentError: false,
     };
   }
 
@@ -77,51 +78,58 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
   }
 
   private async initializeForm(): Promise<void> {
-    const currentUser = await this.spService.getCurrentUser();
-    console.log("Terence, this the current user:");
-    console.log(currentUser.Email);
-    const { departments, departmentSectorMap } = await this.spService.getDepartments(currentUser.Title);
-    console.log("Terence, this the departments:", departments);
-    console.log("Terence, this the departmentSectorMap:", departmentSectorMap);
-    const { buildings, venues } = await this.spService.getBuildings();
-    const layouts = await this.spService.getLayouts();
-    const purposeOfUse = await this.spService.getPurposeOfUse();
-    const participants = await this.spService.getParticipants();
-    const facilityMap = await this.spService.getFacilities();
-    const { crsdMembers, ddMembers, fssMembers, fssApproversMembers } = hasGroupMembersAccess() ? await this.spService.getGroupMembers(): { crsdMembers: [], ddMembers: [], fssMembers: [], fssApproversMembers: [] };
-    //const { crsdMembers, ddMembers, fssMembers, fssApproversMembers } =  { crsdMembers: [], ddMembers: [], fssMembers: [], fssApproversMembers: [] };
-    
-    this.venue = venues;
-    this.layout = layouts;
-    this.facilityMap = facilityMap;
+    try {
+      const currentUser = await this.spService.getCurrentUser();
+      console.log("Terence, this the current user:");
+      console.log(currentUser.Email);
+      const { departments, departmentSectorMap } = await this.spService.getDepartments(currentUser.Email);
+      console.log("Terence, this the departments:", departments);
+      console.log("Terence, this the departmentSectorMap:", departmentSectorMap);
+      const { buildings, venues } = await this.spService.getBuildings();
+      const layouts = await this.spService.getLayouts();
+      const purposeOfUse = await this.spService.getPurposeOfUse();
+      const participants = await this.spService.getParticipants();
+      const facilityMap = await this.spService.getFacilities();
+      const { crsdMembers, ddMembers, fssMembers, fssApproversMembers } = hasGroupMembersAccess() ? await this.spService.getGroupMembers(): { crsdMembers: [], ddMembers: [], fssMembers: [], fssApproversMembers: [] };
+      //const { crsdMembers, ddMembers, fssMembers, fssApproversMembers } =  { crsdMembers: [], ddMembers: [], fssMembers: [], fssApproversMembers: [] };
+      
+      this.venue = venues;
+      this.layout = layouts;
+      this.facilityMap = facilityMap;
 
-    // Convert facilityMap to facilityList dropdown format
-    const facilityList = Object.keys(facilityMap).map(facility => ({
-      id: facility,
-      value: facility
-    }));
+      // Convert facilityMap to facilityList dropdown format
+      const facilityList = Object.keys(facilityMap).map(facility => ({
+        id: facility,
+        value: facility
+      }));
 
-    const buildingList = buildings.map((item, index) => ({
-      id: index.toString(),
-      value: item.value
-    }));
+      const buildingList = buildings.map((item, index) => ({
+        id: index.toString(),
+        value: item.value
+      }));
 
-    this.setState({
-      departmentList: departments,
-      departmentSectorMap,
-      buildingList,
-      venueList: venues,
-      purposeOfUseList: purposeOfUse,
-      participantList: participants,
-      facilityList, // Add the facilityList to state
-      crsdMemberList: crsdMembers,
-      ddMemeberList: ddMembers,
-      fssMemberList: fssMembers,
-      fssApproversMemberList: fssApproversMembers,
-      requestorEmail: currentUser.Email,
-    });
+      this.setState({
+        departmentList: departments,
+        departmentSectorMap,
+        buildingList,
+        venueList: venues,
+        purposeOfUseList: purposeOfUse,
+        participantList: participants,
+        facilityList, // Add the facilityList to state
+        crsdMemberList: crsdMembers,
+        ddMemeberList: ddMembers,
+        fssMemberList: fssMembers,
+        fssApproversMemberList: fssApproversMembers,
+        requestorEmail: currentUser.Email,
+      });
 
-    this.formikRef.current.setFieldValue("requestedBy", currentUser.Title);
+      this.formikRef.current.setFieldValue("requestedBy", currentUser.Title);
+    } catch (error) {
+      console.error('Error in SearchUserDepartment:', error);
+      this.setState({
+        isDepartmentError: true
+      });
+    }
   }
 
   private resetFormFields(preserveBuilding: boolean = false, preserveVenue: boolean = false): void {
@@ -682,6 +690,13 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
               message={this.state.failureMessage}
               severity="error"
               onClose={() => this.setState({ isSavingFailure: false })}
+            />
+
+            <Notification
+              open={this.state.isDepartmentError}
+              message="Exception encountered in SearchUserDepartment. Please contact the admin"
+              severity="error"
+              onClose={() => this.setState({ isDepartmentError: false })}
             />
 
             <Checkbox

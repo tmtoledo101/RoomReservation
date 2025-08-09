@@ -60,6 +60,7 @@ export interface IFacilityData {
     isddMember: boolean;
     fssMemberList: string[];
     fssApproversMemberList: string[];
+    isDepartmentError: boolean;
   }
   
   export interface IResReservationFormValues {

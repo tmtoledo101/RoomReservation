@@ -72,63 +72,41 @@ export class SharePointService {
       // Includes sector mapping and pagination handling
       console.log("TESTENV_department", configService.isTestEnvironment() );
       console.log( "DEVUSER_department",configService.isDevUser());
-        console.log("Terence, here is the user : " + email, "developmentMode:", isDevelopmentMode());
-    
-        let deparmentData = [];
-        
-    
-          // Get departments with pagination
-          let page;
-          if (isDevelopmentMode()) {
-            const filterText = isDevelopmentMode() ? `Title eq '${email}'` 
-            : `EmployeeName/Email eq '${email}'`;  // Changed EMail to Email
-            //const selectText =isDevelopmentMode() ? 
-             // "Department/Title" : "Department/Department";
-             const selectText = "Department/Department";
-            const firstExpandText = isDevelopmentMode() ? 
-              "Department": "Department/FieldValuesAsText";
-            const secondExpandText = isDevelopmentMode() ? 
-              "EmployeeName": "EmployeeName/EMail";
-    
-            page = await sp.web.lists
-              .getByTitle("UsersPerDepartment")
-              .items
-              .select("EmployeeName/EMail", selectText)
-              .expand(firstExpandText, secondExpandText)
-              .filter(filterText)
-              .top(5000)  // Process 100 items at a time
-              .getPaged();
-          } else {
-            page = await sp.web.lists
-              .getByTitle("UsersPerDepartment")
-              .items
-              .select("EmployeeName/EMail", "Department/Department")
-              .expand("Department", "EmployeeName")
-              .filter(`EmployeeName/EMail eq '${email}'`)
-              .top(5000)
-              .getPaged();
-          }
-    
-          // Collect all pages
-          while (true) {
-            deparmentData.push(...page.results);
-            
-            if (page.hasNext) {
-              page = await page.getNext();
-            } else {
-              break;
-            }
-          }
+      console.log("Terence, here is the user : " + email, "developmentMode:", isDevelopmentMode());
+      // Remove .filter from the SharePoint query and do filtering in-memory
+      let deparmentData = [];
+      let page = await sp.web.lists
+        .getByTitle("UsersPerDepartment")
+        .items
+        .select("EmployeeName/EMail", "Department/Department")
+        .expand("Department", "EmployeeName")
+        .top(5000)
+        .getPaged();
 
-    const deparmentList: any[] = await sp.web.lists
-      .getByTitle("Department")
-      .items.select(
-        "Department",
-        "Sector"
-      )
-      .get();
+      // Collect all pages
+      while (true) {
+        deparmentData.push(...page.results);
+        if (page.hasNext) {
+          page = await page.getNext();
+        } else {
+          break;
+        }
+      }
 
-    return { deparmentData, deparmentList };
+      // In-memory filter by email
+      deparmentData = deparmentData.filter(item =>
+        item.EmployeeName && item.EmployeeName.EMail === email
+      );
+
+      const deparmentList: any[] = await sp.web.lists
+        .getByTitle("Department")
+        .items.select(
+          "Department",
+          "Sector"
+        )
+        .get();
+
+      return { deparmentData, deparmentList };
   }
 
   public async getBuildings() {

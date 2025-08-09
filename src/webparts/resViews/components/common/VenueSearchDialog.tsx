@@ -24,7 +24,9 @@ import {validationSchema} from "../utils/validation";
 import{ validateDateTime_, validateDateRange } from "../utils/helpers";
 import { ConfirmationDialog } from "./ConfirmationDialog";
 import { ModalPopup } from "./ModalPopup";
-
+import CircularProgress from "@material-ui/core/CircularProgress";
+import { Snackbar } from "@material-ui/core";
+import { Alert } from "@material-ui/lab";
 
 interface IVenueSearchDialogProps {
   open: boolean;
@@ -52,6 +54,7 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
   initialBuilding = "",
   initialFromDate = null,
   initialToDate = null,
+  
 }) => {
   // Component state management
   const [filteredVenueList, setFilteredVenueList] = React.useState(venueList);
@@ -60,7 +63,12 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
   const [confirmDeleteDialogOpen, setConfirmDeleteDialogOpen] = React.useState(false);
   const [selectedVenue, setSelectedVenue] = React.useState<any>(null);
   const [selectedFormikValues, setSelectedFormikValues] = React.useState<any>(null);
-
+  const [loading, setLoading] = React.useState(false); 
+  const [notification, setNotification] = React.useState({
+    show: false,
+    message: "",
+    severity: "success" as "success" | "error" | "warning" | "info"
+  });
   const handleDepartmentChange = (e: any, formik: any): void => {
     const { value } = e.target;
     let newVenue = venueList;
@@ -88,6 +96,7 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
     const { fromDate, toDate } = formik.values;
     
     try {
+      setLoading(true);
       await formik.validateForm();
       if (formik.isValid && fromDate && toDate) {
         const unavailableVenueList = await SharePointService.checkVenueAvailability(fromDate, toDate);
@@ -96,6 +105,14 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
       }
     } catch (error) {
       console.error('Error checking venue availability:', error);
+      setNotification({
+        show: true,
+        message: "Exception encountered while checking venue availability. Please contact the admin",
+        severity: "error"
+      });
+    }
+    finally {
+      setLoading(false);
     }
   };
 
@@ -123,6 +140,13 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
            !formik.errors.toDate &&
            validateDateTime_(formik.values.fromDate, formik.values.toDate) &&
            validateDateRange(formik.values.fromDate, formik.values.toDate);
+  };
+
+  const handleNotificationClose = (): void => {
+    setNotification({
+      ...notification,
+      show: false
+    });
   };
 
   return (
@@ -250,9 +274,15 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
                       Search Available Venues
                     </Button>
                   </Grid>
-
+                  {/* Loading Spinner */}
+                  {loading && (
+                    <Grid item xs={12} style={{ textAlign: "center", margin: "20px 0" }}>
+                    <CircularProgress />
+                    <div>Checking venue availability...</div>
+                    </Grid>
+                    )}
                   {/* Venues List Section */}
-                  {showResults && (
+                  {!loading && showResults && (
                     <Grid item xs={12}>
                       <Typography variant="subtitle1" style={{ marginBottom: "15px", fontWeight: 500 }}>
                         {filteredVenues.length} venues available
@@ -282,7 +312,18 @@ export const VenueSearchDialog: React.FC<IVenueSearchDialogProps> = ({
                     </Grid>
                   )}
                 </Grid>
+
+                <Snackbar
+                  open={notification.show}
+                  autoHideDuration={6000}
+                  onClose={handleNotificationClose}
+                >
+                  <Alert onClose={handleNotificationClose} severity={notification.severity}>
+                    {notification.message}
+                  </Alert>
+                </Snackbar>
               </div>
+              
             );
           }}
         </Formik>

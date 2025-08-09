@@ -38,52 +38,32 @@ export class SharePointService {
         console.log("DEVUSER_department", configService.isDevUser());
         console.log("Terence, here is the user : " + email, "developmentMode:", isDevelopmentMode());
 
-        let departmentData = [];
-
-
         // Get departments with pagination
         let page;
-        if (isDevelopmentMode()) {
-            const filterText = isDevelopmentMode() ? `Title eq '${email}'`
-                : `EmployeeName/Email eq '${email}'`;  // Changed EMail to Email
-            //const selectText =isDevelopmentMode() ?
-            // "Department/Title" : "Department/Department";
-            const selectText = "Department/Department";
-            const firstExpandText = isDevelopmentMode() ?
-                "Department" : "Department/FieldValuesAsText";
-            const secondExpandText = isDevelopmentMode() ?
-                "EmployeeName" : "EmployeeName/EMail";
+   
+            page = await sp.web.lists
+                .getByTitle("UsersPerDepartment")
+                .items
+                .select("EmployeeName/EMail", "Department/Department")
+                .expand("Department", "EmployeeName")
+                .top(5000)
+                .getPaged();
+       
+        // Collect all pages
+        let departmentData = [];
+        while (true) {
+            departmentData.push(...page.results);
+            if (page.hasNext) {
+                page = await page.getNext();
+            } else {
+                break;
+            }
+        }
 
-            page = await sp.web.lists
-                .getByTitle("UsersPerDepartment")
-                .items
-                .select("EmployeeName/EMail", selectText)
-                .expand(firstExpandText, secondExpandText)
-                .filter(filterText)
-                .top(5000)   // Process 100 items at a time
-                .getPaged();
-        } else {
-            page = await sp.web.lists
-                .getByTitle("UsersPerDepartment")
-                .items
-                .select("EmployeeName/EMail", "Department/Department")
-                .expand("Department", "EmployeeName")
-                .filter(`EmployeeName/Email eq '${email}'`)
-                .top(5000)
-                .getPaged();
-        }
-
-        // Collect all pages
-        while (true) {
-            departmentData.push(...page.results);
-
-            if (page.hasNext) {
-                page = await page.getNext();
-            } else {
-                break;
-            }
-        }
-
+        // In-memory filter by email
+        departmentData = departmentData.filter(item =>
+            (item.EmployeeName && item.EmployeeName.EMail === email)
+        );
 
         const deparmentList = await sp.web.lists
             .getByTitle("Department")
@@ -165,7 +145,6 @@ public async checkVenueAvailability(fromDate: Date, toDate: Date, venue?: string
     const reservations = [];
     try {
         // Fetch all relevant reservations (without filter to avoid threshold issues)
-        let a = 1/0;
         let page = await sp.web.lists
             .getByTitle("Request")
             .items.select(

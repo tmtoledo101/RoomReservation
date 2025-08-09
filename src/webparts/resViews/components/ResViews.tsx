@@ -108,8 +108,9 @@ export default class ResViews extends React.Component<IResViewsProps, IResViewSt
   protected handleSearch = async (fromDate: Date | null, toDate: Date | null): Promise<void> => {
     if (fromDate && toDate) {
       // Store dates in state for refresh after update
-      this.setState({ fromDate: fromDate.toISOString(), toDate: toDate.toISOString() });
-      await this.getItems(fromDate.toISOString(), toDate.toISOString());
+      //this.setState({ fromDate: fromDate.toISOString(), toDate: toDate.toISOString() });
+      this.setState({ fromDate: fromDate, toDate: toDate});
+      await this.getItems(fromDate, toDate);
     }
   }
 
@@ -142,7 +143,7 @@ export default class ResViews extends React.Component<IResViewsProps, IResViewSt
     this.setState({ department: departments });
   }
 
-  private async getItems(from: string, to: string): Promise<void> {
+  private async getItems(from: Date, to: Date): Promise<void> {
     try {
       const { department, approverGroups } = this.state;
       
