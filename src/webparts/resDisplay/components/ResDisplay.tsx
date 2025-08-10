@@ -538,15 +538,6 @@ export default class ResDisplay extends React.Component<IResDisplayProps, IResDi
           toUser = this.state.ddMemeberList;
         }
 
-        await this.spService.sendEmail(
-          [this.state.requestorEmail],
-          [...toUser],
-          finalResult,
-          this.state.newStatus,
-          this.props.siteUrl,
-          new URLSearchParams(window.location.search).get("pid")
-        );
-
         this.setState({
           isSavingDone: true,
         });

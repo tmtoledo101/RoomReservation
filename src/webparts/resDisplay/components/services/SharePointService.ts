@@ -326,42 +326,7 @@ export class SharePointService {
     }
   }
 
-  public async sendEmail(to: string[], cc: string[], values: any, type: string, siteUrl: string, id: string) {
-    let emailProps: IEmailProperties = {
-      From: "NTT_LagmayJ_JavierGO@bsp.gov.ph",
-      To: to,
-      CC: cc,
-      Subject: '',
-      Body: '',
-      AdditionalHeaders: {
-        "content-type": "application/json;odata=verbose",
-      }
-    };
 
-    if (type === 'Approved') {
-      emailProps.Subject = `Approved Request for Reservation.:  ${id}. Date of Use: ${dateFormat(values["fromDate"])} to ${dateFormat(values["toDate"])}`;
-      emailProps.Body = `We are pleased to inform you that your venue reservation request is approved. <br/>
-      For further assistance, you may e-mail us at coraoreservations@bsp.gov.ph or call our Events and  
-      Visitor Services Pool (EVSP) at local telephone numbers 2559 or 2462.<br/><br/>
-      Link: <a href="${siteUrl}/SitePages/DisplayReservation_appge.aspx?pid=${id}">Request url</a>`;
-    }
-    if (type === 'Disapproved') {
-      emailProps.Subject = `Disapproved Request for Reservation.:  ${id}. Date of Use: ${dateFormat(values["fromDate"])} to ${dateFormat(values["toDate"])}`;
-      emailProps.Body = `We regret to inform you that your venue reservation request is disapproved. 
-      For further clarifications, you may e-mail us at coraoreservations@bsp.gov.ph or call our
-       Events and Visitor Services Pool (EVSP) at local telephone numbers 2559 or 2462.<br/><br/>
-      Link: <a href="${siteUrl}/SitePages/DisplayReservation_appge.aspx?pid=${id}">Request url</a>`;
-    }
-    if (type === 'Cancelled') {
-      emailProps.Subject = `Cancelled Request for Reservation.:  ${id}. Date of Use: ${dateFormat(values["fromDate"])} to ${dateFormat(values["toDate"])}`;
-      emailProps.Body = `This venue reservation request is cancelled. 
-      For further clarifications, you may e-mail us at coraoreservations@bsp.gov.ph or call our
-       Events and Visitor Services Pool (EVSP) at local telephone numbers 2559 or 2462.<br/><br/>
-      Link: <a href="${siteUrl}/SitePages/DisplayReservation_appge.aspx?pid=${id}">Request url</a>`;
-    }
-
-    await sp.utility.sendEmail(emailProps);
-  }
 
   private ISODate(date: string) {
     return moment(date).toISOString();

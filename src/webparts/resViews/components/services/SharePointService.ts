@@ -230,7 +230,7 @@ export class SharePointService {
           "ToDate",
           "Status"
         )
-        .top(6000)    // Smaller batch size for better performance
+        .top(5000)    // Smaller batch size for better performance
         .getPaged();
 
       // Collect all pages
