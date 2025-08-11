@@ -77,7 +77,7 @@ export default class ResDisplay extends React.Component<IResDisplayProps, IResDi
   public async componentDidMount() {
     const queryParams = new URLSearchParams(window.location.search);
     const id = queryParams.get("pid");
-    //const id = "5159"; // For testing purpose only, remove this line in production
+    //const id = "5321"; // For testing purpose only, remove this line in production
     await this.getLoggedinUser();
     await this.getItems(id);
     await this.getCRSD();
@@ -750,7 +750,7 @@ export default class ResDisplay extends React.Component<IResDisplayProps, IResDi
                       isDDMember={isDDMember}
                       ddMemberList={ddMemeberList}
                       crsdMemberList={crsdMemberList}
-                      isEdit={isEdit}
+                      isEdit={false}
                       saveStart={saveStart}
                       onEditClick={this.onEditClick}
                       onApprove={() => this.handleConfirmDialog(true, APPROVED)}

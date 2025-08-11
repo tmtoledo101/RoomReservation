@@ -32,15 +32,19 @@ export const VenueDetailsSection: React.FC<IVenueDetailsSectionProps> = ({
     const loadData = async () => {
       try {
         setIsLoading(true);
-        
+        console.log('formik values on load:', formik.values); // Log initial formik values
         // Load buildings and venues using the updated SharePointService
         const { buildings, venues } = await SharePointService.getBuildings();
         setBuildingList(buildings);
         setVenueList(venues);
 
-        // Load departments and sector map with requestedBy value
+        // Get the email of the requestedBy value before calling getDepartments
+        const requestorEmail = await SharePointService.getRequestorEmail(formik.values.requestedBy);
+        console.log('Requestor email:', requestorEmail);
+
+        // Load departments and sector map with requestor email instead of requestedBy
         const { departmentList: departments, departmentSectorMap: sectorMap } = 
-          await SharePointService.getDepartments(formik.values.requestedBy);
+          await SharePointService.getDepartments(requestorEmail);
 
         // Sort departments alphabetically by value
         const sortedDepartments = [...departments].sort((a, b) => 

@@ -96,7 +96,6 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
       this.venue = venues;
       this.layout = layouts;
       this.facilityMap = facilityMap;
-
       // Convert facilityMap to facilityList dropdown format
       const facilityList = Object.keys(facilityMap).map(facility => ({
         id: facility,
@@ -124,6 +123,7 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
       });
 
       this.formikRef.current.setFieldValue("requestedBy", currentUser.Title);
+      this.formikRef.current.setFieldValue("requestorEmail", currentUser.Email);
     } catch (error) {
       console.error('Error in SearchUserDepartment:', error);
       this.setState({

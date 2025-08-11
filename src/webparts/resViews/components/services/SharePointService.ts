@@ -434,8 +434,8 @@ export class SharePointService {
     const userDepartments = [];
     let page = await sp.web.lists
       .getByTitle("UsersPerDepartment")
-      .items.select("Department/Department")
-      .expand("Department/FieldValuesAsText")
+      .items.select("EmployeeName/EMail", "Department/Department")
+      .expand("Department", "EmployeeName")
       .top(5000)    // Smaller batch size for better performance
       .getPaged();
     while (true) {
@@ -447,9 +447,13 @@ export class SharePointService {
       }
     }
     // In-memory filter by user title
+    console.log("User Departments:", userDepartments);
+    console.log("Current User Title:", currentUserTitle);
+
     const filteredUserDepartments = userDepartments.filter(item =>
-      item.Title === currentUserTitle
+      (item.EmployeeName && item.EmployeeName.EMail === currentUserTitle)
     );
+    console.log("Filtered User Departments:", filteredUserDepartments);
     if (filteredUserDepartments.length === 0) {
       console.error('User department not found');
       return {
@@ -976,25 +980,38 @@ const filteredResults = allResults.filter(item => {
   }
 
  public static async getRequestorEmail(requestedBy: string): Promise<string> {
-    try {
-      const users = await sp.web.lists
-        .getByTitle("UsersPerDepartment")
-        .items.select("EmployeeName/EMail", "Title")
-        .expand("EmployeeName")
-        .filter(`Title eq '${requestedBy}'`)
-        .get();
-
-      if (users.length > 0 && users[0].EmployeeName) {
-        return users[0].EmployeeName.EMail;
+  try {
+    const users: any[] = [];
+    
+    let page = await sp.web.lists
+      .getByTitle("UsersPerDepartment")
+      .items.select("EmployeeName/EMail", "Title")
+      .expand("EmployeeName")
+      .top(5000)
+      .getPaged();
+    
+    while (true) {
+      users.push(...page.results);
+      if (page.hasNext) {
+        page = await page.getNext();
+      } else {
+        break;
       }
-      
-      return "";
-    } catch (error) {
-      console.error("Error getting requestor email:", error);
-      return "";
     }
-  }
 
+    // In-memory filter by Title
+    const matched = users.find(user => user.Title === requestedBy && user.EmployeeName && user.EmployeeName.EMail);
+
+    if (matched) {
+      return matched.EmployeeName.EMail;
+    }
+
+    return "";
+  } catch (error) {
+    console.error("Error getting requestor email:", error);
+    return "";
+  }
+}
   public static async getFiles(guid: string, siteRelativeUrl?: string): Promise<any[]> {
     try {
       console.log('SharePointService.getFiles called with GUID:', guid);
