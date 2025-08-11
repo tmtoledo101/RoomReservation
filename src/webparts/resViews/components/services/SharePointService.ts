@@ -538,18 +538,30 @@ private static async getRequestItemsBatch(dateFrom: Date, dateTo: Date, departme
     console.log('fromDate:', fromDate);
     console.log('toDate:', toDate);
     console.log('All results', allResults.length, 'items:', allResults);
-
+    console.log('Departments:', departments);
     // In-memory filter by department and date range (UTC-safe)
-   function toDateOnlyString(date: Date): string {
+   /*function toDateOnlyString(date: Date): string {
   // Returns 'YYYY-MM-DD'
   return date.toISOString().split('T')[0];
+}*/
+
+function toDateOnlyString(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0'); // getMonth() is 0-based
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
+
 
 const filteredResults = allResults.filter(item => {
   const itemFromDate = toDateOnlyString(new Date(item.FromDate));
-  const itemToDate = toDateOnlyString(new Date(item.ToDate));
+  const itemToDate = toDateOnlyString( new Date(item.ToDate));
   const searchFromDate = toDateOnlyString(fromDate);
   const searchToDate = toDateOnlyString(toDate);
+  if( item.ReferenceNumber === 'RR-202507-7584') {
+  console.log(`Checking item: ${item.ReferenceNumber}, From: ${itemFromDate}, FromFromSP: ${item.FromDate}, DateConvert: ${new Date(item.FromDate)} To: ${itemToDate}`);
+  console.log(`Against search range: From: ${searchFromDate}, To: ${searchToDate}`);
+  }
   return (
     departments.includes(item.Department) &&
     itemToDate >= searchFromDate &&
