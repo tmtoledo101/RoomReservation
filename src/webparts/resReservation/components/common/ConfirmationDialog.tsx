@@ -1,15 +1,16 @@
 import * as React from "react";
-import { Grid, Button } from "@material-ui/core";
+import { Grid, Button, CircularProgress } from "@material-ui/core";
 import { ModalPopup } from "./ModalPopup";
 // Interface defining the props for the ConfirmationDialog component
 interface IConfirmationDialogProps {
   open: boolean;  // Controls dialog visibility
   onClose: () => void;  // Handler for dialog close action
-  onConfirm: () => void; // Dialog title
+  onConfirm: () => void; // Handler for confirm action
   title: string;  // Dialog title
   message: string; // Dialog message content
   confirmLabel?: string; // Optional custom label for confirm button
   cancelLabel?: string;  // Optional custom label for cancel button
+  isLoading?: boolean; // Optional loading state
 }
 
 export const ConfirmationDialog: React.FC<IConfirmationDialogProps> = ({
@@ -19,8 +20,13 @@ export const ConfirmationDialog: React.FC<IConfirmationDialogProps> = ({
   title,
   message,
   confirmLabel = "Ok",  // Default confirm button text
-  cancelLabel = "Cancel"  // Default cancel button text
+  cancelLabel = "Cancel",  // Default cancel button text
+  isLoading = false // Default loading state
 }) => {
+  const handleConfirm = () => {
+    onClose(); // Close dialog immediately
+    onConfirm(); // Then execute the confirm action
+  };
   return (
     // ModalPopup: Base dialog component with customizable header
     <ModalPopup
@@ -59,7 +65,7 @@ export const ConfirmationDialog: React.FC<IConfirmationDialogProps> = ({
               style={{
                 marginLeft: "20px",
               }}
-              onClick={onConfirm}
+              onClick={handleConfirm}
             >
               {confirmLabel}
             </Button>

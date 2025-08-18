@@ -173,8 +173,8 @@ public async checkVenueAvailability(fromDate: Date, toDate: Date, venue?: string
         const filtered = reservations.filter(res =>
             res.Status !== 'Cancelled' &&
             res.Status !== 'Rejected' &&
-            new Date(res.FromDate) < toDate &&
-            new Date(res.ToDate) > fromDate &&
+            new Date(res.FromDate) <= toDate &&
+            new Date(res.ToDate) >= fromDate &&
             (!venue || (res.Venue && res.Venue === venue))
         );
         console.log("Filtered reservations:", filtered);
@@ -511,7 +511,7 @@ public async checkVenueAvailability(fromDate: Date, toDate: Date, venue?: string
     public async saveEmailData(emailProps: IEmailProperties, url: string): Promise<boolean> {
         try {
             // Extract reference number from subject
-            const refNoMatch = emailProps.Subject.match(/(?:Request:|No\.|:)\s*([^.]+)/);
+            const refNoMatch = emailProps.Subject.match(/(?:Request:|No\|:)\s*([^.]+)/);
             const referenceNo = refNoMatch ? refNoMatch[1].trim() : '';
             console.log("Body", emailProps.Body);
             // Save to SharePoint list

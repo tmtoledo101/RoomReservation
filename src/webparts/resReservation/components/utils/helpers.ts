@@ -90,9 +90,12 @@
     export const arrayToDropDownValues = (array) =>
       array.map((item) => ({ id: item, value: item }));
     
+ 
+
     export const dateFormat = (date) => {
-      return moment(date).format("MM/DD/yyyy HH:mm");
+      return moment(date).format("MM/DD/YYYY hh:mm A");
     };
+
     
     export const getCount = (count, padlen = 2) => {
       const newCount = `${count + 1}`;
@@ -173,14 +176,14 @@
       }
     
       if (type === 3) {
-        emailProps.Subject = `Approved Request for Reservation.: ${referenceNo}. Date of Use: ${dateFormat(values["fromDate"])} to ${dateFormat(values["toDate"])}`;
+        emailProps.Subject = `Approved Request for Reservation: ${referenceNo}. Date of Use: ${dateFormat(values["fromDate"])} to ${dateFormat(values["toDate"])}`;
         emailProps.Body = `We are pleased to inform you that your venue reservation request is approved. 
         Should you have any query or clarification, kindly email us at fosd-fpad@bsp.gov.ph or call local numbers 2578/2392. <br/>
         `;
       }
     
       if (type === 4) {
-        emailProps.Subject = `Approved Request for Reservation.: ${referenceNo}. Date of Use: ${dateFormat(values["fromDate"])} to ${dateFormat(values["toDate"])}`;
+        emailProps.Subject = `Approved Request for Reservation: ${referenceNo}. Date of Use: ${dateFormat(values["fromDate"])} to ${dateFormat(values["toDate"])}`;
         emailProps.Body = `We are pleased to inform you that your venue reservation request is approved. 
         Should you have any query or clarification, kindly email us at fosd-fpad@bsp.gov.ph or call local numbers 2578/2392. <br/>
         `;

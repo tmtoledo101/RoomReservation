@@ -111,8 +111,8 @@ export const validateDateRange = (startDate: Date | null, endDate: Date | null):
   return monthsDiff <= 3;
 };
 
-export const dateFormat = (date: any): string => {
-  return moment(date).format("MM/DD/yyyy HH:mm");
+export const dateFormat = (date) => {
+  return moment(date).format("MM/DD/YYYY hh:mm A");
 };
 
 export const newResEmail = async (context: any, to: Array<string>, cc: Array<string>, values: any, type: string, siteUrl: string, id: number, refNo:string): Promise<IEmailResult> => {
@@ -141,17 +141,17 @@ export const newResEmail = async (context: any, to: Array<string>, cc: Array<str
     }
 
   if (type === STATUS.APPROVED) {
-    emailProps.Subject = `Approved Request for Reservation.: ${refNo}. Date of Use: ${dateFormat(values["fromDate"])} to ${dateFormat(values["toDate"])}`;
+    emailProps.Subject = `Approved Request for Reservation: ${refNo}. Date of Use: ${dateFormat(values["fromDate"])} to ${dateFormat(values["toDate"])}`;
     emailProps.Body = `We are pleased to inform you that your venue reservation request is approved. 
     Should you have any query or clarification, kindly email us at fosd-fpad@bsp.gov.ph or call local numbers 2578/2392..<br/><br/>`;
   }
   if (type === STATUS.DISAPPROVED) {
-    emailProps.Subject = `Disapproved Request for Reservation.: ${refNo}. Date of Use: ${dateFormat(values["fromDate"])} to ${dateFormat(values["toDate"])}`;
+    emailProps.Subject = `Disapproved Request for Reservation: ${refNo}. Date of Use: ${dateFormat(values["fromDate"])} to ${dateFormat(values["toDate"])}`;
     emailProps.Body =`We regret to inform you that your venue reservation request is disapproved. 
     Should you have any query or clarification, kindly email us at fosd-fpad@bsp.gov.ph or call local numbers 2578/2392.`;
   }
   if (type === STATUS.CANCELLED) {
-    emailProps.Subject = `Cancelled Request for Reservation.: ${refNo}. Date of Use: ${dateFormat(values["fromDate"])} to ${dateFormat(values["toDate"])}`;
+    emailProps.Subject = `Cancelled Request for Reservation: ${refNo}. Date of Use: ${dateFormat(values["fromDate"])} to ${dateFormat(values["toDate"])}`;
     emailProps.Body = `We are pleased to inform you that your venue reservation request is cancelled. 
     Should you have any query or clarification, kindly email us at fosd-fpad@bsp.gov.ph or call local numbers 2578/2392.`;
   }

@@ -3,7 +3,7 @@
 
 import * as React from "react";
 import { Formik } from "formik";
-import { Grid, Button, Checkbox } from "@material-ui/core";
+import { Grid, Button, Checkbox, CircularProgress } from "@material-ui/core";
 import SaveIcon from "@material-ui/icons/Save";
 import CloseIcon from "@material-ui/icons/Close";
 
@@ -648,11 +648,11 @@ export class ResReservationForm extends React.Component<IResReservationFormProps
                       <Button
                         type="submit"
                         variant="contained"
-                        startIcon={<SaveIcon />}
+                        startIcon={this.state.saveStart ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
                         color="secondary"
                         disabled={this.state.saveStart}
                       >
-                        Save
+                        {this.state.saveStart ? "Saving..." : "Save"}
                       </Button>
                     </div>
                   </Grid>
