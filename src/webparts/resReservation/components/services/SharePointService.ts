@@ -168,15 +168,35 @@ public async checkVenueAvailability(fromDate: Date, toDate: Date, venue?: string
                 break;
             }
         }
-
+       
         // Filter in-memory: not Cancelled/Rejected, overlapping dates, and (if provided) matching venue
-        const filtered = reservations.filter(res =>
-            res.Status !== 'Cancelled' &&
-            res.Status !== 'Rejected' &&
-            new Date(res.FromDate) <= toDate &&
-            new Date(res.ToDate) >= fromDate &&
-            (!venue || (res.Venue && res.Venue === venue))
-        );
+        const filtered = reservations.filter(res => {
+            const resFromDate = new Date(res.FromDate);
+            const resToDate = new Date(res.ToDate);
+            
+            // Normalize dates to remove seconds/milliseconds for precise comparison
+            const normalizedFromDate = new Date(fromDate);
+            normalizedFromDate.setSeconds(0, 0);
+            const normalizedToDate = new Date(toDate);
+            normalizedToDate.setSeconds(0, 0);
+            const normalizedResFromDate = new Date(resFromDate);
+            normalizedResFromDate.setSeconds(0, 0);
+            const normalizedResToDate = new Date(resToDate);
+            normalizedResToDate.setSeconds(0, 0);
+            
+            // Two reservations overlap if neither ends before the other starts
+            const hasOverlap = !(normalizedResFromDate >= normalizedToDate || normalizedResToDate <= normalizedFromDate);
+            
+            console.log(`Checking reservation: ${res.Venue}, From: ${normalizedResFromDate.toISOString()}, To: ${normalizedResToDate.toISOString()}`);
+            console.log(`Against booking: From: ${normalizedFromDate.toISOString()}, To: ${normalizedToDate.toISOString()}`);
+            console.log(`resFromDate >= toDate: ${normalizedResFromDate >= normalizedToDate}, resToDate <= fromDate: ${normalizedResToDate <= normalizedFromDate}, hasOverlap: ${hasOverlap}`);
+            
+            return res.Status !== 'Cancelled' &&
+                   res.Status !== 'Rejected' &&
+                   hasOverlap &&
+                   (!venue || (res.Venue && res.Venue === venue));
+        });
+        console.log("fromDate:", fromDate, "toDate:", toDate);
         console.log("Filtered reservations:", filtered);
         // Return list of venue names that are already booked
         return filtered.map(res => res.Venue);
