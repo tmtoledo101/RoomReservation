@@ -20,6 +20,7 @@ import { isDevelopmentMode } from "../../../shared/utils/enivronmentHelper";
 interface IGroupUsers {
   crsdUsers: { Email: string; Title: string; }[];
   ddUsers: { Email: string; Title: string; }[];
+  fssUsers: { Email: string; Title: string; }[];
 }
 export class SharePointService {
   private web: any;
@@ -156,10 +157,24 @@ export class SharePointService {
   }
 
   public async getFacility() {
-    return await sp.web.lists
+    const facilities = await sp.web.lists
       .getByTitle("Facility")
-      .items.select("Title", "AssetNumber", "Facility", "Quantity")
+      .items.select("Title", "AssetNumber", "Facility", "Quantity", "FacilityOwner/Title", "FacilityOwner/ID", "FacilityOwner/EMail")
+      .expand("FacilityOwner")
       .get();
+
+    const facilityMap = {};
+    facilities.forEach((item) => {
+      facilityMap[item.Facility] = {
+        ...item,
+        "FacilityOwner":
+          item.FacilityOwner && item.FacilityOwner.results && item.FacilityOwner.results.length > 0
+            ? item.FacilityOwner.results[0].EMail
+            : null
+      };
+    });
+
+    return facilityMap;
   }
 
   public async getFiles(guid: string, siteRelativeUrl: string) {
@@ -174,6 +189,7 @@ export class SharePointService {
   public async getCRSD(): Promise<IGroupUsers> {
     let crsdUsers = [];
     let ddUsers = [];
+    let fssUsers = [];
   
     try {
       try {
@@ -189,17 +205,26 @@ export class SharePointService {
       } catch (error) {
         console.warn('Failed to fetch DD users:', error);
       }
+
+      try {
+        fssUsers = await sp.web.siteGroups.getById(1016).users();
+        console.log('FSS Users fetched:', fssUsers.length);
+      } catch (error) {
+        console.warn('Failed to fetch FSS users:', error);
+      }
   
       return {
         crsdUsers: crsdUsers || [],
-        ddUsers: ddUsers || []
+        ddUsers: ddUsers || [],
+        fssUsers: fssUsers || []
       };
   
     } catch (error) {
       console.error('Error in getCRSD:', error);
       return {
         crsdUsers: [],
-        ddUsers: []
+        ddUsers: [],
+        fssUsers: []
       };
     }
   }
@@ -255,74 +280,139 @@ export class SharePointService {
   }
 
   public async updateRequest(id: string | number, formData: any, newStatus: string, selectedID: string | number, guid: string) {
-    const participant = JSON.stringify(formData["participant"]);
-    const facility = JSON.stringify(formData["facilityData"]);
+    try {
+      console.log("SharePointService.updateRequest - Starting with parameters:", {
+        id,
+        newStatus,
+        selectedID,
+        guid,
+        hasFormData: !!formData
+      });
 
-    if (newStatus === "Cancelled" || newStatus === "Disapproved") {
-      await this.updateRoomTimeSlot(selectedID, formData["venueId"], this.ISODate(formData["fromDate"]), this.ISODate(formData["toDate"]), true);
-    }
+      const participant = JSON.stringify(formData["participants"]);
+      const facility = JSON.stringify(formData["facilityData"]);
 
-    let dataNeedsToBeUpdated = {};
+      console.log("SharePointService.updateRequest - Serialized data:", {
+        participant,
+        facility
+      });
 
-    if (formData.isEdit) {
-      const isAvailable = await this.checkRoomAvailablity(formData["venueId"], this.ISODate(formData["fromDate"]), this.ISODate(formData["toDate"]));
-      if (newStatus === "Approved" && isAvailable) {
-        await this.updateRoomTimeSlot(selectedID, formData["venueId"], this.ISODate(formData["fromDate"]), this.ISODate(formData["toDate"]));
+      // Update room time slot for cancellation/disapproval
+      if (newStatus === "Cancelled" || newStatus === "Disapproved") {
+        console.log("SharePointService.updateRequest - Updating room time slot for cancellation/disapproval");
+        try {
+          await this.updateRoomTimeSlot(selectedID, formData["venueId"], this.ISODate(formData["fromDate"]), this.ISODate(formData["toDate"]), true);
+          console.log("SharePointService.updateRequest - Room time slot updated successfully");
+        } catch (timeSlotError) {
+          console.error("SharePointService.updateRequest - Error updating room time slot:", timeSlotError);
+          throw new Error(`Failed to update room time slot: ${timeSlotError.message}`);
+        }
       }
-      dataNeedsToBeUpdated = {
-        Title: formData["requestedBy"],
-        RequestedBy: formData["requestedBy"],
-        Department: formData["department"],
-        Building: formData["building"],
-        Venue: formData["venue"],
-        Layout: formData["layout"],
-        PrincipalUser: formData["principal"],
-        ContactPerson: formData["contactPerson"],
-        ContactNumber: formData["contactNumber"],
-        PurposeOfUse: formData["purposeOfUse"],
-        Participant: participant,
-        NoParticipant: formData["numberOfParticipant"],
-        TitleDescription: formData["titleDesc"],
-        FromDate: formData["fromDate"],
-        ToDate: formData["toDate"],
-        OtherRequirement: formData["otherRequirements"],
-        IsCSDR: formData["isCSDR"],
-        FacilityData: facility,
-      };
-    }
 
-    await sp.web.lists.getByTitle('Request').items.getById(Number(id)).update({
-      ...dataNeedsToBeUpdated,
-      Status: newStatus
-    });
+      let dataNeedsToBeUpdated = {};
 
-    if (guid) {
-      const f = "/sites/ResourceReservation" + "/ReservationDocs/" + guid;
-      await sp.web.lists.getByTitle("ReservationDocs").rootFolder.folders.getByName(guid).delete();
-      await sp.web.lists.getByTitle("ReservationDocs").rootFolder.folders
-        .add(guid)
-        .then(r => {
-          Promise.all(formData.files.map((file) => {
-            if (file.size <= 10485760) {
-              sp.web.getFolderByServerRelativeUrl(f).files.add(file.name, file, true)
-                .then(result => {
-                  result.file.getItem()
-                    .then(item => {
-                      item.update({
-                        RequestId: guid
-                      });
-                    });
-                });
-            } else {
-              sp.web.getFolderByServerRelativeUrl(f).files.addChunked(file.name, file, d1 => {
-              }, true).then(({ file: fileData }) => fileData.getItem()).then((item: any) => {
-                return item.update({
-                  RequestId: guid
-                });
-              });
-            }
-          }));
+      if (formData.isEdit) {
+        console.log("SharePointService.updateRequest - Processing edit mode");
+        try {
+          const isAvailable = await this.checkRoomAvailablity(formData["venueId"], this.ISODate(formData["fromDate"]), this.ISODate(formData["toDate"]));
+          if (newStatus === "Approved" && isAvailable) {
+            await this.updateRoomTimeSlot(selectedID, formData["venueId"], this.ISODate(formData["fromDate"]), this.ISODate(formData["toDate"]));
+          }
+        } catch (availabilityError) {
+          console.error("SharePointService.updateRequest - Error checking room availability:", availabilityError);
+          throw new Error(`Failed to check room availability: ${availabilityError.message}`);
+        }
+
+        dataNeedsToBeUpdated = {
+          Title: formData["requestedBy"],
+          RequestedBy: formData["requestedBy"],
+          Department: formData["department"],
+          Building: formData["building"],
+          Venue: formData["venue"],
+          Layout: formData["layout"],
+          PrincipalUser: formData["principal"],
+          ContactPerson: formData["contactPerson"],
+          ContactNumber: formData["contactNumber"],
+          PurposeOfUse: formData["purposeOfUse"],
+          Participant: participant,
+          NoParticipant: formData["numberOfParticipant"],
+          TitleDescription: formData["titleDesc"],
+          FromDate: formData["fromDate"],
+          ToDate: formData["toDate"],
+          OtherRequirement: formData["otherRequirements"],
+          IsCSDR: formData["isCSDR"],
+          FacilityData: facility,
+        };
+      }
+
+      // Update the main request item
+      console.log("SharePointService.updateRequest - Updating main request item with data:", {
+        ...dataNeedsToBeUpdated,
+        Status: newStatus
+      });
+
+      try {
+        await sp.web.lists.getByTitle('Request').items.getById(Number(id)).update({
+          Status: newStatus
         });
+        console.log("SharePointService.updateRequest - Main request item updated successfully");
+      } catch (updateError) {
+        console.error("SharePointService.updateRequest - Error updating main request item:", updateError);
+        throw new Error(`Failed to update request item: ${updateError.message}`);
+      }
+
+      // Handle file operations
+      if (guid && formData.files && formData.files.length > 0) {
+        console.log("SharePointService.updateRequest - Processing file operations for guid:", guid);
+        try {
+          const f = "/sites/ResourceReservation" + "/ReservationDocs/" + guid;
+          
+          // Delete existing folder
+          try {
+            await sp.web.lists.getByTitle("ReservationDocs").rootFolder.folders.getByName(guid).delete();
+            console.log("SharePointService.updateRequest - Existing folder deleted");
+          } catch (deleteError) {
+            console.warn("SharePointService.updateRequest - Could not delete existing folder (may not exist):", deleteError);
+          }
+
+          // Create new folder and upload files
+          await sp.web.lists.getByTitle("ReservationDocs").rootFolder.folders
+            .add(guid)
+            .then(r => {
+              console.log("SharePointService.updateRequest - New folder created, uploading files");
+              return Promise.all(formData.files.map((file) => {
+                if (file.size <= 10485760) {
+                  return sp.web.getFolderByServerRelativeUrl(f).files.add(file.name, file, true)
+                    .then(result => {
+                      return result.file.getItem()
+                        .then(item => {
+                          return item.update({
+                            RequestId: guid
+                          });
+                        });
+                    });
+                } else {
+                  return sp.web.getFolderByServerRelativeUrl(f).files.addChunked(file.name, file, d1 => {
+                  }, true).then(({ file: fileData }) => fileData.getItem()).then((item: any) => {
+                    return item.update({
+                      RequestId: guid
+                    });
+                  });
+                }
+              }));
+            });
+          console.log("SharePointService.updateRequest - File operations completed successfully");
+        } catch (fileError) {
+          console.error("SharePointService.updateRequest - Error during file operations:", fileError);
+          // Don't throw here as the main update was successful
+          console.warn("SharePointService.updateRequest - Continuing despite file operation error");
+        }
+      }
+
+      console.log("SharePointService.updateRequest - Update completed successfully");
+    } catch (error) {
+      console.error("SharePointService.updateRequest - Error during update:", error);
+      throw error;
     }
   }
 

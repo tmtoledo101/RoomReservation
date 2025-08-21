@@ -69,6 +69,7 @@ export default class ResDisplayWebPart extends BaseClientSideWebPart<IResDisplay
     const element: React.ReactElement<IResDisplayProps > = React.createElement(
       ResDisplay,
       {
+        context: this.context,
         description: this.properties.description,
         siteUrl: this.context.pageContext.web.absoluteUrl,
         siteRelativeUrl: this.context.pageContext.web.serverRelativeUrl

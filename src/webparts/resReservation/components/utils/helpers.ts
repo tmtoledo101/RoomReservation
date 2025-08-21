@@ -188,12 +188,37 @@
         Should you have any query or clarification, kindly email us at fosd-fpad@bsp.gov.ph or call local numbers 2578/2392. <br/>
         `;
       }
+
+      if (type === 5) {
+        emailProps.Subject = `Cancelled Room Reservation Request: ${referenceNo}. Date of Use: ${dateFormat(values.fromDate)} to ${dateFormat(values.toDate)}`;
+        emailProps.Body = `<b>Room Reservation Request Cancelled</b><br/><br/>
+        Your room reservation request has been cancelled in the Resource Reservation System.<br/>
+        Please visit the link below to view the document for details.<br/><br/>
+        Thank you.<br/><br/>
+        Reference No. ${referenceNo}<br/>
+        Date of Use: ${dateFormat(values.fromDate)} To ${dateFormat(values.toDate)}<br/><br/>
+        Venue: ${values.venue}<br/><br/>
+        Requestor: ${values.requestedBy}<br/>
+        Department: ${values.department}<br/><br/>
+        Principal User: ${values.principal}<br/><br/>
+        Contact Person: ${values.contactPerson}<br/>
+        Contact No: ${values.contactNumber}<br/><br/>
+        Participants: ${values.participant ? values.participant.join(' , ') : ''}<br/>
+        Purpose of Use: ${values.purposeOfUse}<br/>
+        Title Description: ${values.titleDesc}<br/>
+        No. of Participants: ${values.numberOfParticipant}<br/><br/>
+        `;
+      }
       const url = `${siteUrl}/SitePages/DisplayReservation_appge.aspx?pid=${id}`;
       const result = await sendEnhancedEmail(context, emailProps, url);
       if (!result.success) {
         console.error("Failed to send reservation email:", result.error);
       }
       return result;
+    };
+
+    export const sendCancellationEmail = async (context: any, to: Array<string>, cc: Array<string>, values: any, siteUrl: string, referenceNo: string, id: string): Promise<IEmailResult> => {
+      return await newResEmail(context, to, cc, values, 5, null, siteUrl, referenceNo, id);
     };
     
     export const checkRoomAvailability = async (venueId: string, fromDate: string, toDate: string) => {
@@ -240,4 +265,3 @@
         Timeslot: JSON.stringify(timeSlot),
       });
     };
-  

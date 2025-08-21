@@ -34,6 +34,7 @@ export interface IResDisplayState {
   status: string;
   newStatus: string;
   crsdMemberList: string[];
+  fssMemberList: string[];
   requestorEmail: string;
   isSavingDone: boolean;
   isSavingFailure: boolean;

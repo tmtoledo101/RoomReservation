@@ -6,7 +6,7 @@ import { Formik } from "formik";
 import { Grid, Checkbox } from "@material-ui/core";
 import { SharePointService } from "./services/SharePointService";
 import { validationSchema } from "./utils/validation";
-import { mapArrayToObject, arrayToDropDownValues } from "./utils/helpers";
+import { mapArrayToObject, arrayToDropDownValues, sendCancellationEmail } from "./utils/helpers";
 import { BasicInformation } from "./common/BasicInformation";
 import { VenueDetails } from "./common/VenueDetails";
 import { ParticipantInformation } from "./common/ParticipantInformation";
@@ -62,6 +62,7 @@ export default class ResDisplay extends React.Component<IResDisplayProps, IResDi
       status: "",
       newStatus: "",
       crsdMemberList: [],
+      fssMemberList: [],
       requestorEmail: "",
       isSavingDone: false,
       isSavingFailure: false,
@@ -76,8 +77,8 @@ export default class ResDisplay extends React.Component<IResDisplayProps, IResDi
 
   public async componentDidMount() {
     const queryParams = new URLSearchParams(window.location.search);
-    const id = queryParams.get("pid");
-    //const id = "5321"; // For testing purpose only, remove this line in production
+    //const id = queryParams.get("pid");
+    const id = "5328"; // For testing purpose only, remove this line in production
     await this.getLoggedinUser();
     await this.getItems(id);
     await this.getCRSD();
@@ -269,22 +270,20 @@ export default class ResDisplay extends React.Component<IResDisplayProps, IResDi
   }
 
   private getFacility = async () => {
-    const Facility = await this.spService.getFacility();
-    const facility = {};
-    Facility.forEach((item) => {
-      facility[item.Facility] = item;
-    });
-    this.facilityMap = facility;
+    const facilityMap = await this.spService.getFacility();
+    this.facilityMap = facilityMap;
   }
 
   private getCRSD = async () => {
-    const { crsdUsers, ddUsers } = hasGroupMembersAccess() ? await this.spService.getCRSD(): { crsdUsers: [], ddUsers: [] };
+    const { crsdUsers, ddUsers, fssUsers } = hasGroupMembersAccess() ? await this.spService.getCRSD(): { crsdUsers: [], ddUsers: [], fssUsers: [] };
     const list = crsdUsers.map(item => item.Email);
     const list2 = ddUsers.map(item => item.Email);
+    const list3 = fssUsers.map(item => item.Email);
     this.setState({
       crsdMemberList: [...list],
       ddMemeberList: [...list2],
-      approverList: [...list, ...list2],
+      fssMemberList: [...list3],
+      approverList: [...list, ...list2, ...list3],
     });
   }
 
@@ -525,6 +524,14 @@ export default class ResDisplay extends React.Component<IResDisplayProps, IResDi
       this.handleConfirmDialog(false);
 
       try {
+        console.log("Starting request update with data:", {
+          id: Number(new URLSearchParams(window.location.search).get("pid")),
+          newStatus: this.state.newStatus,
+          selectedID: this.state.selectedID,
+          guid: this.state.guid,
+          finalResult
+        });
+
         await this.spService.updateRequest(
           Number(new URLSearchParams(window.location.search).get("pid")),
           finalResult,
@@ -532,6 +539,59 @@ export default class ResDisplay extends React.Component<IResDisplayProps, IResDi
           this.state.selectedID,
           this.state.guid
         );
+
+        console.log("Request update completed successfully");
+
+        // Send cancellation email if status is CANCELLED
+        if (this.state.newStatus === CANCELLED) {
+          try {
+            console.log("Preparing cancellation email...");
+            const toEmails = [this.state.requestorEmail];
+            let ccEmails = [];
+            
+            // Add FSS members for HO Multi-Storey Bldg
+            if (finalResult.building === "HO Multi-Storey Bldg") {
+              ccEmails = ccEmails.concat(this.state.fssMemberList);
+            }
+            
+            // Add CRSD and DD members for SPC
+            if (finalResult.building === "SPC") {
+              ccEmails = ccEmails.concat(this.state.crsdMemberList);
+              ccEmails = ccEmails.concat(this.state.ddMemeberList);
+            }
+            
+            // Add facility owners if facilities are involved
+            if (this.state.facilityData.length > 0) {
+              const facilityOwners = this.state.facilityData
+                .map(facility => this.facilityMap[facility.facility] && this.facilityMap[facility.facility].FacilityOwner)
+                .filter(owner => owner);
+              ccEmails = ccEmails.concat(facilityOwners);
+            }
+
+            // Remove duplicates
+            const uniqueCcEmails = ccEmails.filter((email, index) => ccEmails.indexOf(email) === index);
+            console.log("Sending cancellation email to:", toEmails, "CC:", uniqueCcEmails);
+            
+            const emailResult = await sendCancellationEmail(
+              this.props.context,
+              toEmails,
+              uniqueCcEmails,
+              finalResult,
+              this.props.siteUrl,
+              finalResult.referenceNumber,
+              new URLSearchParams(window.location.search).get("pid") || "5328"
+            );
+            
+            if (emailResult.success) {
+              console.log("Cancellation email sent successfully");
+            } else {
+              console.error("Failed to send cancellation email:", emailResult.error);
+            }
+          } catch (emailError) {
+            console.error('Failed to send cancellation email notification:', emailError);
+            // Don't fail the entire operation if email fails
+          }
+        }
 
         let toUser = this.state.crsdMemberList;
         if (this.state.isDDMember) {
@@ -542,6 +602,12 @@ export default class ResDisplay extends React.Component<IResDisplayProps, IResDi
           isSavingDone: true,
         });
       } catch (error) {
+        console.error("Error during request update:", error);
+        console.error("Error details:", {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        });
         this.setState({
           isSavingFailure: true,
         });

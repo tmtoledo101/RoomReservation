@@ -16,6 +16,7 @@ export interface ITableItem {
   contactNumber: string;
   status: string;
   ID: number;
+  created?: string;  // Created date from SharePoint list
   layout?: string;
   contactPerson?: string;
   principal?: string;

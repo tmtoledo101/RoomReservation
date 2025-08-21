@@ -70,6 +70,7 @@ export class SharePointService {
       contactNumber: item.ContactNumber,
       status: item.Status,
       ID: item.Id,
+      created: item.Created,
       layout: item.Layout || "",
       contactPerson: item.ContactPerson || "",
       principal: item.PrincipalUser || "",
@@ -103,7 +104,8 @@ export class SharePointService {
         "PrincipalUser",
         "TitleDescription",
         "Participant",
-        "OtherRequirement"
+        "OtherRequirement",
+        "Created"
       )
       // .filter(`Status ne 'Cancelled' and Status ne 'Rejected'`) // <-- Remove this line
       .top(500)
@@ -295,7 +297,8 @@ export class SharePointService {
         "TitleDescription",
         "Participant",
         "OtherRequirement",
-        "GUID"
+        "GUID",
+        "Created"
       )
       .orderBy("Id", false)
       .getPaged();
@@ -519,7 +522,8 @@ private static async getRequestItemsBatch(dateFrom: Date, dateTo: Date, departme
         "TitleDescription",
         "Participant",
         "OtherRequirement",
-        "GUID"
+        "GUID",
+        "Created"
       )
       .orderBy("Id", false)
       .top(5000)
@@ -604,6 +608,7 @@ const filteredResults = allResults.filter(item => {
         contactNumber: item.ContactNumber,
         status: item.Status,
         ID: item.Id,
+        created: item.Created,
         layout: item.Layout || "",
         contactPerson: item.ContactPerson || "",
         principal: item.PrincipalUser || "",

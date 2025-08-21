@@ -67,6 +67,7 @@ export const CustomTable: React.FC<ICustomTableProps> = ({
           },
           render: (rowData) => formatDate(rowData.toDate),
         },
+        
         {
           title: "Building",
           field: "building",
@@ -94,6 +95,15 @@ export const CustomTable: React.FC<ICustomTableProps> = ({
         {
           title: "Requested By",
           field: "requestedBy",
+        },
+        {
+          title: "Created Date",
+          field: "created",
+          type: "date",
+          cellStyle: {
+            minWidth: 150,
+          },
+          render: (rowData) => formatDate(rowData.created),
         },
         {
           title: "Department",
@@ -134,4 +144,3 @@ export const CustomTable: React.FC<ICustomTableProps> = ({
     </div>
   );
 };
-

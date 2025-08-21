@@ -528,28 +528,43 @@ public async checkVenueAvailability(fromDate: Date, toDate: Date, venue?: string
         }
     }
 
-    public async saveEmailData(emailProps: IEmailProperties, url: string): Promise<boolean> {
-        try {
-            // Extract reference number from subject
-            const refNoMatch = emailProps.Subject.match(/(?:Request:|No\|:)\s*([^.]+)/);
-            const referenceNo = refNoMatch ? refNoMatch[1].trim() : '';
-            console.log("Body", emailProps.Body);
-            // Save to SharePoint list
-            await sp.web.lists.getByTitle("EmailDataForPA").items.add({
-                ReferenceNo: referenceNo,
-                To: emailProps.To  ? [...new Set(emailProps.To)].join(';') : '',
-                CC:  emailProps.CC ? [...new Set(emailProps.CC)].join(';') : '',
-                SendAsFrom: emailProps.From,
-                Subject: emailProps.Subject,
-                Body: emailProps.Body,
-                RecordUrl: url
-            });
+    public async saveEmailData(emailProps: IEmailProperties, url: string): Promise<boolean> {
+        try {
+            // Extract reference number from subject
+            const refNoMatch = emailProps.Subject.match(/(?:Request:|No\|:)\s*([^.]+)/);
+            const referenceNo = refNoMatch ? refNoMatch[1].trim() : '';
+            console.log("Body", emailProps.Body);
+            // Save to SharePoint list
+            await sp.web.lists.getByTitle("EmailDataForPA").items.add({
+                ReferenceNo: referenceNo,
+                To: emailProps.To  ? [...new Set(emailProps.To)].join(';') : '',
+                CC:  emailProps.CC ? [...new Set(emailProps.CC)].join(';') : '',
+                SendAsFrom: emailProps.From,
+                Subject: emailProps.Subject,
+                Body: emailProps.Body,
+                RecordUrl: url
+            });
 
-            return true;
-        } catch (error) {
-            console.error("Failed to save email data:", error);
-            return false;
-        }
-    }
+            return true;
+        } catch (error) {
+            console.error("Failed to save email data:", error);
+            return false;
+        }
+    }
+
+    public async cancelReservation(requestId: number, reason?: string): Promise<boolean> {
+        try {
+            // Update the request status to Cancelled
+            await sp.web.lists.getByTitle("Request").items.getById(requestId).update({
+                Status: "Cancelled",
+                CancellationReason: reason || "Cancelled by user"
+            });
+
+            return true;
+        } catch (error) {
+            console.error("Failed to cancel reservation:", error);
+            return false;
+        }
+    }
 }
 //TestComment[...new Set(emailProps.To)].join(';') : '';
