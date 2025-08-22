@@ -288,7 +288,7 @@ export class SharePointService {
         guid,
         hasFormData: !!formData
       });
-
+      /*
       const participant = JSON.stringify(formData["participants"]);
       const facility = JSON.stringify(formData["facilityData"]);
 
@@ -344,16 +344,16 @@ export class SharePointService {
           FacilityData: facility,
         };
       }
-
+      */
       // Update the main request item
       console.log("SharePointService.updateRequest - Updating main request item with data:", {
-        ...dataNeedsToBeUpdated,
-        Status: newStatus
+        Status: newStatus,
+        id: Number(id)
       });
 
       try {
         await sp.web.lists.getByTitle('Request').items.getById(Number(id)).update({
-          Status: newStatus
+          Status: newStatus,
         });
         console.log("SharePointService.updateRequest - Main request item updated successfully");
       } catch (updateError) {

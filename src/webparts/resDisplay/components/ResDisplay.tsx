@@ -78,7 +78,7 @@ export default class ResDisplay extends React.Component<IResDisplayProps, IResDi
   public async componentDidMount() {
     const queryParams = new URLSearchParams(window.location.search);
     //const id = queryParams.get("pid");
-    const id = "5328"; // For testing purpose only, remove this line in production
+    const id = "8524"; // For testing purpose only, remove this line in production
     await this.getLoggedinUser();
     await this.getItems(id);
     await this.getCRSD();
@@ -522,10 +522,11 @@ export default class ResDisplay extends React.Component<IResDisplayProps, IResDi
       finalResult["files"] = this.state.files;
       finalResult["venueId"] = this.state.venueId;
       this.handleConfirmDialog(false);
+     //const id =  Number(new URLSearchParams(window.location.search).get("pid"));
 
       try {
         console.log("Starting request update with data:", {
-          id: Number(new URLSearchParams(window.location.search).get("pid")),
+          id: new URLSearchParams(window.location.search).get("pid") || "8524",
           newStatus: this.state.newStatus,
           selectedID: this.state.selectedID,
           guid: this.state.guid,
@@ -533,7 +534,7 @@ export default class ResDisplay extends React.Component<IResDisplayProps, IResDi
         });
 
         await this.spService.updateRequest(
-          Number(new URLSearchParams(window.location.search).get("pid")),
+          new URLSearchParams(window.location.search).get("pid") || "8524",
           finalResult,
           this.state.newStatus,
           this.state.selectedID,
@@ -579,7 +580,7 @@ export default class ResDisplay extends React.Component<IResDisplayProps, IResDi
               finalResult,
               this.props.siteUrl,
               finalResult.referenceNumber,
-              new URLSearchParams(window.location.search).get("pid") || "5328"
+              new URLSearchParams(window.location.search).get("pid") || "8524"
             );
             
             if (emailResult.success) {
