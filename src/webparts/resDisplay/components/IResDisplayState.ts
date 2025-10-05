@@ -44,4 +44,5 @@ export interface IResDisplayState {
   selectedID: string;
   isFssManaged: boolean;
   isDDMember: boolean;
+  pid: string;
 }
